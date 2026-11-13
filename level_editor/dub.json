@@ -1,0 +1,13 @@
+{
+	"description": "A simple 2D level editor for xml (format Java Engine 1) in Dlang.",
+	"dependencies": {
+		"raylib-d": "~>6.2.0"
+	},
+	"authors": ["SAR"],
+	"copyright": "Copyright © 2026, SAR",
+	"license": "MIT",
+	"name": "level_editor",
+	"libs": ["raylib"],
+	"buildOptions": [],
+	"sourceFiles": ["libraygui.a"]
+}
