@@ -14,21 +14,16 @@ Combo 6Beat/
 ├── game/                      # Juego y motor en Java 17 + Maven (Processing 4)
 │   ├── src/main/java/engine/  # Motor reutilizable (escenas, audio, diálogos, física, sprites)
 │   ├── src/main/java/game/    # Lógica del juego (InitScene, HubScene, ROTNScene/ROTNCore, SQLite)
-│   ├── resources/             # Canciones (.osu/.scene), diálogos JSON, sprites, SFX y schema.sql
+│   ├── resources/             # Canciones (.osu/.scene), diálogo del Hub, sprites, SFX y schema.sql
 │   └── pom.xml
 ├── docs/
 │   ├── entrega_final/         # Paquete integrador de entrega final:
 │   │   ├── 01_documentacion/  # Documentación integral (Markdown y PDF)
 │   │   ├── 02_base_de_datos/  # DER Chen, Modelo Relacional 3FN (Draw.io/PNG) y scripts SQLite
-│   │   ├── 03_codigo_fuente/  # Arquitectura POO en capas
-│   │   └── 04_manuales/       # Manual de Usuario y Guía de Instalación (Markdown y PDF)
+│   │   └── 03_codigo_fuente/  # Arquitectura POO en capas
 │   ├── arquitectura/          # Diagramas de arquitectura y consigna integradora
 │   ├── propuesta/             # Propuesta de tema original
 │   └── story/                 # Biblia narrativa, personajes y escaleta
-├── tools/
-│   ├── level_editor/          # Editor externo nativo en D (@nogc nothrow) + raylib-d + raygui
-│   ├── projects/              # Archivos de proyecto del editor (.procshit)
-│   └── scripts/               # Utilidades de conversión de audio e importación
 └── assets_raw/                # Arte fuente y exports fuera del juego
 ```
 
@@ -43,7 +38,7 @@ Todo el módulo de persistencia se encuentra en [`docs/entrega_final/02_base_de_
   - **Modelo Relacional (3FN, Crow's Foot):** [`Modelo_Relacional_Combo6Beat.drawio`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_Combo6Beat.drawio) / [`Modelo_Relacional_Combo6Beat.png`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_Combo6Beat.png)
   - **Diccionario de Datos y Normalización:** [`Modelo_Relacional_3FN.md`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_3FN.md)
 - **Scripts SQLite (12 tablas, 4 índices, 14 triggers, 7 vistas):**
-  1. [`01_ddl_creacion.sql`](docs/entrega_final/02_base_de_datos/01_ddl_creacion.sql) — Creación de tablas (`ZONAS`, `ENEMIGOS`, `CATALOGO_ITEMS`, `CATALOGO_BATALLAS`, `PARTIDAS`, `BATALLAS_VENCIDAS`, `OBJETOS_OBTENIDOS`, `HISTORIAL_OBJETOS`, `FLAGS_PARTIDA`, `CANCIONES_PERSONALIZADAS`, `CANCION_OBJETOS_INTENTO`, `DB_META`), índices, triggers (validación, récord custom, auditoría de ítems, progreso global y desbloqueo automático de amuletos por puntaje) y vistas `INNER JOIN`.
+  1. [`01_ddl_creacion.sql`](docs/entrega_final/02_base_de_datos/01_ddl_creacion.sql) — Creación de tablas (`ZONAS`, `ENEMIGOS`, `CATALOGO_ITEMS`, `CATALOGO_BATALLAS`, `PARTIDAS`, `BATALLAS_VENCIDAS`, `OBJETOS_OBTENIDOS`, `HISTORIAL_OBJETOS`, `FLAGS_PARTIDA`, `CANCIONES_PERSONALIZADAS`, `CANCION_OBJETOS_INTENTO`, `DB_META`), índices, triggers y vistas `INNER JOIN`.
   2. [`02_dml_datos_iniciales.sql`](docs/entrega_final/02_base_de_datos/02_dml_datos_iniciales.sql) — Catálogos semilla y partidas/batallas/canciones de prueba.
   3. [`03_consultas_reportes.sql`](docs/entrega_final/02_base_de_datos/03_consultas_reportes.sql) — Consultas de verificación e informes sobre las 7 vistas.
   4. [`04_respaldo_completo.sql`](docs/entrega_final/02_base_de_datos/04_respaldo_completo.sql) — Respaldo completo (`.dump`) listo para restaurar.
@@ -77,10 +72,3 @@ mvn compile exec:java -Dexec.mainClass=game.Main
 ```
 
 *(Si ya tenés las dependencias en caché local, podés usar `mvn -o compile exec:java -Dexec.mainClass=game.Main`).*
-
-### Editor de herramientas (D + DUB, opcional)
-
-```bash
-cd tools/level_editor
-dub build
-```
