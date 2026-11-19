@@ -1,17 +1,17 @@
 ---
 name: build-and-verify
 description: >-
-  Compila y verifica los dos subproyectos de Combo 6Beat (level_editor en D con DUB y source/combo_6beat en Java 17 con Maven offline).
-  Usar siempre después de modificar código fuente en level_editor/ o source/combo_6beat/, o para diagnosticar errores de compilación.
+  Compila y verifica los dos subproyectos de Combo 6Beat (tools/level_editor en D con DUB y game en Java 17 con Maven offline).
+  Usar siempre después de modificar código fuente en tools/level_editor/ o game/, o para diagnosticar errores de compilación.
 ---
 
 # Build y Verificación de Combo 6Beat
 
 Este proyecto tiene dos builds independientes que deben mantenerse verdes por separado.
 
-## 1. `level_editor/` (Dlang + raylib-d + raygui)
+## 1. `tools/level_editor/` (Dlang + raylib-d + raygui)
 
-Ejecutar desde `/home/sar/Documentos/Combo 6Beat/level_editor`:
+Ejecutar desde `/home/sar/Documentos/Combo 6Beat/tools/level_editor`:
 
 ```bash
 dub build
@@ -25,9 +25,9 @@ dub build
 - Uso accidental del GC (`string`, `~`, `new`, arrays dinámicos) falla en compilación con error `@nogc`. Reemplazar por buffers `char[N]` + `snprintf`/`strncpy` o `malloc`/`free`.
 - No ejecutar el binario GUI `./level_editor` en entornos headless sin display.
 
-## 2. `source/combo_6beat/` (Java 17 + Maven + Processing 4)
+## 2. `game/` (Java 17 + Maven + Processing 4)
 
-Ejecutar desde `/home/sar/Documentos/Combo 6Beat/source/combo_6beat`:
+Ejecutar desde `/home/sar/Documentos/Combo 6Beat/game`:
 
 ```bash
 mvn -o compile

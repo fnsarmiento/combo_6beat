@@ -1,13 +1,13 @@
 ---
 name: scene-dialog-contracts
 description: >-
-  Especificación exacta de los formatos compartidos entre level_editor (D) y source/combo_6beat (Java): XML de escenas, JSON de diálogos, archivos .procshit y beatmaps .osu.
+  Especificación exacta de los formatos compartidos entre tools/level_editor (D) y game (Java): XML de escenas, JSON de diálogos, archivos .procshit y beatmaps .osu.
   Usar al crear, parsear, exportar o depurar escenas XML, diálogos JSON, mapas de tiles o archivos de proyecto.
 ---
 
 # Contratos de Datos: Escenas, Diálogos y Proyectos
 
-Referencia autoritativa basada en `level_editor/source/scenes/map_editor/` y `source/combo_6beat/src/main/java/`.
+Referencia autoritativa basada en `tools/level_editor/source/scenes/map_editor/` y `game/src/main/java/`.
 
 ---
 

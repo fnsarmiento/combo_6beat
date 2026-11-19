@@ -4,28 +4,33 @@ Videojuego 2D con estética pixel art que combina exploración RPG top-down (ins
 
 ## Estructura del Workspace
 
-- `Propuesta de Tema.docx`: Especificación original de objetivo, alcance, mecánicas matemáticas (curación dinámica y power-ups), catálogo de NPCs híbridos y escenarios.
-- `source/combo_6beat/`: Juego y motor en **Java 17 + Maven** (`org.processing:core:4.5.7`, `controlP5:2.2.6`, `TinySound`). **Nota:** contiene su propio repositorio `.git` interno.
-- `level_editor/`: Editor externo nativo en **D (`@nogc nothrow`) + `raylib-d` + `raygui`**, que sustituye al antiguo editor Java eliminado (`game.editor.*`).
-- `debug assets/`: Proyecto y mapas Tiled de referencia (`debug.tiled-project`, `Debug.tsx`, `sin nombre.tmx`, `tileset.png`).
-- `release assets/`: Directorio destinado a assets finales de distribución (actualmente vacío).
-- `PROJECT_STATUS.md`: Estado detallado de la propuesta, lo ya resuelto, pendientes y bugs/desajustes conocidos. Léelo antes de planificar nuevas funcionalidades o refactors transversales.
+- `game/`: Juego y motor en **Java 17 + Maven** (`org.processing:core:4.5.7`, `controlP5:2.2.6`, `TinySound`). **Nota:** contiene su propio repositorio `.git` interno conectado a GitHub.
+- `tools/`: Herramientas de desarrollo del proyecto:
+  - `tools/level_editor/`: Editor externo nativo en **D (`@nogc nothrow`) + `raylib-d` + `raygui`**.
+  - `tools/projects/`: Archivos de proyecto `.procshit` (`beach_ruins.procshit`, `swamp.procshit`).
+  - `tools/scripts/`: Scripts utilitarios (`import_pixellab_scene.py`, `mp3_to_wav.sh`).
+- `assets_raw/`: Arte fuente y exports fuera del juego (`assets_raw/debug/`, `assets_raw/release/`).
+- `docs/`: Toda la documentación unificada:
+  - `docs/propuesta/`: Propuesta original (`Propuesta de Tema.docx`) y `PROJECT_STATUS.md`.
+  - `docs/story/`: Biblia narrativa, personajes y borradores de diálogos.
+  - `docs/arquitectura/`: Diagramas de arquitectura y DER.
+  - `docs/entrega_final/`: Entregables finales integradores (documentación, BD SQLite 3FN, manuales).
 
 ## Reglas Transversales
 
-1. **Separación de herramientas:** Todo el tooling de edición de niveles, tilesets, tilemaps y grafos de diálogo vive en `level_editor/` (D). No reintroducir un editor embebido dentro de `source/combo_6beat/`.
-2. **Contratos compartidos (`level_editor/` <-> `source/combo_6beat/`):**
+1. **Separación de herramientas:** Todo el tooling vive en `tools/` (`tools/level_editor/`, `tools/scripts/`). No reintroducir un editor embebido dentro de `game/`.
+2. **Contratos compartidos (`tools/level_editor/` <-> `game/`):**
    - Las escenas XML, los grafos JSON de diálogo y los archivos de proyecto `.procshit` deben usar **exclusivamente rutas relativas** (nunca rutas absolutas del sistema).
    - Antes de modificar el esquema XML de escenas, el formato JSON de diálogos o `.procshit`, consultar la skill `.agents/skills/scene-dialog-contracts/SKILL.md` y mantener sincronizados ambos lados (D y Java).
 3. **Idioma y estilo:**
    - Identificadores de código (clases, métodos, structs, claves XML/JSON): en inglés (salvo claves/etiquetas heredadas ya presentes).
    - Comentarios, mensajes de UI del editor y documentación del proyecto: en español.
-4. **Verificación tras cambios:** Usar la skill `.agents/skills/build-and-verify/SKILL.md` (`dub build` para `level_editor/`, `mvn -o compile` para `source/combo_6beat/`).
+4. **Verificación tras cambios:** Usar la skill `.agents/skills/build-and-verify/SKILL.md` (`dub build` para `tools/level_editor/`, `mvn -o compile` para `game/`).
 
 ## Reglas por Subdirectorio
 
-- `level_editor/GEMINI.md` — Restricciones `@nogc nothrow`, módulos D, buffers y UI `raygui`.
-- `source/combo_6beat/GEMINI.md` — Build Maven, resolución virtual `480x270`, estado git y arquitectura general Java.
-- `source/combo_6beat/src/main/java/engine/GEMINI.md` — Contratos del motor reutilizable (`Engine`, `Scene`, `ResourcesManager`, física, audio, diálogos).
-- `source/combo_6beat/src/main/java/game/GEMINI.md` — Lógica específica de *Combo 6Beat* (`Main`, `Config`, `RPGScene`, `ROTNScene`/`ROTNCore`, `.osu`).
-- `source/combo_6beat/resources/GEMINI.md` — Convenciones de escenas XML, diálogos JSON, beatmaps `.osu`, audio y spritesheets.
+- `tools/level_editor/GEMINI.md` — Restricciones `@nogc nothrow`, módulos D, buffers y UI `raygui`.
+- `game/GEMINI.md` — Build Maven, resolución virtual `480x270`, estado git y arquitectura general Java.
+- `game/src/main/java/engine/GEMINI.md` — Contratos del motor reutilizable (`Engine`, `Scene`, `ResourcesManager`, física, audio, diálogos).
+- `game/src/main/java/game/GEMINI.md` — Lógica específica de *Combo 6Beat* (`Main`, `Config`, `RPGScene`, `ROTNScene`/`ROTNCore`, `.osu`).
+- `game/resources/GEMINI.md` — Convenciones de escenas XML, diálogos JSON, beatmaps `.osu`, audio y spritesheets.

@@ -64,6 +64,8 @@ void on_setup() {
     // Cargar automáticamente el proyecto por defecto al iniciar para que las escenas aparezcan de inmediato
     if (FileExists("beach_ruins.procshit")) {
         procshit_load_project("beach_ruins.procshit");
+    } else if (FileExists("../projects/beach_ruins.procshit")) {
+        procshit_load_project("../projects/beach_ruins.procshit");
     } else if (FileExists("../beach_ruins.procshit")) {
         procshit_load_project("../beach_ruins.procshit");
     }
