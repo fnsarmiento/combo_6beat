@@ -1,0 +1,317 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="mr-3fn-combo6beat" name="Modelo Relacional 3FN (Combo 6Beat)">
+    <mxGraphModel dx="2760" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2760" pageHeight="1400" math="0" shadow="0" background="#FAF8F3">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="mr_title" value="MODELO RELACIONAL NORMALIZADO (3FN) — COMBO 6BEAT (12 TABLAS SQLITE)&#10;Incluye ZONAS (Salas del Hub), ENEMIGOS (posición + canción), Amuletos por Score y Canciones Custom" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E2436;strokeColor=#111111;strokeWidth=2;fontStyle=1;fontSize=17;fontColor=#FFE182;" vertex="1" parent="1">
+          <mxGeometry x="80" y="30" width="1280" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ZONAS" value="ZONAS (Salas del Hub)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#2B4C7E;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="150" width="390" height="144" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ZONAS_r0" value="[PK] id_zona : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_ZONAS">
+          <mxGeometry y="34" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ZONAS_r1" value="  nombre : TEXT NOT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ZONAS">
+          <mxGeometry y="60" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ZONAS_r2" value="[UQ] escena_xml_relativa : TEXT UNIQUE" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ZONAS">
+          <mxGeometry y="86" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ZONAS_r3" value="  orden_progresion : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ZONAS">
+          <mxGeometry y="112" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS" value="ENEMIGOS" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#7A2E3A;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="440" width="390" height="274" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r0" value="[PK] id_enemigo : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="34" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r1" value="  nombre : TEXT NOT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="60" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r2" value="  especie : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="86" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r3" value="[FK] id_zona -&gt; ZONAS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="112" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r4" value="  hub_x : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="138" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r5" value="  hub_y : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="164" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r6" value="  cancion_referencia : TEXT NOT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="190" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r7" value="  sprite_relativo : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="216" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_ENEMIGOS_r8" value="[FK,UQ] id_batalla -&gt; CATALOGO_BATALLAS : TEXT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_ENEMIGOS">
+          <mxGeometry y="242" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS" value="CATALOGO_BATALLAS" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#2B4C7E;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="580" y="440" width="410" height="326" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r0" value="[PK] id_batalla : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="34" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r1" value="[UQ] boss_id : TEXT UNIQUE" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="60" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r2" value="  boss_nombre : TEXT NOT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="86" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r3" value="  especie : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="112" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r4" value="[UQ] defeat_flag : TEXT UNIQUE" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="138" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r5" value="  escena_combate_relativa : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="164" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r6" value="[FK] id_zona -&gt; ZONAS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="190" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r7" value="[FK] id_item_recompensa -&gt; CATALOGO_ITEMS : TEXT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="216" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r8" value="[FK] id_amuleto_score -&gt; CATALOGO_ITEMS : TEXT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="242" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r9" value="  puntaje_minimo_amuleto : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="268" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_BATALLAS_r10" value="  es_historia_principal : INTEGER (0|1)" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_BATALLAS">
+          <mxGeometry y="294" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS" value="PARTIDAS (Ranuras 1..4)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#1F6F5B;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="150" width="380" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r0" value="[PK] id_partida : INTEGER AI" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="34" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r1" value="[UQ] slot : INTEGER (1..4)" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="60" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r2" value="[FK] id_zona_actual -&gt; ZONAS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="86" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r3" value="  player_x / player_y : REAL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="112" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r4" value="[FK] id_zona_retorno -&gt; ZONAS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="138" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r5" value="  return_x / return_y : REAL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="164" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r6" value="  heal_strategy : TEXT (OPT|MIN)" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="190" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r7" value="  estado_general : TEXT CHECK" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="216" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r8" value="  progreso_porcentaje : REAL (0..100)" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="242" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_PARTIDAS_r9" value="  fecha_creacion / actualizacion : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_PARTIDAS">
+          <mxGeometry y="268" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS" value="BATALLAS_VENCIDAS (N:M)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#5B4B8A;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="580" y="920" width="410" height="222" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS_r0" value="[PK,FK] id_partida -&gt; PARTIDAS : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_BATALLAS_VENCIDAS">
+          <mxGeometry y="34" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS_r1" value="[PK,FK] id_batalla -&gt; CATALOGO_BATALLAS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_BATALLAS_VENCIDAS">
+          <mxGeometry y="60" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS_r2" value="  puntaje_maximo : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_BATALLAS_VENCIDAS">
+          <mxGeometry y="86" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS_r3" value="  max_combo : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_BATALLAS_VENCIDAS">
+          <mxGeometry y="112" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS_r4" value="  perfects / goods / safes / misses : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_BATALLAS_VENCIDAS">
+          <mxGeometry y="138" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS_r5" value="  intentos_totales : INTEGER &gt;= 1" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_BATALLAS_VENCIDAS">
+          <mxGeometry y="164" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_BATALLAS_VENCIDAS_r6" value="  fecha_primera / ultima_victoria : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_BATALLAS_VENCIDAS">
+          <mxGeometry y="190" width="410" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_FLAGS_PARTIDA" value="FLAGS_PARTIDA (Débil)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#8A5A2B;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="150" width="370" height="118" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_FLAGS_PARTIDA_r0" value="[PK,FK] id_partida -&gt; PARTIDAS : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_FLAGS_PARTIDA">
+          <mxGeometry y="34" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_FLAGS_PARTIDA_r1" value="[PK] flag_nombre : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_FLAGS_PARTIDA">
+          <mxGeometry y="60" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_FLAGS_PARTIDA_r2" value="  fecha_definicion : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_FLAGS_PARTIDA">
+          <mxGeometry y="86" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_OBJETOS_OBTENIDOS" value="OBJETOS_OBTENIDOS (N:M)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#5B4B8A;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="390" width="370" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_OBJETOS_OBTENIDOS_r0" value="[PK,FK] id_partida -&gt; PARTIDAS : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_OBJETOS_OBTENIDOS">
+          <mxGeometry y="34" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_OBJETOS_OBTENIDOS_r1" value="[PK,FK] id_item -&gt; CATALOGO_ITEMS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_OBJETOS_OBTENIDOS">
+          <mxGeometry y="60" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_OBJETOS_OBTENIDOS_r2" value="  cantidad : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_OBJETOS_OBTENIDOS">
+          <mxGeometry y="86" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_OBJETOS_OBTENIDOS_r3" value="  equipado : INTEGER (0|1)" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_OBJETOS_OBTENIDOS">
+          <mxGeometry y="112" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_OBJETOS_OBTENIDOS_r4" value="  fecha_obtencion / actualizacion : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_OBJETOS_OBTENIDOS">
+          <mxGeometry y="138" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_HISTORIAL_OBJETOS" value="HISTORIAL_OBJETOS (Auditoría)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#1F6F5B;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="690" width="370" height="196" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_HISTORIAL_OBJETOS_r0" value="[PK] id_historial : INTEGER AI" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_HISTORIAL_OBJETOS">
+          <mxGeometry y="34" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_HISTORIAL_OBJETOS_r1" value="[FK] id_partida -&gt; PARTIDAS : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_HISTORIAL_OBJETOS">
+          <mxGeometry y="60" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_HISTORIAL_OBJETOS_r2" value="[FK] id_item -&gt; CATALOGO_ITEMS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFF5E6;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_HISTORIAL_OBJETOS">
+          <mxGeometry y="86" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_HISTORIAL_OBJETOS_r3" value="  evento : TEXT CHECK" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_HISTORIAL_OBJETOS">
+          <mxGeometry y="112" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_HISTORIAL_OBJETOS_r4" value="  cantidad_delta : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_HISTORIAL_OBJETOS">
+          <mxGeometry y="138" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_HISTORIAL_OBJETOS_r5" value="  fecha_evento : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_HISTORIAL_OBJETOS">
+          <mxGeometry y="164" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_ITEMS" value="CATALOGO_ITEMS" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#2B4C7E;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="1020" width="370" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_ITEMS_r0" value="[PK] id_item : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_CATALOGO_ITEMS">
+          <mxGeometry y="34" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_ITEMS_r1" value="  nombre : TEXT NOT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_ITEMS">
+          <mxGeometry y="60" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_ITEMS_r2" value="  categoria : TEXT CHECK" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_ITEMS">
+          <mxGeometry y="86" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_ITEMS_r3" value="  curacion_hp : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_ITEMS">
+          <mxGeometry y="112" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CATALOGO_ITEMS_r4" value="  descripcion : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CATALOGO_ITEMS">
+          <mxGeometry y="138" width="370" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCION_OBJETOS_INTENTO" value="CANCION_OBJETOS_INTENTO (N:M)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#5B4B8A;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="2140" y="1020" width="520" height="118" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCION_OBJETOS_INTENTO_r0" value="[PK,FK] id_cancion -&gt; CANCIONES_PERSONALIZADAS : INTEGER" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_CANCION_OBJETOS_INTENTO">
+          <mxGeometry y="34" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCION_OBJETOS_INTENTO_r1" value="[PK] tipo_registro : TEXT ('ULTIMO'|'MEJOR')" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_CANCION_OBJETOS_INTENTO">
+          <mxGeometry y="60" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCION_OBJETOS_INTENTO_r2" value="[PK,FK] id_item -&gt; CATALOGO_ITEMS : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_CANCION_OBJETOS_INTENTO">
+          <mxGeometry y="86" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS" value="CANCIONES_PERSONALIZADAS" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#1F6F5B;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="2140" y="390" width="520" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r0" value="[PK] id_cancion : INTEGER AI" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="34" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r1" value="[UQ] clave_unica : TEXT UNIQUE" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="60" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r2" value="  titulo / artista / dificultad : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="86" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r3" value="  bpm : REAL &gt; 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="112" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r4" value="  ruta_portada / audio / chart : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="138" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r5" value="  cantidad_notas : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="164" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r6" value="  puntaje / combo / prec_ultimo_intento : INT/REAL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="190" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r7" value="  puntaje / combo / prec_mas_alto : INT/REAL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="216" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r8" value="  veces_jugada : INTEGER &gt;= 0" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="242" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_CANCIONES_PERSONALIZADAS_r9" value="  fecha_ultimo_intento / record : TEXT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry y="268" width="520" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_DB_META" value="DB_META (Control)" style="shape=table;startSize=34;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;fillColor=#4A5568;fontColor=#FFFFFF;strokeColor=#1A1A1A;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="920" width="390" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_DB_META_r0" value="[PK] clave : TEXT" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#EBF9E8;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;fontStyle=1;" vertex="1" parent="tbl_DB_META">
+          <mxGeometry y="34" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_DB_META_r1" value="  valor : TEXT NOT NULL" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=#FFFFFF;top=0;left=0;bottom=1;right=0;strokeColor=#CCCCCC;align=left;spacingLeft=8;fontSize=12;fontColor=#111111;" vertex="1" parent="tbl_DB_META">
+          <mxGeometry y="60" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_0" value="N:1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_ENEMIGOS" target="tbl_ZONAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_1" value="1:1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_ENEMIGOS" target="tbl_CATALOGO_BATALLAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_2" value="N:1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_CATALOGO_BATALLAS" target="tbl_ZONAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_3" value="recompensa / amuleto" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_CATALOGO_BATALLAS" target="tbl_CATALOGO_ITEMS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_4" value="actual / retorno" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_PARTIDAS" target="tbl_ZONAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_5" value="N:1 CASCADE" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_BATALLAS_VENCIDAS" target="tbl_PARTIDAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_6" value="N:1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_BATALLAS_VENCIDAS" target="tbl_CATALOGO_BATALLAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_7" value="N:1 CASCADE" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_FLAGS_PARTIDA" target="tbl_PARTIDAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_8" value="N:1 CASCADE" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_OBJETOS_OBTENIDOS" target="tbl_PARTIDAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_9" value="N:1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_OBJETOS_OBTENIDOS" target="tbl_CATALOGO_ITEMS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_10" value="N:1 CASCADE" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_HISTORIAL_OBJETOS" target="tbl_PARTIDAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_11" value="N:1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_HISTORIAL_OBJETOS" target="tbl_CATALOGO_ITEMS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_12" value="N:1 CASCADE" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_CANCION_OBJETOS_INTENTO" target="tbl_CANCIONES_PERSONALIZADAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fk_13" value="N:1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#333333;strokeWidth=1.8;fontSize=11;fontStyle=1;fontColor=#7A1C1C;labelBackgroundColor=#FAF8F3;" edge="1" parent="1" source="tbl_CANCION_OBJETOS_INTENTO" target="tbl_CATALOGO_ITEMS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,309 +1,304 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="4840" height="2780" viewBox="0 0 4840 2780">
-  <defs>
-    <pattern id="minorGrid" width="24" height="24" patternUnits="userSpaceOnUse">
-      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#EAE5DA" stroke-width="1"/>
-    </pattern>
-    <pattern id="majorGrid" width="120" height="120" patternUnits="userSpaceOnUse">
-      <rect width="120" height="120" fill="url(#minorGrid)"/>
-      <path d="M 120 0 L 0 0 0 120" fill="none" stroke="#DCD5C6" stroke-width="1.4"/>
-    </pattern>
-  </defs>
-  <rect width="4840" height="2780" fill="#FAF8F3"/>
-  <rect width="4840" height="2780" fill="url(#majorGrid)"/>
-  <text x="60" y="88" font-family="DejaVu Sans, Arial, sans-serif" font-size="34" font-weight="bold" fill="#241814">DER Conceptual — Base de Datos Combo 6Beat (Notación Chen)</text>
-  <text x="60" y="124" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#4A403C">Modelo conceptual puro: sin claves foráneas (FK) ni tablas intermedias (las relaciones N:M se modelan con rombos y atributos propios)</text>
-  <rect x="60" y="150" width="490" height="205" rx="10" fill="#FFFDF8" stroke="#DCD5C6" stroke-width="2"/>
-  <ellipse cx="140" cy="196" rx="56" ry="21" fill="#33FF33" stroke="#0E0E0E" stroke-width="2"/>
-  <text x="140" y="202" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="bold" fill="#241814">PK</text>
-  <text x="214" y="202" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#241814">Clave Primaria (Primary Key)</text>
-  <rect x="84" y="236" width="112" height="38" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2"/>
-  <rect x="89" y="241" width="102" height="28" fill="none" stroke="#0E0E0E" stroke-width="1.4"/>
-  <text x="140" y="260" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" font-weight="bold" fill="#241814">DÉBIL</text>
-  <text x="214" y="261" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#241814">Entidad Débil (relación identificadora)</text>
-  <ellipse cx="140" cy="316" rx="56" ry="21" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2"/>
-  <text x="140" y="321" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" fill="#241814">parcial</text>
-  <line x1="112" y1="326" x2="168" y2="326" stroke="#0E0E0E" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <text x="214" y="321" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#241814">Clave Parcial de Entidad Débil</text>
-  <line x1="734.7" y1="486.0" x2="630.0" y2="345.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="758.5" y1="486.0" x2="750.0" y2="300.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="794.9" y1="486.0" x2="950.0" y2="335.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="847.7" y1="486.0" x2="1005.0" y2="425.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1501.5" y1="254.0" x2="1385.0" y2="145.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1578.5" y1="254.0" x2="1695.0" y2="145.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1513.6" y1="1104.0" x2="1375.0" y2="915.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1521.7" y1="1104.0" x2="1365.0" y2="795.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1566.8" y1="1104.0" x2="1685.0" y2="945.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1555.4" y1="1104.0" x2="1700.0" y2="765.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1625.0" y1="1104.0" x2="1835.0" y2="1015.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1571.5" y1="1104.0" x2="1785.0" y2="860.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1571.0" y1="1176.0" x2="1725.0" y2="1355.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1554.3" y1="1176.0" x2="1665.0" y2="1455.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1538.5" y1="1176.0" x2="1525.0" y2="1495.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1524.0" y1="1176.0" x2="1400.0" y2="1455.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1507.3" y1="1176.0" x2="1345.0" y2="1355.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="696.0" y1="2124.0" x2="520.0" y2="2025.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="682.5" y1="2196.0" x2="480.0" y2="2290.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="729.5" y1="2196.0" x2="565.0" y2="2390.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="754.6" y1="2196.0" x2="720.0" y2="2425.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="777.6" y1="2196.0" x2="885.0" y2="2415.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="814.5" y1="2196.0" x2="1055.0" y2="2355.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="804.7" y1="2124.0" x2="965.0" y2="1995.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2187.7" y1="1896.0" x2="2015.0" y2="2015.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2228.0" y1="1896.0" x2="2165.0" y2="2085.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2255.2" y1="1896.0" x2="2335.0" y2="2085.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2296.9" y1="1896.0" x2="2485.0" y2="2015.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2897.5" y1="1104.0" x2="2745.0" y2="975.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2924.4" y1="1104.0" x2="2825.0" y2="875.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2945.2" y1="1104.0" x2="2980.0" y2="865.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2969.0" y1="1104.0" x2="3125.0" y2="910.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="3010.7" y1="1104.0" x2="3205.0" y2="1005.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4148.2" y1="1102.0" x2="3975.0" y2="975.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4167.0" y1="1102.0" x2="3935.0" y2="835.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4187.3" y1="1102.0" x2="4065.0" y2="735.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4203.1" y1="1102.0" x2="4235.0" y2="705.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4219.2" y1="1102.0" x2="4405.0" y2="735.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4241.6" y1="1102.0" x2="4550.0" y2="820.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4250.4" y1="1102.0" x2="4465.0" y2="940.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4284.8" y1="1102.0" x2="4635.0" y2="945.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4377.5" y1="1113.3" x2="4665.0" y2="1070.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4377.5" y1="1162.9" x2="4665.0" y2="1200.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4289.4" y1="1178.0" x2="4635.0" y2="1325.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4243.0" y1="1178.0" x2="4545.0" y2="1445.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4219.2" y1="1178.0" x2="4405.0" y2="1545.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4180.8" y1="1178.0" x2="3995.0" y2="1545.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4157.0" y1="1178.0" x2="3855.0" y2="1445.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4110.6" y1="1178.0" x2="3765.0" y2="1325.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4022.5" y1="1173.2" x2="3745.0" y2="1225.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4022.5" y1="1106.5" x2="3750.0" y2="1055.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="4117.2" y1="1102.0" x2="3775.0" y2="945.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1122.5" y1="1621.3" x2="915.0" y2="1405.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1106.9" y1="1630.5" x2="830.0" y2="1505.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1084.8" y1="1643.6" x2="795.0" y2="1615.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1095.8" y1="1662.9" x2="815.0" y2="1730.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1115.8" y1="1674.8" x2="895.0" y2="1835.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1184.1" y1="1674.8" x2="1370.0" y2="1810.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1169.4" y1="1683.5" x2="1295.0" y2="1900.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1150.8" y1="1694.5" x2="1155.0" y2="1935.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="1132.1" y1="1684.4" x2="1015.0" y2="1910.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2215.5" y1="1109.5" x2="2075.0" y2="935.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2232.1" y1="1099.7" x2="2185.0" y2="860.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2252.7" y1="1102.5" x2="2335.0" y2="860.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="2268.3" y1="1111.7" x2="2435.0" y2="945.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <line x1="3510.0" y1="1095.0" x2="3510.0" y2="960.0" stroke="#0E0E0E" stroke-width="1.6"/>
-  <polyline points="660.0,520.0 230.0,520.0 230.0,1295.0" fill="none" stroke="#0E0E0E" stroke-width="2.1"/>
-  <polyline points="230.0,1385.0 230.0,2160.0 622.5,2160.0" fill="none" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="539.6" y="508.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">1</text>
-  <text x="512.6" y="2148.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <line x1="802.8" y1="554.0" x2="1117.6" y2="804.2" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="1182.4" y1="855.8" x2="1494.7" y2="1104.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="947.7" y="694.8" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">1</text>
-  <text x="1326.1" y="995.6" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <line x1="1540.0" y1="1104.0" x2="1540.0" y2="665.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="1540.0" y1="575.0" x2="1540.0" y2="326.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1560.0" y="884.5" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">1</text>
-  <text x="1560.0" y="450.5" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <line x1="1512.5" y1="1176.0" x2="1173.7" y2="1619.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="1126.3" y1="1681.0" x2="787.5" y2="2124.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1359.0" y="1409.7" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <text x="972.8" y="1914.6" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">M</text>
-  <line x1="1650.0" y1="1140.0" x2="2164.0" y2="1140.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="2316.0" y1="1140.0" x2="2815.0" y2="1140.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1907.0" y="1150.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <text x="2565.5" y="1150.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">M</text>
-  <line x1="1575.0" y1="1176.0" x2="1862.2" y2="1471.4" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="1917.8" y1="1528.6" x2="2205.0" y2="1824.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1704.3" y="1337.7" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">1</text>
-  <text x="2047.0" y="1690.2" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <line x1="2275.0" y1="1824.0" x2="2562.2" y2="1528.6" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="2617.8" y1="1471.4" x2="2905.0" y2="1176.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="2404.3" y="1662.3" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <text x="2747.0" y="1309.8" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">1</text>
-  <polyline points="2940.0,1176.0 2940.0,2160.0 1926.0,2160.0" fill="none" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="1774.0" y1="2160.0" x2="897.5" y2="2160.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="2940.0" y="1439.5" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">1</text>
-  <text x="1335.8" y="2130.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">0..N</text>
-  <line x1="4022.5" y1="1140.0" x2="3586.0" y2="1140.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <line x1="3434.0" y1="1140.0" x2="3065.0" y2="1140.0" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="3804.2" y="1110.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">N</text>
-  <text x="3249.5" y="1110.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" fill="#241814">M</text>
-  <polygon points="230,1295.0 306.0,1340 230,1385.0 154.0,1340" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="230" y="1346" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">ubicar</text>
-  <text x="230" y="1285.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">1:N</text>
-  <polygon points="1150,785.0 1226.0,830 1150,875.0 1074.0,830" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1150" y="836" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">estar</text>
-  <text x="1150" y="775.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">1:N</text>
-  <polygon points="1540,575.0 1616.0,620 1540,665.0 1464.0,620" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <polygon points="1540,582.0 1605.0,620 1540,658.0 1475.0,620" fill="none" stroke="#0E0E0E" stroke-width="1.4"/>
-  <text x="1540" y="626" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">definir</text>
-  <text x="1540" y="565.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">1:N</text>
-  <polygon points="1150,1605.0 1226.0,1650 1150,1695.0 1074.0,1650" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1150" y="1656" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">vencer</text>
-  <text x="1150" y="1595.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">N:M</text>
-  <polygon points="2240,1095.0 2316.0,1140 2240,1185.0 2164.0,1140" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="2240" y="1146" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">poseer</text>
-  <text x="2240" y="1207.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">N:M</text>
-  <polygon points="1890,1455.0 1966.0,1500 1890,1545.0 1814.0,1500" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1890" y="1506" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">auditar</text>
-  <text x="1890" y="1445.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">1:N</text>
-  <polygon points="2590,1455.0 2666.0,1500 2590,1545.0 2514.0,1500" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="2590" y="1506" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">referenciar</text>
-  <text x="2590" y="1445.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">N:1</text>
-  <polygon points="1850,2115.0 1926.0,2160 1850,2205.0 1774.0,2160" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="1850" y="2166" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">recompensar</text>
-  <text x="1850" y="2105.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">1:0..N</text>
-  <polygon points="3510,1095.0 3586.0,1140 3510,1185.0 3434.0,1140" fill="#FFFDF8" stroke="#0E0E0E" stroke-width="2.1"/>
-  <text x="3510" y="1146" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold" fill="#241814">utilizar</text>
-  <text x="3510" y="1207.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4A403C">N:M</text>
-  <ellipse cx="630.0" cy="345.0" rx="62.0" ry="23.0" fill="#33FF33" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="630.0" y="350.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" text-decoration="underline" fill="#241814">id_zona</text>
-  <ellipse cx="750.0" cy="300.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="750.0" y="305.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">nombre</text>
-  <ellipse cx="950.0" cy="335.0" rx="107.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="950.0" y="340.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">escena_xml_relativa</text>
-  <ellipse cx="1005.0" cy="425.0" rx="93.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1005.0" y="430.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">orden_progresion</text>
-  <ellipse cx="1385.0" cy="145.0" rx="69.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1385.0" y="150.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" fill="#241814">flag_nombre</text>
-  <line x1="1343.2" y1="154.0" x2="1426.8" y2="154.0" stroke="#0E0E0E" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <ellipse cx="1695.0" cy="145.0" rx="93.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1695.0" y="150.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_definicion</text>
-  <ellipse cx="1375.0" cy="915.0" rx="64.5" ry="23.0" fill="#33FF33" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1375.0" y="920.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" text-decoration="underline" fill="#241814">id_partida</text>
-  <ellipse cx="1365.0" cy="795.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1365.0" y="800.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">slot</text>
-  <ellipse cx="1685.0" cy="945.0" rx="83.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1685.0" y="950.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_creacion</text>
-  <ellipse cx="1700.0" cy="765.0" rx="107.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1700.0" y="770.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_actualizacion</text>
-  <ellipse cx="1835.0" cy="1015.0" rx="83.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1835.0" y="1020.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">estado_general</text>
-  <ellipse cx="1785.0" cy="860.0" rx="107.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1785.0" y="865.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">progreso_porcentaje</text>
-  <ellipse cx="1725.0" cy="1355.0" rx="78.8" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1725.0" y="1360.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">heal_strategy</text>
-  <ellipse cx="1665.0" cy="1455.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1665.0" y="1460.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">return_y</text>
-  <ellipse cx="1525.0" cy="1495.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1525.0" y="1500.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">return_x</text>
-  <ellipse cx="1400.0" cy="1455.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1400.0" y="1460.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">player_y</text>
-  <ellipse cx="1345.0" cy="1355.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1345.0" y="1360.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">player_x</text>
-  <ellipse cx="520.0" cy="2025.0" rx="64.5" ry="23.0" fill="#33FF33" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="520.0" y="2030.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" text-decoration="underline" fill="#241814">id_batalla</text>
-  <ellipse cx="480.0" cy="2290.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="480.0" y="2295.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">boss_id</text>
-  <ellipse cx="565.0" cy="2390.0" rx="69.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="565.0" y="2395.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">boss_nombre</text>
-  <ellipse cx="720.0" cy="2425.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="720.0" y="2430.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">especie</text>
-  <ellipse cx="885.0" cy="2415.0" rx="69.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="885.0" y="2420.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">defeat_flag</text>
-  <ellipse cx="1055.0" cy="2355.0" rx="126.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1055.0" y="2360.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">escena_combate_relativa</text>
-  <ellipse cx="965.0" cy="1995.0" rx="116.8" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="965.0" y="2000.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">es_historia_principal</text>
-  <ellipse cx="2015.0" cy="2015.0" rx="74.0" ry="23.0" fill="#33FF33" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2015.0" y="2020.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" text-decoration="underline" fill="#241814">id_historial</text>
-  <ellipse cx="2165.0" cy="2085.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2165.0" y="2090.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">evento</text>
-  <ellipse cx="2335.0" cy="2085.0" rx="83.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2335.0" y="2090.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">cantidad_delta</text>
-  <ellipse cx="2485.0" cy="2015.0" rx="74.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2485.0" y="2020.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_evento</text>
-  <ellipse cx="2745.0" cy="975.0" rx="62.0" ry="23.0" fill="#33FF33" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2745.0" y="980.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" text-decoration="underline" fill="#241814">id_item</text>
-  <ellipse cx="2825.0" cy="875.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2825.0" y="880.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">nombre</text>
-  <ellipse cx="2980.0" cy="865.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2980.0" y="870.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">categoria</text>
-  <ellipse cx="3125.0" cy="910.0" rx="69.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3125.0" y="915.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">curacion_hp</text>
-  <ellipse cx="3205.0" cy="1005.0" rx="69.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3205.0" y="1010.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">descripcion</text>
-  <ellipse cx="3975.0" cy="975.0" rx="64.5" ry="23.0" fill="#33FF33" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3975.0" y="980.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" text-decoration="underline" fill="#241814">id_cancion</text>
-  <ellipse cx="3935.0" cy="835.0" rx="69.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3935.0" y="840.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">clave_unica</text>
-  <ellipse cx="4065.0" cy="735.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4065.0" y="740.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">titulo</text>
-  <ellipse cx="4235.0" cy="705.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4235.0" y="710.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">artista</text>
-  <ellipse cx="4405.0" cy="735.0" rx="64.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4405.0" y="740.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">dificultad</text>
-  <ellipse cx="4550.0" cy="820.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4550.0" y="825.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">bpm</text>
-  <ellipse cx="4465.0" cy="940.0" rx="74.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4465.0" y="945.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_record</text>
-  <ellipse cx="4635.0" cy="945.0" rx="74.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4635.0" y="950.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">ruta_portada</text>
-  <ellipse cx="4665.0" cy="1070.0" rx="64.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4665.0" y="1075.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">ruta_audio</text>
-  <ellipse cx="4665.0" cy="1200.0" rx="64.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4665.0" y="1205.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">ruta_chart</text>
-  <ellipse cx="4635.0" cy="1325.0" rx="83.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4635.0" y="1330.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">cantidad_notas</text>
-  <ellipse cx="4545.0" cy="1445.0" rx="121.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4545.0" y="1450.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">puntaje_ultimo_intento</text>
-  <ellipse cx="4405.0" cy="1545.0" rx="112.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="4405.0" y="1550.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">combo_ultimo_intento</text>
-  <ellipse cx="3995.0" cy="1545.0" rx="131.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3995.0" y="1550.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">precision_ultimo_intento</text>
-  <ellipse cx="3855.0" cy="1445.0" rx="93.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3855.0" y="1450.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">puntaje_mas_alto</text>
-  <ellipse cx="3765.0" cy="1325.0" rx="83.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3765.0" y="1330.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">combo_mas_alto</text>
-  <ellipse cx="3745.0" cy="1225.0" rx="102.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3745.0" y="1230.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">precision_mas_alta</text>
-  <ellipse cx="3750.0" cy="1055.0" rx="74.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3750.0" y="1060.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">veces_jugada</text>
-  <ellipse cx="3775.0" cy="945.0" rx="112.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3775.0" y="950.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_ultimo_intento</text>
-  <ellipse cx="915.0" cy="1405.0" rx="83.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="915.0" y="1410.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">puntaje_maximo</text>
-  <ellipse cx="830.0" cy="1505.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="830.0" y="1510.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">max_combo</text>
-  <ellipse cx="795.0" cy="1615.0" rx="93.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="795.0" y="1620.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">intentos_totales</text>
-  <ellipse cx="815.0" cy="1730.0" rx="121.5" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="815.0" y="1735.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_primera_victoria</text>
-  <ellipse cx="895.0" cy="1835.0" rx="116.8" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="895.0" y="1840.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_ultima_victoria</text>
-  <ellipse cx="1370.0" cy="1810.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1370.0" y="1815.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">perfects</text>
-  <ellipse cx="1295.0" cy="1900.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1295.0" y="1905.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">goods</text>
-  <ellipse cx="1155.0" cy="1935.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1155.0" y="1940.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">safes</text>
-  <ellipse cx="1015.0" cy="1910.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="1015.0" y="1915.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">misses</text>
-  <ellipse cx="2075.0" cy="935.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2075.0" y="940.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">cantidad</text>
-  <ellipse cx="2185.0" cy="860.0" rx="62.0" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2185.0" y="865.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">equipado</text>
-  <ellipse cx="2335.0" cy="860.0" rx="88.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2335.0" y="865.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_obtencion</text>
-  <ellipse cx="2435.0" cy="945.0" rx="107.2" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="2435.0" y="950.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">fecha_actualizacion</text>
-  <ellipse cx="3510.0" cy="960.0" rx="78.8" ry="23.0" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="1.9"/>
-  <text x="3510.0" y="965.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#241814">tipo_registro</text>
-  <rect x="660.0" y="486.0" width="200" height="68" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2.6"/>
-  <text x="760.0" y="527.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">ZONAS</text>
-  <rect x="1415.0" y="254.0" width="250" height="72" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2.6"/>
-  <rect x="1420.0" y="259.0" width="240" height="62" fill="none" stroke="#0E0E0E" stroke-width="1.5"/>
-  <text x="1540.0" y="297.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">FLAGS_PARTIDA</text>
-  <rect x="1430.0" y="1104.0" width="220" height="72" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2.6"/>
-  <text x="1540.0" y="1147.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">PARTIDAS</text>
-  <rect x="622.5" y="2124.0" width="275" height="72" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2.6"/>
-  <text x="760.0" y="2167.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">CATALOGO_BATALLAS</text>
-  <rect x="2102.5" y="1824.0" width="275" height="72" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2.6"/>
-  <text x="2240.0" y="1867.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">HISTORIAL_OBJETOS</text>
-  <rect x="2815.0" y="1104.0" width="250" height="72" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2.6"/>
-  <text x="2940.0" y="1147.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">CATALOGO_ITEMS</text>
-  <rect x="4022.5" y="1102.0" width="355" height="76" fill="#FFFFFF" stroke="#0E0E0E" stroke-width="2.6"/>
-  <text x="4200.0" y="1147.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">CANCIONES_PERSONALIZADAS</text>
-  <rect x="60" y="2550" width="4580" height="160" rx="10" fill="#FFFDF8" stroke="#DCD5C6" stroke-width="2"/>
-  <text x="90" y="2592" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#241814">Correspondencia con el Modelo Lógico Relacional 3FN (01_ddl_creacion.sql):</text>
-  <text x="90" y="2630" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#4A403C">• Las relaciones N:M (vencer, poseer, utilizar) se materializan como tablas asociativas en SQLite: BATALLAS_VENCIDAS, OBJETOS_OBTENIDOS y CANCION_OBJETOS_INTENTO.</text>
-  <text x="90" y="2664" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#4A403C">• Las relaciones 1:N (estar, definir, ubicar, recompensar, auditar, referenciar) propagan sus claves foráneas (FK) en el DDL con PRAGMA foreign_keys = ON.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="4350" height="2000" viewBox="0 0 4350 2000">
+<rect width="4350" height="2000" fill="#FAF8F3"/>
+<style>text{font-family:DejaVu Sans,Arial,sans-serif;text-anchor:middle;dominant-baseline:central;}</style>
+<rect x="80" y="40" width="1280" height="74" rx="10" fill="#1E2436" stroke="#111" stroke-width="2"/>
+<text x="720" y="65" fill="#FFE182" font-size="19" font-weight="bold">DER CONCEPTUAL (NOTACIÓN CHEN PURA) — COMBO 6BEAT</text>
+<text x="720" y="93" fill="#D5E4FF" font-size="14">Sin claves foráneas (FK) ni tablas intermedias | Hub por salas + ENEMIGOS + Amuletos por Score</text>
+<ellipse cx="167" cy="159" rx="87" ry="21" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="167" y="159" fill="#111" font-size="13" font-weight="bold" text-decoration="underline">Clave Primaria (PK)</text>
+<rect x="275" y="140" width="155" height="38" fill="#FFF8DC" stroke="#1A1A1A" stroke-width="2"/>
+<rect x="280" y="145" width="145" height="28" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
+<text x="352" y="159" fill="#111" font-size="12" font-weight="bold">ENTIDAD DÉBIL</text>
+<ellipse cx="522" cy="159" rx="72" ry="21" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.8" stroke-dasharray="6,4"/>
+<text x="522" y="159" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">Clave Parcial</text>
+<polygon points="670,134 725,159 670,184 615,159" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2"/>
+<text x="670" y="159" fill="#111" font-size="12" font-weight="bold">Relación</text>
+<line x1="540" y1="560" x2="405.9422224541789" y2="447.5121683048556" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="560" x2="540.0" y2="395.0" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="560" x2="721.8653347947321" y2="455.0" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="560" x2="320.0" y2="560.0" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="1340" x2="327.49631821640503" y2="1396.9401899225545" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="1340" x2="328.5691603231706" y2="1263.0454677517246" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="1340" x2="422.4168305480355" y2="1172.0738309207568" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="1340" x2="431.0204770933012" y2="1495.6388884149085" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="1340" x2="555.2522549808401" y2="1514.3340721660554" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="1340" x2="706.1700935788386" y2="1506.1700935788385" stroke="#555" stroke-width="1.4"/>
+<line x1="540" y1="1340" x2="781.4814565722671" y2="1404.7047612756303" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1467.9720420448923" y2="1187.9720420448923" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1550.4711762656368" y2="1126.0122838335903" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1740.4510516337198" y2="1167.9780706993117" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1482.1141776686231" y2="1477.8858223313769" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1604.7477450191598" y2="1514.3340721660554" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1746.18681599723" y2="1520.2134497435782" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1865.7037214601987" y2="1439.2707472552167" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="1340" x2="1867.2746942367398" y2="1259.6555814625137" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1425.1442841485014" y2="447.5" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1508.152594911546" y2="400.26535136364663" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1595.6447073319885" y2="386.70308797022517" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1686.6939279485055" y2="376.75993894674787" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1797.3024195615124" y2="421.47616805172686" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1397.475874903971" y2="649.905582419819" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1481.476168051727" y2="737.3024195615125" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1710.8629262742504" y2="754.8561742128798" stroke="#555" stroke-width="1.4"/>
+<line x1="1620" y1="560" x2="1828.883771293693" y2="706.2619912695168" stroke="#555" stroke-width="1.4"/>
+<line x1="2520" y1="320" x2="2450.267986812785" y2="170.45921513895274" stroke="#555" stroke-width="1.4"/>
+<line x1="2520" y1="320" x2="2650.814754519511" y2="189.18524548048873" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="760" x2="2597.5" y2="617.1058083755677" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="760" x2="2762.5" y2="617.1058083755677" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="760" x2="2905.0" y2="760.0" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="760" x2="2783.2437585431885" y2="907.4473679720186" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="1540" x2="2557.8703541595573" y2="1685.5484441926058" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="1540" x2="2664.74774501916" y2="1714.3340721660554" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="1540" x2="2783.3342565254748" y2="1705.369378750503" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="1540" x2="2883.9804480046932" y2="1622.4134505515005" stroke="#555" stroke-width="1.4"/>
+<line x1="2680" y1="1540" x2="2893.9877161664094" y2="1470.4711762656368" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3490.877419134387" y2="1392.241245921842" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3589.13707372575" y2="1345.1438257871202" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3696.559591122055" y2="1350.7230073625683" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3803.318933815475" y2="1363.8823104778667" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3916.431882914531" y2="1444.4753186789424" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3924.5369001834515" y2="1591.9779227044398" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3858.3547581145745" y2="1700.591345526126" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3743.4106660501175" y2="1776.6518274408218" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3593.84048351434" y2="1753.252286550361" stroke="#555" stroke-width="1.4"/>
+<line x1="3680" y1="1540" x2="3467.9879759608934" y2="1672.4798160583011" stroke="#555" stroke-width="1.4"/>
+<line x1="1080" y1="560" x2="540" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1080" y1="560" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="540" y1="920" x2="540" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="540" y1="920" x2="540" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1080" y1="920" x2="540" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1080" y1="920" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1080" y1="1280" x2="540" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1080" y1="1280" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1620" y1="920" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1620" y1="920" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1620" y1="920" x2="1450" y2="885" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<line x1="1620" y1="920" x2="1450" y2="940" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<line x1="1620" y1="920" x2="1795" y2="885" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<line x1="1620" y1="920" x2="1795" y2="940" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<line x1="2100" y1="320" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2100" y1="320" x2="2520" y2="320" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="760" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="760" x2="2680" y2="760" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2680" y1="1140" x2="2680" y2="760" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2680" y1="1140" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="1140" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="1140" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="1140" x2="2025" y2="1208" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<line x1="2160" y1="1140" x2="2160" y2="1235" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<line x1="2160" y1="1440" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="1440" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="1650" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="2160" y1="1650" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="3180" y1="1520" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="3180" y1="1520" x2="3680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="3180" y1="1520" x2="3180" y2="1415" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<rect x="445.0" y="528.0" width="190" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
+<text x="540" y="560" fill="#111" font-size="16" font-weight="bold">ZONAS</text>
+<ellipse cx="405.9422224541789" cy="447.5121683048556" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="405.9422224541789" y="447.5121683048556" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">id_zona</text>
+<ellipse cx="540.0" cy="395.0" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="540.0" y="395.0" fill="#111" font-size="12">nombre</text>
+<ellipse cx="721.8653347947321" cy="455.0" rx="89.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="721.8653347947321" y="455.0" fill="#111" font-size="12">escena_xml_relativa</text>
+<ellipse cx="320.0" cy="560.0" rx="77.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="320.0" y="560.0" fill="#111" font-size="12">orden_progresion</text>
+<rect x="445.0" y="1308.0" width="190" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
+<text x="540" y="1340" fill="#111" font-size="16" font-weight="bold">ENEMIGOS</text>
+<ellipse cx="327.49631821640503" cy="1396.9401899225545" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="327.49631821640503" y="1396.9401899225545" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">id_enemigo</text>
+<ellipse cx="328.5691603231706" cy="1263.0454677517246" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="328.5691603231706" y="1263.0454677517246" fill="#111" font-size="12">nombre</text>
+<ellipse cx="422.4168305480355" cy="1172.0738309207568" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="422.4168305480355" y="1172.0738309207568" fill="#111" font-size="12">especie</text>
+<ellipse cx="431.0204770933012" cy="1495.6388884149085" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="431.0204770933012" y="1495.6388884149085" fill="#111" font-size="12">hub_x</text>
+<ellipse cx="555.2522549808401" cy="1514.3340721660554" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="555.2522549808401" y="1514.3340721660554" fill="#111" font-size="12">hub_y</text>
+<ellipse cx="706.1700935788386" cy="1506.1700935788385" rx="85.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="706.1700935788386" y="1506.1700935788385" fill="#111" font-size="12">cancion_referencia</text>
+<ellipse cx="781.4814565722671" cy="1404.7047612756303" rx="73.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="781.4814565722671" y="1404.7047612756303" fill="#111" font-size="12">sprite_relativo</text>
+<rect x="1500.0" y="1308.0" width="240" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
+<text x="1620" y="1340" fill="#111" font-size="16" font-weight="bold">CATALOGO_BATALLAS</text>
+<ellipse cx="1467.9720420448923" cy="1187.9720420448923" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="1467.9720420448923" y="1187.9720420448923" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">id_batalla</text>
+<ellipse cx="1550.4711762656368" cy="1126.0122838335903" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1550.4711762656368" y="1126.0122838335903" fill="#111" font-size="12">boss_id</text>
+<ellipse cx="1740.4510516337198" cy="1167.9780706993117" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1740.4510516337198" y="1167.9780706993117" fill="#111" font-size="12">boss_nombre</text>
+<ellipse cx="1482.1141776686231" cy="1477.8858223313769" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1482.1141776686231" y="1477.8858223313769" fill="#111" font-size="12">especie</text>
+<ellipse cx="1604.7477450191598" cy="1514.3340721660554" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1604.7477450191598" y="1514.3340721660554" fill="#111" font-size="12">defeat_flag</text>
+<ellipse cx="1746.18681599723" cy="1520.2134497435782" rx="69.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1746.18681599723" y="1520.2134497435782" fill="#111" font-size="12">escena_combate</text>
+<ellipse cx="1865.7037214601987" cy="1439.2707472552167" rx="101.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1865.7037214601987" y="1439.2707472552167" fill="#111" font-size="12">puntaje_minimo_amuleto</text>
+<ellipse cx="1867.2746942367398" cy="1259.6555814625137" rx="97.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1867.2746942367398" y="1259.6555814625137" fill="#111" font-size="12">es_historia_principal</text>
+<rect x="1520.0" y="528.0" width="200" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
+<text x="1620" y="560" fill="#111" font-size="16" font-weight="bold">PARTIDAS</text>
+<ellipse cx="1425.1442841485014" cy="447.5" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="1425.1442841485014" y="447.5" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">id_partida</text>
+<ellipse cx="1508.152594911546" cy="400.26535136364663" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1508.152594911546" y="400.26535136364663" fill="#111" font-size="12">slot</text>
+<ellipse cx="1595.6447073319885" cy="386.70308797022517" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1595.6447073319885" y="386.70308797022517" fill="#111" font-size="12">player_x</text>
+<ellipse cx="1686.6939279485055" cy="376.75993894674787" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1686.6939279485055" y="376.75993894674787" fill="#111" font-size="12">player_y</text>
+<ellipse cx="1797.3024195615124" cy="421.47616805172686" rx="65.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1797.3024195615124" y="421.47616805172686" fill="#111" font-size="12">heal_strategy</text>
+<ellipse cx="1397.475874903971" cy="649.905582419819" rx="69.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1397.475874903971" y="649.905582419819" fill="#111" font-size="12">estado_general</text>
+<ellipse cx="1481.476168051727" cy="737.3024195615125" rx="89.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1481.476168051727" y="737.3024195615125" fill="#111" font-size="12">progreso_porcentaje</text>
+<ellipse cx="1710.8629262742504" cy="754.8561742128798" rx="69.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1710.8629262742504" y="754.8561742128798" fill="#111" font-size="12">fecha_creacion</text>
+<ellipse cx="1828.883771293693" cy="706.2619912695168" rx="89.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1828.883771293693" y="706.2619912695168" fill="#111" font-size="12">fecha_actualizacion</text>
+<rect x="2415.0" y="288.0" width="210" height="64" fill="#FFF8DC" stroke="#1A1A1A" stroke-width="2.5"/>
+<rect x="2420.0" y="293.0" width="200" height="54" fill="none" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2520" y="320" fill="#111" font-size="16" font-weight="bold">FLAGS_PARTIDA</text>
+<ellipse cx="2450.267986812785" cy="170.45921513895274" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.8" stroke-dasharray="6,4"/>
+<text x="2450.267986812785" y="170.45921513895274" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">flag_nombre</text>
+<ellipse cx="2650.814754519511" cy="189.18524548048873" rx="77.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2650.814754519511" y="189.18524548048873" fill="#111" font-size="12">fecha_definicion</text>
+<rect x="2565.0" y="728.0" width="230" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
+<text x="2680" y="760" fill="#111" font-size="16" font-weight="bold">HISTORIAL_OBJETOS</text>
+<ellipse cx="2597.5" cy="617.1058083755677" rx="61.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="2597.5" y="617.1058083755677" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">id_historial</text>
+<ellipse cx="2762.5" cy="617.1058083755677" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2762.5" y="617.1058083755677" fill="#111" font-size="12">evento</text>
+<ellipse cx="2905.0" cy="760.0" rx="69.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2905.0" y="760.0" fill="#111" font-size="12">cantidad_delta</text>
+<ellipse cx="2783.2437585431885" cy="907.4473679720186" rx="61.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2783.2437585431885" y="907.4473679720186" fill="#111" font-size="12">fecha_evento</text>
+<rect x="2570.0" y="1508.0" width="220" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
+<text x="2680" y="1540" fill="#111" font-size="16" font-weight="bold">CATALOGO_ITEMS</text>
+<ellipse cx="2557.8703541595573" cy="1685.5484441926058" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="2557.8703541595573" y="1685.5484441926058" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">id_item</text>
+<ellipse cx="2664.74774501916" cy="1714.3340721660554" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2664.74774501916" y="1714.3340721660554" fill="#111" font-size="12">nombre</text>
+<ellipse cx="2783.3342565254748" cy="1705.369378750503" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2783.3342565254748" y="1705.369378750503" fill="#111" font-size="12">categoria</text>
+<ellipse cx="2883.9804480046932" cy="1622.4134505515005" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2883.9804480046932" y="1622.4134505515005" fill="#111" font-size="12">curacion_hp</text>
+<ellipse cx="2893.9877161664094" cy="1470.4711762656368" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="2893.9877161664094" y="1470.4711762656368" fill="#111" font-size="12">descripcion</text>
+<rect x="3537.5" y="1508.0" width="285" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
+<text x="3680" y="1540" fill="#111" font-size="16" font-weight="bold">CANCIONES_PERSONALIZADAS</text>
+<ellipse cx="3490.877419134387" cy="1392.241245921842" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="3490.877419134387" y="1392.241245921842" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">id_cancion</text>
+<ellipse cx="3589.13707372575" cy="1345.1438257871202" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3589.13707372575" y="1345.1438257871202" fill="#111" font-size="12">clave_unica</text>
+<ellipse cx="3696.559591122055" cy="1350.7230073625683" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3696.559591122055" y="1350.7230073625683" fill="#111" font-size="12">titulo</text>
+<ellipse cx="3803.318933815475" cy="1363.8823104778667" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3803.318933815475" y="1363.8823104778667" fill="#111" font-size="12">artista</text>
+<ellipse cx="3916.431882914531" cy="1444.4753186789424" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3916.431882914531" y="1444.4753186789424" fill="#111" font-size="12">dificultad</text>
+<ellipse cx="3924.5369001834515" cy="1591.9779227044398" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3924.5369001834515" y="1591.9779227044398" fill="#111" font-size="12">bpm</text>
+<ellipse cx="3858.3547581145745" cy="1700.591345526126" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3858.3547581145745" y="1700.591345526126" fill="#111" font-size="12">ruta_chart</text>
+<ellipse cx="3743.4106660501175" cy="1776.6518274408218" rx="101.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3743.4106660501175" y="1776.6518274408218" fill="#111" font-size="12">puntaje_ultimo_intento</text>
+<ellipse cx="3593.84048351434" cy="1753.252286550361" rx="77.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3593.84048351434" y="1753.252286550361" fill="#111" font-size="12">puntaje_mas_alto</text>
+<ellipse cx="3467.9879759608934" cy="1672.4798160583011" rx="61.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="3467.9879759608934" y="1672.4798160583011" fill="#111" font-size="12">veces_jugada</text>
+<polygon points="1080,516.0 1155.0,560 1080,604.0 1005.0,560" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="1080" y="552.0" fill="#111" font-size="13" font-weight="bold">estar en</text>
+<text x="1080" y="568.0" fill="#111" font-size="13" font-weight="bold">(sala actual)</text>
+<rect x="769.0" y="548.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="783.0" y="560.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<rect x="1363.0" y="548.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1377.0" y="560.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<polygon points="540,879.0 615.0,920 540,961.0 465.0,920" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="540" y="920.0" fill="#111" font-size="13" font-weight="bold">se ubica en</text>
+<rect x="526.0" y="710.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="540.0" y="722.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<rect x="526.0" y="1139.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="540.0" y="1151.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<polygon points="1080,879.0 1155.0,920 1080,961.0 1005.0,920" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="1080" y="920.0" fill="#111" font-size="13" font-weight="bold">pertenece a</text>
+<rect x="769.0" y="710.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="783.0" y="722.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<rect x="1363.0" y="1139.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1377.0" y="1151.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<polygon points="1080,1239.0 1155.0,1280 1080,1321.0 1005.0,1280" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="1080" y="1280.0" fill="#111" font-size="13" font-weight="bold">protagoniza</text>
+<rect x="769.0" y="1301.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="783.0" y="1313.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<rect x="1363.0" y="1301.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1377.0" y="1313.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<polygon points="1620,877.0 1692.5,920 1620,963.0 1547.5,920" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="1620" y="912.0" fill="#111" font-size="13" font-weight="bold">vencer</text>
+<text x="1620" y="928.0" fill="#111" font-size="13" font-weight="bold">(N:M)</text>
+<rect x="1606.0" y="710.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1620.0" y="722.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<rect x="1606.0" y="1139.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1620.0" y="1151.0" fill="#9B1B24" font-size="15" font-weight="bold">M</text>
+<ellipse cx="1450" cy="885" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
+<text x="1450" y="885.0" fill="#111" font-size="11">puntaje_maximo</text>
+<ellipse cx="1450" cy="940" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
+<text x="1450" y="940.0" fill="#111" font-size="11">max_combo</text>
+<ellipse cx="1795" cy="885" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
+<text x="1795" y="885.0" fill="#111" font-size="11">perfects / misses</text>
+<ellipse cx="1795" cy="940" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
+<text x="1795" y="940.0" fill="#111" font-size="11">intentos_totales</text>
+<polygon points="2100,281.0 2165.0,320 2100,359.0 2035.0,320" fill="#FFF3C4" stroke="#1A1A1A" stroke-width="2.2"/>
+<polygon points="2100,287.0 2157.0,320 2100,353.0 2043.0,320" fill="none" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="2100" y="320.0" fill="#111" font-size="13" font-weight="bold">definir</text>
+<rect x="1822.0" y="440.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1836.0" y="452.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<rect x="2317.0" y="308.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2331.0" y="320.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<polygon points="2160,721.0 2225.0,760 2160,799.0 2095.0,760" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="2160" y="760.0" fill="#111" font-size="13" font-weight="bold">auditar</text>
+<rect x="1849.0" y="638.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1863.0" y="650.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<rect x="2432.0" y="748.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2446.0" y="760.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<polygon points="2680,1099.0 2752.5,1140 2680,1181.0 2607.5,1140" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="2680" y="1140.0" fill="#111" font-size="13" font-weight="bold">referenciar</text>
+<rect x="2666.0" y="919.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2680.0" y="931.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<rect x="2666.0" y="1348.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2680.0" y="1360.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<polygon points="2160,1098.0 2230.0,1140 2160,1182.0 2090.0,1140" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="2160" y="1132.0" fill="#111" font-size="13" font-weight="bold">poseer</text>
+<text x="2160" y="1148.0" fill="#111" font-size="13" font-weight="bold">(N:M)</text>
+<rect x="1849.0" y="809.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1863.0" y="821.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<rect x="2432.0" y="1348.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2446.0" y="1360.0" fill="#9B1B24" font-size="15" font-weight="bold">M</text>
+<ellipse cx="2025" cy="1208" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
+<text x="2025" y="1208.0" fill="#111" font-size="11">cantidad</text>
+<ellipse cx="2160" cy="1235" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
+<text x="2160" y="1235.0" fill="#111" font-size="11">equipado</text>
+<polygon points="2160,1400.0 2232.5,1440 2160,1480.0 2087.5,1440" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="2160" y="1440.0" fill="#111" font-size="13" font-weight="bold">recompensa</text>
+<rect x="1849.0" y="1373.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1863.0" y="1385.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<rect x="2432.0" y="1483.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2446.0" y="1495.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<polygon points="2160,1604.0 2247.5,1650 2160,1696.0 2072.5,1650" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="2160" y="1642.0" fill="#111" font-size="13" font-weight="bold">desbloquea</text>
+<text x="2160" y="1658.0" fill="#111" font-size="13" font-weight="bold">amuleto (score)</text>
+<rect x="1849.0" y="1467.5" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1863.0" y="1479.5" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<rect x="2432.0" y="1577.5" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2446.0" y="1589.5" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<polygon points="3180,1477.0 3252.5,1520 3180,1563.0 3107.5,1520" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="3180" y="1512.0" fill="#111" font-size="13" font-weight="bold">utilizar</text>
+<text x="3180" y="1528.0" fill="#111" font-size="13" font-weight="bold">(N:M)</text>
+<rect x="2891.0" y="1519.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2905.0" y="1531.0" fill="#9B1B24" font-size="15" font-weight="bold">M</text>
+<rect x="3441.0" y="1519.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="3455.0" y="1531.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
+<ellipse cx="3180" cy="1415" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
+<text x="3180" y="1408.0" fill="#111" font-size="11">tipo_registro</text>
+<text x="3180" y="1422.0" fill="#111" font-size="11">(ULTIMO/MEJOR)</text>
 </svg>
