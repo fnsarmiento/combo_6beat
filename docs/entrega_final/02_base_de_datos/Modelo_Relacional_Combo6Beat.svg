@@ -1,208 +1,344 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2760" height="1400" viewBox="0 0 2760 1400">
-<rect width="2760" height="1400" fill="#FAF8F3"/>
-<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="#333"/></marker></defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="2120" height="1300" viewBox="0 0 2120 1300">
+<rect width="2120" height="1300" fill="#FFFFFF"/>
 <style>text{font-family:DejaVu Sans,Arial,sans-serif;}</style>
-<rect x="80" y="30" width="1280" height="74" rx="10" fill="#1E2436" stroke="#111" stroke-width="2"/>
-<text x="720" y="58" text-anchor="middle" fill="#FFE182" font-size="19" font-weight="bold">MODELO RELACIONAL NORMALIZADO (3FN) — COMBO 6BEAT (12 TABLAS SQLITE)</text>
-<text x="720" y="84" text-anchor="middle" fill="#D5E4FF" font-size="14">Incluye ZONAS (Salas del Hub), ENEMIGOS (posición + canción), Amuletos por Score y Canciones Custom</text>
-<line x1="275.0" y1="577.0" x2="275.0" y2="222.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="275.0" y1="577.0" x2="785.0" y2="603.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="785.0" y1="603.0" x2="275.0" y2="222.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="785.0" y1="603.0" x2="1805.0" y2="1105.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="1290.0" y1="300.0" x2="275.0" y2="222.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="785.0" y1="1031.0" x2="1290.0" y2="300.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="785.0" y1="1031.0" x2="785.0" y2="603.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="1805.0" y1="209.0" x2="1290.0" y2="300.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="1805.0" y1="475.0" x2="1290.0" y2="300.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="1805.0" y1="475.0" x2="1805.0" y2="1105.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="1805.0" y1="788.0" x2="1290.0" y2="300.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="1805.0" y1="788.0" x2="1805.0" y2="1105.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="2400.0" y1="1079.0" x2="2400.0" y2="540.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<line x1="2400.0" y1="1079.0" x2="1805.0" y2="1105.0" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="80" y="150" width="390" height="144" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="80" y="150" width="390" height="34" rx="4" fill="#2B4C7E" stroke="#1A1A1A" stroke-width="2"/>
-<text x="275.0" y="172" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">ZONAS (Salas del Hub)</text>
-<rect x="81" y="184" width="388" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="201" fill="#111111" font-size="12" font-weight="bold">[PK] id_zona : TEXT</text>
-<rect x="81" y="210" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="227" fill="#111111" font-size="12">  nombre : TEXT NOT NULL</text>
-<rect x="81" y="236" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="253" fill="#111111" font-size="12">[UQ] escena_xml_relativa : TEXT UNIQUE</text>
-<rect x="81" y="262" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="279" fill="#111111" font-size="12">  orden_progresion : INTEGER</text>
-<rect x="80" y="440" width="390" height="274" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="80" y="440" width="390" height="34" rx="4" fill="#7A2E3A" stroke="#1A1A1A" stroke-width="2"/>
-<text x="275.0" y="462" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">ENEMIGOS</text>
-<rect x="81" y="474" width="388" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="491" fill="#111111" font-size="12" font-weight="bold">[PK] id_enemigo : TEXT</text>
-<rect x="81" y="500" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="517" fill="#111111" font-size="12">  nombre : TEXT NOT NULL</text>
-<rect x="81" y="526" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="543" fill="#111111" font-size="12">  especie : TEXT</text>
-<rect x="81" y="552" width="388" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="569" fill="#111111" font-size="12">[FK] id_zona -&gt; ZONAS : TEXT</text>
-<rect x="81" y="578" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="595" fill="#111111" font-size="12">  hub_x : INTEGER &gt;= 0</text>
-<rect x="81" y="604" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="621" fill="#111111" font-size="12">  hub_y : INTEGER &gt;= 0</text>
-<rect x="81" y="630" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="647" fill="#111111" font-size="12">  cancion_referencia : TEXT NOT NULL</text>
-<rect x="81" y="656" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="673" fill="#111111" font-size="12">  sprite_relativo : TEXT</text>
-<rect x="81" y="682" width="388" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="699" fill="#111111" font-size="12">[FK,UQ] id_batalla -&gt; CATALOGO_BATALLAS : TEXT NULL</text>
-<rect x="580" y="440" width="410" height="326" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="580" y="440" width="410" height="34" rx="4" fill="#2B4C7E" stroke="#1A1A1A" stroke-width="2"/>
-<text x="785.0" y="462" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">CATALOGO_BATALLAS</text>
-<rect x="581" y="474" width="408" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="491" fill="#111111" font-size="12" font-weight="bold">[PK] id_batalla : TEXT</text>
-<rect x="581" y="500" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="517" fill="#111111" font-size="12">[UQ] boss_id : TEXT UNIQUE</text>
-<rect x="581" y="526" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="543" fill="#111111" font-size="12">  boss_nombre : TEXT NOT NULL</text>
-<rect x="581" y="552" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="569" fill="#111111" font-size="12">  especie : TEXT</text>
-<rect x="581" y="578" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="595" fill="#111111" font-size="12">[UQ] defeat_flag : TEXT UNIQUE</text>
-<rect x="581" y="604" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="621" fill="#111111" font-size="12">  escena_combate_relativa : TEXT</text>
-<rect x="581" y="630" width="408" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="647" fill="#111111" font-size="12">[FK] id_zona -&gt; ZONAS : TEXT</text>
-<rect x="581" y="656" width="408" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="673" fill="#111111" font-size="12">[FK] id_item_recompensa -&gt; CATALOGO_ITEMS : TEXT NULL</text>
-<rect x="581" y="682" width="408" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="699" fill="#111111" font-size="12">[FK] id_amuleto_score -&gt; CATALOGO_ITEMS : TEXT NULL</text>
-<rect x="581" y="708" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="725" fill="#111111" font-size="12">  puntaje_minimo_amuleto : INTEGER &gt;= 0</text>
-<rect x="581" y="734" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="751" fill="#111111" font-size="12">  es_historia_principal : INTEGER (0|1)</text>
-<rect x="1100" y="150" width="380" height="300" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="1100" y="150" width="380" height="34" rx="4" fill="#1F6F5B" stroke="#1A1A1A" stroke-width="2"/>
-<text x="1290.0" y="172" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">PARTIDAS (Ranuras 1..4)</text>
-<rect x="1101" y="184" width="378" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="201" fill="#111111" font-size="12" font-weight="bold">[PK] id_partida : INTEGER AI</text>
-<rect x="1101" y="210" width="378" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="227" fill="#111111" font-size="12">[UQ] slot : INTEGER (1..4)</text>
-<rect x="1101" y="236" width="378" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="253" fill="#111111" font-size="12">[FK] id_zona_actual -&gt; ZONAS : TEXT</text>
-<rect x="1101" y="262" width="378" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="279" fill="#111111" font-size="12">  player_x / player_y : REAL</text>
-<rect x="1101" y="288" width="378" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="305" fill="#111111" font-size="12">[FK] id_zona_retorno -&gt; ZONAS : TEXT</text>
-<rect x="1101" y="314" width="378" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="331" fill="#111111" font-size="12">  return_x / return_y : REAL</text>
-<rect x="1101" y="340" width="378" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="357" fill="#111111" font-size="12">  heal_strategy : TEXT (OPT|MIN)</text>
-<rect x="1101" y="366" width="378" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="383" fill="#111111" font-size="12">  estado_general : TEXT CHECK</text>
-<rect x="1101" y="392" width="378" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="409" fill="#111111" font-size="12">  progreso_porcentaje : REAL (0..100)</text>
-<rect x="1101" y="418" width="378" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1110" y="435" fill="#111111" font-size="12">  fecha_creacion / actualizacion : TEXT</text>
-<rect x="580" y="920" width="410" height="222" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="580" y="920" width="410" height="34" rx="4" fill="#5B4B8A" stroke="#1A1A1A" stroke-width="2"/>
-<text x="785.0" y="942" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">BATALLAS_VENCIDAS (N:M)</text>
-<rect x="581" y="954" width="408" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="971" fill="#111111" font-size="12" font-weight="bold">[PK,FK] id_partida -&gt; PARTIDAS : INTEGER</text>
-<rect x="581" y="980" width="408" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="997" fill="#111111" font-size="12" font-weight="bold">[PK,FK] id_batalla -&gt; CATALOGO_BATALLAS : TEXT</text>
-<rect x="581" y="1006" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="1023" fill="#111111" font-size="12">  puntaje_maximo : INTEGER &gt;= 0</text>
-<rect x="581" y="1032" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="1049" fill="#111111" font-size="12">  max_combo : INTEGER &gt;= 0</text>
-<rect x="581" y="1058" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="1075" fill="#111111" font-size="12">  perfects / goods / safes / misses : INTEGER</text>
-<rect x="581" y="1084" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="1101" fill="#111111" font-size="12">  intentos_totales : INTEGER &gt;= 1</text>
-<rect x="581" y="1110" width="408" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="590" y="1127" fill="#111111" font-size="12">  fecha_primera / ultima_victoria : TEXT</text>
-<rect x="1620" y="150" width="370" height="118" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="1620" y="150" width="370" height="34" rx="4" fill="#8A5A2B" stroke="#1A1A1A" stroke-width="2"/>
-<text x="1805.0" y="172" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">FLAGS_PARTIDA (Débil)</text>
-<rect x="1621" y="184" width="368" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="201" fill="#111111" font-size="12" font-weight="bold">[PK,FK] id_partida -&gt; PARTIDAS : INTEGER</text>
-<rect x="1621" y="210" width="368" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="227" fill="#111111" font-size="12" font-weight="bold">[PK] flag_nombre : TEXT</text>
-<rect x="1621" y="236" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="253" fill="#111111" font-size="12">  fecha_definicion : TEXT</text>
-<rect x="1620" y="390" width="370" height="170" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="1620" y="390" width="370" height="34" rx="4" fill="#5B4B8A" stroke="#1A1A1A" stroke-width="2"/>
-<text x="1805.0" y="412" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">OBJETOS_OBTENIDOS (N:M)</text>
-<rect x="1621" y="424" width="368" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="441" fill="#111111" font-size="12" font-weight="bold">[PK,FK] id_partida -&gt; PARTIDAS : INTEGER</text>
-<rect x="1621" y="450" width="368" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="467" fill="#111111" font-size="12" font-weight="bold">[PK,FK] id_item -&gt; CATALOGO_ITEMS : TEXT</text>
-<rect x="1621" y="476" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="493" fill="#111111" font-size="12">  cantidad : INTEGER &gt;= 0</text>
-<rect x="1621" y="502" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="519" fill="#111111" font-size="12">  equipado : INTEGER (0|1)</text>
-<rect x="1621" y="528" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="545" fill="#111111" font-size="12">  fecha_obtencion / actualizacion : TEXT</text>
-<rect x="1620" y="690" width="370" height="196" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="1620" y="690" width="370" height="34" rx="4" fill="#1F6F5B" stroke="#1A1A1A" stroke-width="2"/>
-<text x="1805.0" y="712" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">HISTORIAL_OBJETOS (Auditoría)</text>
-<rect x="1621" y="724" width="368" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="741" fill="#111111" font-size="12" font-weight="bold">[PK] id_historial : INTEGER AI</text>
-<rect x="1621" y="750" width="368" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="767" fill="#111111" font-size="12">[FK] id_partida -&gt; PARTIDAS : INTEGER</text>
-<rect x="1621" y="776" width="368" height="26" fill="#FFF5E6" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="793" fill="#111111" font-size="12">[FK] id_item -&gt; CATALOGO_ITEMS : TEXT</text>
-<rect x="1621" y="802" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="819" fill="#111111" font-size="12">  evento : TEXT CHECK</text>
-<rect x="1621" y="828" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="845" fill="#111111" font-size="12">  cantidad_delta : INTEGER</text>
-<rect x="1621" y="854" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="871" fill="#111111" font-size="12">  fecha_evento : TEXT</text>
-<rect x="1620" y="1020" width="370" height="170" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="1620" y="1020" width="370" height="34" rx="4" fill="#2B4C7E" stroke="#1A1A1A" stroke-width="2"/>
-<text x="1805.0" y="1042" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">CATALOGO_ITEMS</text>
-<rect x="1621" y="1054" width="368" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="1071" fill="#111111" font-size="12" font-weight="bold">[PK] id_item : TEXT</text>
-<rect x="1621" y="1080" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="1097" fill="#111111" font-size="12">  nombre : TEXT NOT NULL</text>
-<rect x="1621" y="1106" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="1123" fill="#111111" font-size="12">  categoria : TEXT CHECK</text>
-<rect x="1621" y="1132" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="1149" fill="#111111" font-size="12">  curacion_hp : INTEGER &gt;= 0</text>
-<rect x="1621" y="1158" width="368" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="1630" y="1175" fill="#111111" font-size="12">  descripcion : TEXT</text>
-<rect x="2140" y="1020" width="520" height="118" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="2140" y="1020" width="520" height="34" rx="4" fill="#5B4B8A" stroke="#1A1A1A" stroke-width="2"/>
-<text x="2400.0" y="1042" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">CANCION_OBJETOS_INTENTO (N:M)</text>
-<rect x="2141" y="1054" width="518" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="1071" fill="#111111" font-size="12" font-weight="bold">[PK,FK] id_cancion -&gt; CANCIONES_PERSONALIZADAS : INTEGER</text>
-<rect x="2141" y="1080" width="518" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="1097" fill="#111111" font-size="12" font-weight="bold">[PK] tipo_registro : TEXT ('ULTIMO'|'MEJOR')</text>
-<rect x="2141" y="1106" width="518" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="1123" fill="#111111" font-size="12" font-weight="bold">[PK,FK] id_item -&gt; CATALOGO_ITEMS : TEXT</text>
-<rect x="2140" y="390" width="520" height="300" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="2140" y="390" width="520" height="34" rx="4" fill="#1F6F5B" stroke="#1A1A1A" stroke-width="2"/>
-<text x="2400.0" y="412" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">CANCIONES_PERSONALIZADAS</text>
-<rect x="2141" y="424" width="518" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="441" fill="#111111" font-size="12" font-weight="bold">[PK] id_cancion : INTEGER AI</text>
-<rect x="2141" y="450" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="467" fill="#111111" font-size="12">[UQ] clave_unica : TEXT UNIQUE</text>
-<rect x="2141" y="476" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="493" fill="#111111" font-size="12">  titulo / artista / dificultad : TEXT</text>
-<rect x="2141" y="502" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="519" fill="#111111" font-size="12">  bpm : REAL &gt; 0</text>
-<rect x="2141" y="528" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="545" fill="#111111" font-size="12">  ruta_portada / audio / chart : TEXT</text>
-<rect x="2141" y="554" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="571" fill="#111111" font-size="12">  cantidad_notas : INTEGER &gt;= 0</text>
-<rect x="2141" y="580" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="597" fill="#111111" font-size="12">  puntaje / combo / prec_ultimo_intento : INT/REAL</text>
-<rect x="2141" y="606" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="623" fill="#111111" font-size="12">  puntaje / combo / prec_mas_alto : INT/REAL</text>
-<rect x="2141" y="632" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="649" fill="#111111" font-size="12">  veces_jugada : INTEGER &gt;= 0</text>
-<rect x="2141" y="658" width="518" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="2150" y="675" fill="#111111" font-size="12">  fecha_ultimo_intento / record : TEXT NULL</text>
-<rect x="80" y="920" width="390" height="92" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="80" y="920" width="390" height="34" rx="4" fill="#4A5568" stroke="#1A1A1A" stroke-width="2"/>
-<text x="275.0" y="942" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">DB_META (Control)</text>
-<rect x="81" y="954" width="388" height="26" fill="#EBF9E8" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="971" fill="#111111" font-size="12" font-weight="bold">[PK] clave : TEXT</text>
-<rect x="81" y="980" width="388" height="26" fill="#FFFFFF" stroke="#DDDDDD" stroke-width="1"/>
-<text x="90" y="997" fill="#111111" font-size="12">  valor : TEXT NOT NULL</text>
+<text x="80" y="55" font-size="22" font-weight="bold" fill="#111111">Modelo Relacional (3FN) — Combo 6Beat</text>
+<text x="80" y="82" font-size="13" fill="#444444">Notación Crow's Foot (1:1 / 1:N) conectada PK → FK por atributo</text>
+<polyline points="320,165.0 348,165.0 348,555.0 320,555.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="327" y1="159.0" x2="327" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="332" y1="159.0" x2="332" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="332" y1="555.0" x2="320" y2="549.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="332" y1="555.0" x2="320" y2="561.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="320,165.0 380.0,165.0 380.0,645.0 460,645.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="327" y1="159.0" x2="327" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="332" y1="159.0" x2="332" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="448" y1="645.0" x2="460" y2="639.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="448" y1="645.0" x2="460" y2="651.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="320,165.0 610.0,165.0 610.0,225.0 900,225.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="327" y1="159.0" x2="327" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="332" y1="159.0" x2="332" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="888" y1="225.0" x2="900" y2="219.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="888" y1="225.0" x2="900" y2="231.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="320,165.0 620.0,165.0 620.0,315.0 900,315.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="327" y1="159.0" x2="327" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="332" y1="159.0" x2="332" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="888" y1="315.0" x2="900" y2="309.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="888" y1="315.0" x2="900" y2="321.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="460,465.0 410.0,465.0 410.0,705.0 320,705.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="453" y1="459.0" x2="453" y2="471.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="448" y1="459.0" x2="448" y2="471.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="325" y1="699.0" x2="325" y2="711.0" stroke="#222222" stroke-width="1.5"/>
+<circle cx="332" cy="705.0" r="4" fill="#FFFFFF" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1320,945.0 1005.0,945.0 1005.0,675.0 730,675.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1313" y1="939.0" x2="1313" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1308" y1="939.0" x2="1308" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="742" y1="675.0" x2="730" y2="669.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="742" y1="675.0" x2="730" y2="681.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1320,945.0 1015.0,945.0 1015.0,705.0 730,705.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1313" y1="939.0" x2="1313" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1308" y1="939.0" x2="1308" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="742" y1="705.0" x2="730" y2="699.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="742" y1="705.0" x2="730" y2="711.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="900,165.0 815.0,165.0 815.0,925.0 730,925.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="893" y1="159.0" x2="893" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="888" y1="159.0" x2="888" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="742" y1="925.0" x2="730" y2="919.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="742" y1="925.0" x2="730" y2="931.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="730,465.0 758,465.0 758,955.0 730,955.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="737" y1="459.0" x2="737" y2="471.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="742" y1="459.0" x2="742" y2="471.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="742" y1="955.0" x2="730" y2="949.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="742" y1="955.0" x2="730" y2="961.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1160,165.0 1260.0,165.0 1260.0,165.0 1320,165.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1167" y1="159.0" x2="1167" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1172" y1="159.0" x2="1172" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1308" y1="165.0" x2="1320" y2="159.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="1308" y1="165.0" x2="1320" y2="171.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1160,165.0 1220.0,165.0 1220.0,365.0 1320,365.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1167" y1="159.0" x2="1167" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1172" y1="159.0" x2="1172" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1308" y1="365.0" x2="1320" y2="359.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="1308" y1="365.0" x2="1320" y2="371.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1560,945.0 1624,945.0 1624,395.0 1560,395.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1567" y1="939.0" x2="1567" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1572" y1="939.0" x2="1572" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1572" y1="395.0" x2="1560" y2="389.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="1572" y1="395.0" x2="1560" y2="401.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1160,165.0 1240.0,165.0 1240.0,675.0 1320,675.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1167" y1="159.0" x2="1167" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1172" y1="159.0" x2="1172" y2="171.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1308" y1="675.0" x2="1320" y2="669.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="1308" y1="675.0" x2="1320" y2="681.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1560,945.0 1600,945.0 1600,705.0 1560,705.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1567" y1="939.0" x2="1567" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1572" y1="939.0" x2="1572" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1572" y1="705.0" x2="1560" y2="699.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="1572" y1="705.0" x2="1560" y2="711.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="2010,265.0 2062,265.0 2062,945.0 2000,945.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="2017" y1="259.0" x2="2017" y2="271.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="2022" y1="259.0" x2="2022" y2="271.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="2012" y1="945.0" x2="2000" y2="939.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="2012" y1="945.0" x2="2000" y2="951.0" stroke="#222222" stroke-width="1.4"/>
+<polyline points="1560,945.0 1630.0,945.0 1630.0,1005.0 1740,1005.0" fill="none" stroke="#222222" stroke-width="1.3"/>
+<line x1="1567" y1="939.0" x2="1567" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1572" y1="939.0" x2="1572" y2="951.0" stroke="#222222" stroke-width="1.5"/>
+<line x1="1728" y1="1005.0" x2="1740" y2="999.0" stroke="#222222" stroke-width="1.4"/>
+<line x1="1728" y1="1005.0" x2="1740" y2="1011.0" stroke="#222222" stroke-width="1.4"/>
+<rect x="80" y="120" width="240" height="150" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="80" y="120" width="240" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="200.0" y="139" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">ZONAS</text>
+<line x1="80" y1="180" x2="320" y2="180" stroke="#111111" stroke-width="1.4"/>
+<line x1="128" y1="150" x2="128" y2="180" stroke="#DDDDDD" stroke-width="1"/>
+<text x="104.0" y="169" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="135" y="169" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_zona</text>
+<line x1="128" y1="180" x2="128" y2="210" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="199" font-size="12" fill="#111111">nombre</text>
+<line x1="128" y1="210" x2="128" y2="240" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="229" font-size="12" fill="#111111">escena_xml_relativa</text>
+<line x1="128" y1="240" x2="128" y2="270" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="259" font-size="12" fill="#111111">orden_progresion</text>
+<rect x="80" y="420" width="240" height="300" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="80" y="420" width="240" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="200.0" y="439" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">ENEMIGOS</text>
+<line x1="80" y1="480" x2="320" y2="480" stroke="#111111" stroke-width="1.4"/>
+<line x1="128" y1="450" x2="128" y2="480" stroke="#DDDDDD" stroke-width="1"/>
+<text x="104.0" y="469" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="135" y="469" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_enemigo</text>
+<line x1="128" y1="480" x2="128" y2="510" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="499" font-size="12" fill="#111111">nombre</text>
+<line x1="128" y1="510" x2="128" y2="540" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="529" font-size="12" fill="#111111">especie</text>
+<line x1="128" y1="540" x2="128" y2="570" stroke="#DDDDDD" stroke-width="1"/>
+<text x="104.0" y="559" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="135" y="559" font-size="12" fill="#111111">id_zona</text>
+<line x1="128" y1="570" x2="128" y2="600" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="589" font-size="12" fill="#111111">hub_x</text>
+<line x1="128" y1="600" x2="128" y2="630" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="619" font-size="12" fill="#111111">hub_y</text>
+<line x1="128" y1="630" x2="128" y2="660" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="649" font-size="12" fill="#111111">cancion_referencia</text>
+<line x1="128" y1="660" x2="128" y2="690" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="679" font-size="12" fill="#111111">sprite_relativo</text>
+<line x1="128" y1="690" x2="128" y2="720" stroke="#DDDDDD" stroke-width="1"/>
+<text x="104.0" y="709" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="135" y="709" font-size="12" fill="#111111">id_batalla</text>
+<rect x="460" y="420" width="270" height="360" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="460" y="420" width="270" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="595.0" y="439" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">CATALOGO_BATALLAS</text>
+<line x1="460" y1="480" x2="730" y2="480" stroke="#111111" stroke-width="1.4"/>
+<line x1="508" y1="450" x2="508" y2="480" stroke="#DDDDDD" stroke-width="1"/>
+<text x="484.0" y="469" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="515" y="469" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_batalla</text>
+<line x1="508" y1="480" x2="508" y2="510" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="499" font-size="12" fill="#111111">boss_id</text>
+<line x1="508" y1="510" x2="508" y2="540" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="529" font-size="12" fill="#111111">boss_nombre</text>
+<line x1="508" y1="540" x2="508" y2="570" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="559" font-size="12" fill="#111111">especie</text>
+<line x1="508" y1="570" x2="508" y2="600" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="589" font-size="12" fill="#111111">defeat_flag</text>
+<line x1="508" y1="600" x2="508" y2="630" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="619" font-size="12" fill="#111111">escena_combate_relativa</text>
+<line x1="508" y1="630" x2="508" y2="660" stroke="#DDDDDD" stroke-width="1"/>
+<text x="484.0" y="649" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="515" y="649" font-size="12" fill="#111111">id_zona</text>
+<line x1="508" y1="660" x2="508" y2="690" stroke="#DDDDDD" stroke-width="1"/>
+<text x="484.0" y="679" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="515" y="679" font-size="12" fill="#111111">id_item_recompensa</text>
+<line x1="508" y1="690" x2="508" y2="720" stroke="#DDDDDD" stroke-width="1"/>
+<text x="484.0" y="709" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="515" y="709" font-size="12" fill="#111111">id_amuleto_score</text>
+<line x1="508" y1="720" x2="508" y2="750" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="739" font-size="12" fill="#111111">puntaje_minimo_amuleto</text>
+<line x1="508" y1="750" x2="508" y2="780" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="769" font-size="12" fill="#111111">es_historia_principal</text>
+<rect x="900" y="120" width="260" height="420" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="900" y="120" width="260" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="1030.0" y="139" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">PARTIDAS</text>
+<line x1="900" y1="180" x2="1160" y2="180" stroke="#111111" stroke-width="1.4"/>
+<line x1="948" y1="150" x2="948" y2="180" stroke="#DDDDDD" stroke-width="1"/>
+<text x="924.0" y="169" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="955" y="169" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_partida</text>
+<line x1="948" y1="180" x2="948" y2="210" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="199" font-size="12" fill="#111111">slot</text>
+<line x1="948" y1="210" x2="948" y2="240" stroke="#DDDDDD" stroke-width="1"/>
+<text x="924.0" y="229" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="955" y="229" font-size="12" fill="#111111">id_zona_actual</text>
+<line x1="948" y1="240" x2="948" y2="270" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="259" font-size="12" fill="#111111">player_x</text>
+<line x1="948" y1="270" x2="948" y2="300" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="289" font-size="12" fill="#111111">player_y</text>
+<line x1="948" y1="300" x2="948" y2="330" stroke="#DDDDDD" stroke-width="1"/>
+<text x="924.0" y="319" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="955" y="319" font-size="12" fill="#111111">id_zona_retorno</text>
+<line x1="948" y1="330" x2="948" y2="360" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="349" font-size="12" fill="#111111">return_x</text>
+<line x1="948" y1="360" x2="948" y2="390" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="379" font-size="12" fill="#111111">return_y</text>
+<line x1="948" y1="390" x2="948" y2="420" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="409" font-size="12" fill="#111111">heal_strategy</text>
+<line x1="948" y1="420" x2="948" y2="450" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="439" font-size="12" fill="#111111">estado_general</text>
+<line x1="948" y1="450" x2="948" y2="480" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="469" font-size="12" fill="#111111">progreso_porcentaje</text>
+<line x1="948" y1="480" x2="948" y2="510" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="499" font-size="12" fill="#111111">fecha_creacion</text>
+<line x1="948" y1="510" x2="948" y2="540" stroke="#DDDDDD" stroke-width="1"/>
+<text x="955" y="529" font-size="12" fill="#111111">fecha_actualizacion</text>
+<rect x="460" y="880" width="270" height="360" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="460" y="880" width="270" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="595.0" y="899" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">BATALLAS_VENCIDAS</text>
+<line x1="508" y1="910" x2="508" y2="940" stroke="#DDDDDD" stroke-width="1"/>
+<text x="484.0" y="929" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK,FK</text>
+<text x="515" y="929" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_partida</text>
+<line x1="460" y1="970" x2="730" y2="970" stroke="#111111" stroke-width="1.4"/>
+<line x1="508" y1="940" x2="508" y2="970" stroke="#DDDDDD" stroke-width="1"/>
+<text x="484.0" y="959" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK,FK</text>
+<text x="515" y="959" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_batalla</text>
+<line x1="508" y1="970" x2="508" y2="1000" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="989" font-size="12" fill="#111111">puntaje_maximo</text>
+<line x1="508" y1="1000" x2="508" y2="1030" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1019" font-size="12" fill="#111111">max_combo</text>
+<line x1="508" y1="1030" x2="508" y2="1060" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1049" font-size="12" fill="#111111">perfects</text>
+<line x1="508" y1="1060" x2="508" y2="1090" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1079" font-size="12" fill="#111111">goods</text>
+<line x1="508" y1="1090" x2="508" y2="1120" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1109" font-size="12" fill="#111111">safes</text>
+<line x1="508" y1="1120" x2="508" y2="1150" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1139" font-size="12" fill="#111111">misses</text>
+<line x1="508" y1="1150" x2="508" y2="1180" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1169" font-size="12" fill="#111111">intentos_totales</text>
+<line x1="508" y1="1180" x2="508" y2="1210" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1199" font-size="12" fill="#111111">fecha_primera_victoria</text>
+<line x1="508" y1="1210" x2="508" y2="1240" stroke="#DDDDDD" stroke-width="1"/>
+<text x="515" y="1229" font-size="12" fill="#111111">fecha_ultima_victoria</text>
+<rect x="1320" y="120" width="240" height="120" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="1320" y="120" width="240" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="1440.0" y="139" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">FLAGS_PARTIDA</text>
+<line x1="1368" y1="150" x2="1368" y2="180" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="169" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK,FK</text>
+<text x="1375" y="169" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_partida</text>
+<line x1="1320" y1="210" x2="1560" y2="210" stroke="#111111" stroke-width="1.4"/>
+<line x1="1368" y1="180" x2="1368" y2="210" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="199" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="1375" y="199" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">flag_nombre</text>
+<line x1="1368" y1="210" x2="1368" y2="240" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="229" font-size="12" fill="#111111">fecha_definicion</text>
+<rect x="1320" y="320" width="240" height="210" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="1320" y="320" width="240" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="1440.0" y="339" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">OBJETOS_OBTENIDOS</text>
+<line x1="1368" y1="350" x2="1368" y2="380" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="369" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK,FK</text>
+<text x="1375" y="369" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_partida</text>
+<line x1="1320" y1="410" x2="1560" y2="410" stroke="#111111" stroke-width="1.4"/>
+<line x1="1368" y1="380" x2="1368" y2="410" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="399" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK,FK</text>
+<text x="1375" y="399" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_item</text>
+<line x1="1368" y1="410" x2="1368" y2="440" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="429" font-size="12" fill="#111111">cantidad</text>
+<line x1="1368" y1="440" x2="1368" y2="470" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="459" font-size="12" fill="#111111">equipado</text>
+<line x1="1368" y1="470" x2="1368" y2="500" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="489" font-size="12" fill="#111111">fecha_obtencion</text>
+<line x1="1368" y1="500" x2="1368" y2="530" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="519" font-size="12" fill="#111111">fecha_actualizacion</text>
+<rect x="1320" y="600" width="240" height="210" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="1320" y="600" width="240" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="1440.0" y="619" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">HISTORIAL_OBJETOS</text>
+<line x1="1320" y1="660" x2="1560" y2="660" stroke="#111111" stroke-width="1.4"/>
+<line x1="1368" y1="630" x2="1368" y2="660" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="649" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="1375" y="649" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_historial</text>
+<line x1="1368" y1="660" x2="1368" y2="690" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="679" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="1375" y="679" font-size="12" fill="#111111">id_partida</text>
+<line x1="1368" y1="690" x2="1368" y2="720" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="709" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">FK</text>
+<text x="1375" y="709" font-size="12" fill="#111111">id_item</text>
+<line x1="1368" y1="720" x2="1368" y2="750" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="739" font-size="12" fill="#111111">evento</text>
+<line x1="1368" y1="750" x2="1368" y2="780" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="769" font-size="12" fill="#111111">cantidad_delta</text>
+<line x1="1368" y1="780" x2="1368" y2="810" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="799" font-size="12" fill="#111111">fecha_evento</text>
+<rect x="1320" y="900" width="240" height="180" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="1320" y="900" width="240" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="1440.0" y="919" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">CATALOGO_ITEMS</text>
+<line x1="1320" y1="960" x2="1560" y2="960" stroke="#111111" stroke-width="1.4"/>
+<line x1="1368" y1="930" x2="1368" y2="960" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1344.0" y="949" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="1375" y="949" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_item</text>
+<line x1="1368" y1="960" x2="1368" y2="990" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="979" font-size="12" fill="#111111">nombre</text>
+<line x1="1368" y1="990" x2="1368" y2="1020" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="1009" font-size="12" fill="#111111">categoria</text>
+<line x1="1368" y1="1020" x2="1368" y2="1050" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="1039" font-size="12" fill="#111111">curacion_hp</text>
+<line x1="1368" y1="1050" x2="1368" y2="1080" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1375" y="1069" font-size="12" fill="#111111">descripcion</text>
+<rect x="1740" y="900" width="260" height="120" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="1740" y="900" width="260" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="1870.0" y="919" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">CANCION_OBJETOS_INTENTO</text>
+<line x1="1788" y1="930" x2="1788" y2="960" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1764.0" y="949" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK,FK</text>
+<text x="1795" y="949" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_cancion</text>
+<line x1="1788" y1="960" x2="1788" y2="990" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1764.0" y="979" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="1795" y="979" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">tipo_registro</text>
+<line x1="1740" y1="1020" x2="2000" y2="1020" stroke="#111111" stroke-width="1.4"/>
+<line x1="1788" y1="990" x2="1788" y2="1020" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1764.0" y="1009" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK,FK</text>
+<text x="1795" y="1009" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_item</text>
+<rect x="1740" y="220" width="270" height="600" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="1740" y="220" width="270" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="1875.0" y="239" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">CANCIONES_PERSONALIZADAS</text>
+<line x1="1740" y1="280" x2="2010" y2="280" stroke="#111111" stroke-width="1.4"/>
+<line x1="1788" y1="250" x2="1788" y2="280" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1764.0" y="269" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="1795" y="269" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">id_cancion</text>
+<line x1="1788" y1="280" x2="1788" y2="310" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="299" font-size="12" fill="#111111">clave_unica</text>
+<line x1="1788" y1="310" x2="1788" y2="340" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="329" font-size="12" fill="#111111">titulo</text>
+<line x1="1788" y1="340" x2="1788" y2="370" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="359" font-size="12" fill="#111111">artista</text>
+<line x1="1788" y1="370" x2="1788" y2="400" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="389" font-size="12" fill="#111111">dificultad</text>
+<line x1="1788" y1="400" x2="1788" y2="430" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="419" font-size="12" fill="#111111">bpm</text>
+<line x1="1788" y1="430" x2="1788" y2="460" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="449" font-size="12" fill="#111111">ruta_portada</text>
+<line x1="1788" y1="460" x2="1788" y2="490" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="479" font-size="12" fill="#111111">ruta_audio</text>
+<line x1="1788" y1="490" x2="1788" y2="520" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="509" font-size="12" fill="#111111">ruta_chart</text>
+<line x1="1788" y1="520" x2="1788" y2="550" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="539" font-size="12" fill="#111111">cantidad_notas</text>
+<line x1="1788" y1="550" x2="1788" y2="580" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="569" font-size="12" fill="#111111">puntaje_ultimo_intento</text>
+<line x1="1788" y1="580" x2="1788" y2="610" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="599" font-size="12" fill="#111111">combo_ultimo_intento</text>
+<line x1="1788" y1="610" x2="1788" y2="640" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="629" font-size="12" fill="#111111">precision_ultimo_intento</text>
+<line x1="1788" y1="640" x2="1788" y2="670" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="659" font-size="12" fill="#111111">puntaje_mas_alto</text>
+<line x1="1788" y1="670" x2="1788" y2="700" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="689" font-size="12" fill="#111111">combo_mas_alto</text>
+<line x1="1788" y1="700" x2="1788" y2="730" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="719" font-size="12" fill="#111111">precision_mas_alta</text>
+<line x1="1788" y1="730" x2="1788" y2="760" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="749" font-size="12" fill="#111111">veces_jugada</text>
+<line x1="1788" y1="760" x2="1788" y2="790" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="779" font-size="12" fill="#111111">fecha_ultimo_intento</text>
+<line x1="1788" y1="790" x2="1788" y2="820" stroke="#DDDDDD" stroke-width="1"/>
+<text x="1795" y="809" font-size="12" fill="#111111">fecha_record</text>
+<rect x="80" y="880" width="240" height="90" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+<rect x="80" y="880" width="240" height="30" fill="#EAEAEA" stroke="#111111" stroke-width="1.6"/>
+<text x="200.0" y="899" text-anchor="middle" font-size="13" font-weight="bold" fill="#111111">DB_META</text>
+<line x1="80" y1="940" x2="320" y2="940" stroke="#111111" stroke-width="1.4"/>
+<line x1="128" y1="910" x2="128" y2="940" stroke="#DDDDDD" stroke-width="1"/>
+<text x="104.0" y="929" text-anchor="middle" font-size="11" font-weight="bold" fill="#111111">PK</text>
+<text x="135" y="929" font-size="12" fill="#111111" font-weight="bold" text-decoration="underline">clave</text>
+<line x1="128" y1="940" x2="128" y2="970" stroke="#DDDDDD" stroke-width="1"/>
+<text x="135" y="959" font-size="12" fill="#111111">valor</text>
 </svg>
