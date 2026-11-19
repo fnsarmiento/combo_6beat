@@ -165,7 +165,7 @@ void open_add_node_popup(Vector2 screenPos) {
 
 void draw_add_node_popup(Rectangle canvasBounds) {
     float popupW = 210.0f;
-    float popupH = 252.0f;
+    float popupH = 282.0f;
 
     float px = add_node_popup_screen_pos.x;
     float py = add_node_popup_screen_pos.y;
@@ -189,27 +189,29 @@ void draw_add_node_popup(Rectangle canvasBounds) {
     float bh = 26.0f;
     float gap = 30.0f;
 
-    DialogNodeType[7] types = [
+    DialogNodeType[8] types = [
         DialogNodeType.Dialog,
         DialogNodeType.Load,
         DialogNodeType.SaveNext,
         DialogNodeType.PlaySfx,
         DialogNodeType.Define,
         DialogNodeType.IfDef,
-        DialogNodeType.IfNDef
+        DialogNodeType.IfNDef,
+        DialogNodeType.GiveItem
     ];
 
-    const(char)*[7] labels = [
+    const(char)*[8] labels = [
         "+ Dialog ( Principal )",
         "+ __load__",
         "+ __save_next__",
         "+ __playsfx__",
         "+ __define__",
         "+ __ifdef__",
-        "+ __ifndef__"
+        "+ __ifndef__",
+        "+ __give_item__"
     ];
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
         if (GuiButton(Rectangle(bx, by + i * gap, bw, bh), labels[i])) {
             dialog_graph_push_undo(graph);
             dialog_graph_add_node(graph, types[i], add_node_popup_world_pos);
@@ -356,6 +358,8 @@ Color get_node_header_color(ref const(DialogGraphNode) node) {
             return Color(165, 55, 105, 255);
         case DialogNodeType.IfNDef:
             return Color(165, 55, 65, 255);
+        case DialogNodeType.GiveItem:
+            return Color(45, 145, 110, 255);
     }
 }
 
@@ -717,5 +721,6 @@ const(char)* get_directive_arg_label(DialogNodeType type) {
         case DialogNodeType.Define:   return "Macro / Flag a definir (__define__):";
         case DialogNodeType.IfDef:    return "Condicion si definido (__ifdef__):";
         case DialogNodeType.IfNDef:   return "Condicion si NO definido (__ifndef__):";
+        case DialogNodeType.GiveItem: return "Item ID[:count] (__give_item__):";
     }
 }

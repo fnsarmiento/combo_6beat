@@ -12,18 +12,30 @@ import scenes.map_editor.level_data : LevelWorld, get_active_level_world;
 import scenes.map_editor.xml_scene : xml_load_scene, xml_save_scene;
 import scenes.map_editor.dialogs_data : DialogGraph, dialog_graph_load_json, dialog_graph_save_json;
 import scenes.map_editor.tabs.dialogs_editor_tab : dialogs_editor_tab_get_graph;
+import scenes.map_editor.tabs.prefabs_tab :
+    prefabs_write_to_procshit,
+    prefabs_clear_all_for_load,
+    prefabs_parse_procshit_line,
+    prefabs_finalize_after_load;
 import scenes.map_editor.tabs.tileset_tab :
+    MAX_TILESETS,
     MAX_TILESET_TILES,
-    tileset_get_tile_count,
-    tileset_set_tile_count,
-    tileset_get_tile_width_px,
-    tileset_get_tile_height_px,
-    tileset_set_tile_size_px,
-    tileset_get_path,
-    tileset_set_path_and_reload,
-    tileset_is_tile_active,
-    tileset_set_tile_active,
-    tileset_reload_texture;
+    tile_pack,
+    tile_unpack_tileset,
+    tile_unpack_index,
+    tileset_get_tileset_count,
+    tileset_clear_all,
+    tileset_add_slot,
+    tileset_get_path_at,
+    tileset_set_path_and_reload_at,
+    tileset_get_tile_width_at,
+    tileset_get_tile_height_at,
+    tileset_set_tile_size_at,
+    tileset_get_tile_count_at,
+    tileset_set_tile_count_at,
+    tileset_is_tile_active_at,
+    tileset_set_tile_active_at,
+    tileset_reload_all_textures;
 import scenes.map_editor.tabs.tilemap_tab :
     MAX_MAP_WIDTH,
     MAX_MAP_HEIGHT,
@@ -153,7 +165,7 @@ bool project_switch_to_map(int index) {
 
     ref LevelWorld world = get_active_level_world();
     if (xml_load_scene(resolvedPath.ptr, world)) {
-        tileset_reload_texture(false);
+        tileset_reload_all_textures(false);
         current_project.activeMapIndex = index;
         strncpy(current_project.maps[index].fullPath.ptr, resolvedPath.ptr, current_project.maps[index].fullPath.length - 1);
         return true;
@@ -226,24 +238,51 @@ bool procshit_save_project(const(char)* filePath) {
         fprintf(fp, "MAP_ENTRY=%s\n", current_project.maps[i].relativePath.ptr);
     }
 
-    // Datos del Tileset
-    fprintf(fp, "\n# Configuracion del Tileset\n");
-    fprintf(fp, "TILESET_PNG=%s\n", tileset_get_path());
-    fprintf(fp, "TILESET_TILE_WIDTH=%d\n", tileset_get_tile_width_px());
-    fprintf(fp, "TILESET_TILE_HEIGHT=%d\n", tileset_get_tile_height_px());
-    int tCount = tileset_get_tile_count();
-    fprintf(fp, "TILESET_TILE_COUNT=%d\n", tCount);
+    // Datos de Tilesets (claves legacy del slot 0 + lista multi-tileset)
+    int tsTotal = tileset_get_tileset_count();
+    fprintf(fp, "\n# Configuracion de Tilesets\n");
+    if (tsTotal > 0) {
+        int t0Count = tileset_get_tile_count_at(0);
+        fprintf(fp, "TILESET_PNG=%s\n", tileset_get_path_at(0));
+        fprintf(fp, "TILESET_TILE_WIDTH=%d\n", tileset_get_tile_width_at(0));
+        fprintf(fp, "TILESET_TILE_HEIGHT=%d\n", tileset_get_tile_height_at(0));
+        fprintf(fp, "TILESET_TILE_COUNT=%d\n", t0Count);
 
-    fprintf(fp, "TILESET_INACTIVE=");
-    bool firstInactive = true;
-    for (int i = 0; i < tCount; i++) {
-        if (!tileset_is_tile_active(i)) {
-            const(char)* sep = firstInactive ? "" : ",";
-            fprintf(fp, "%s%d", sep, i);
-            firstInactive = false;
+        fprintf(fp, "TILESET_INACTIVE=");
+        bool firstInact0 = true;
+        for (int i = 0; i < t0Count; i++) {
+            if (!tileset_is_tile_active_at(0, i)) {
+                const(char)* sep = firstInact0 ? "" : ",";
+                fprintf(fp, "%s%d", sep, i);
+                firstInact0 = false;
+            }
         }
+        fprintf(fp, "\n");
     }
-    fprintf(fp, "\n");
+
+    fprintf(fp, "TILESET_COUNT=%d\n", tsTotal);
+    for (int ts = 0; ts < tsTotal; ts++) {
+        int tCount = tileset_get_tile_count_at(ts);
+        fprintf(
+            fp,
+            "TILESET_ENTRY=%d,%d,%d,%d,%s\n",
+            ts,
+            tileset_get_tile_width_at(ts),
+            tileset_get_tile_height_at(ts),
+            tCount,
+            tileset_get_path_at(ts)
+        );
+        fprintf(fp, "TILESET_ENTRY_INACTIVE=%d,", ts);
+        bool firstInactive = true;
+        for (int i = 0; i < tCount; i++) {
+            if (!tileset_is_tile_active_at(ts, i)) {
+                const(char)* sep = firstInactive ? "" : ",";
+                fprintf(fp, "%s%d", sep, i);
+                firstInactive = false;
+            }
+        }
+        fprintf(fp, "\n");
+    }
 
     // Datos del Tilemap
     int mapW = tilemap_get_width();
@@ -255,10 +294,20 @@ bool procshit_save_project(const(char)* filePath) {
         for (int c = 0; c < mapW; c++) {
             int val = tilemap_get_cell(c, r);
             if (val >= 0) {
-                fprintf(fp, "TILEMAP_CELL=%d,%d,%d\n", c, r, val);
+                fprintf(
+                    fp,
+                    "TILEMAP_CELL=%d,%d,%d,%d\n",
+                    c,
+                    r,
+                    tile_unpack_tileset(val),
+                    tile_unpack_index(val)
+                );
             }
         }
     }
+
+    // Guardar todos los Prefabs del proyecto dentro de .procshit
+    prefabs_write_to_procshit(fp);
 
     fclose(fp);
     return true;
@@ -266,7 +315,7 @@ bool procshit_save_project(const(char)* filePath) {
 
 /**
  * Carga un archivo de proyecto `.procshit` desde disco y restaura los mapas del proyecto,
- * la escena activa, el grafo de diálogos, el tileset y el tilemap.
+ * la escena activa, el grafo de diálogos, los tilesets y el tilemap.
  */
 bool procshit_load_project(const(char)* filePath) {
     if (filePath is null || filePath[0] == '\0' || !FileExists(filePath)) {
@@ -305,59 +354,28 @@ bool procshit_load_project(const(char)* filePath) {
     ref LevelWorld world = get_active_level_world();
     ref DialogGraph dlgGraph = dialogs_editor_tab_get_graph();
 
+    char[256] resPrefix = 0;
     char[256] activeXmlRel = 0;
     char[256] activeJsonRel = 0;
-    char[256] tilesetPngRel = 0;
-    int tsTileW = tileset_get_tile_width_px();
-    int tsTileH = tileset_get_tile_height_px();
-    int tsCount = tileset_get_tile_count();
-    int tmW = tilemap_get_width();
-    int tmH = tilemap_get_height();
+    bool hasMultiTs = false;
+    bool hasLegacyTs = false;
+    bool hasTilemapData = false;
 
-    for (int i = 0; i < MAX_TILESET_TILES; i++) {
-        tileset_set_tile_active(i, true);
-    }
-
-    // Parsear línea por línea
+    // Pasada 1: Metadatos del proyecto, rutas y detección de secciones
     size_t pos = 0;
     while (pos < bytesRead) {
-        size_t lineStart = pos;
-        while (pos < bytesRead && buffer[pos] != '\n' && buffer[pos] != '\r') {
-            pos++;
-        }
-        size_t lineLen = pos - lineStart;
-        while (pos < bytesRead && (buffer[pos] == '\n' || buffer[pos] == '\r')) {
-            pos++;
-        }
-
-        if (lineLen == 0) continue;
-
         char[1024] lineBuf = 0;
-        size_t copyLen = (lineLen < lineBuf.length - 1) ? lineLen : (lineBuf.length - 1);
-        for (size_t k = 0; k < copyLen; k++) {
-            lineBuf[k] = buffer[lineStart + k];
+        if (!read_next_kv_line(buffer, bytesRead, pos, lineBuf.ptr, lineBuf.length)) {
+            continue;
         }
-        lineBuf[copyLen] = '\0';
-
-        // Ignorar comentarios '#'
-        if (lineBuf[0] == '#') continue;
-
         const(char)* eqPtr = strchr(lineBuf.ptr, '=');
         if (eqPtr is null) continue;
 
-        size_t keyLen = cast(size_t)(eqPtr - lineBuf.ptr);
         char[128] key = 0;
-        if (keyLen >= key.length) keyLen = key.length - 1;
-        for (size_t k = 0; k < keyLen; k++) {
-            key[k] = lineBuf[k];
-        }
-        key[keyLen] = '\0';
-
-        const(char)* val = eqPtr + 1;
+        const(char)* val = extract_kv(lineBuf.ptr, eqPtr, key.ptr, key.length);
 
         if (strcmp(key.ptr, "RESOURCES_PREFIX") == 0) {
-            strncpy(world.resourcesRelPath.ptr, val, world.resourcesRelPath.length - 1);
-            world.resourcesRelPath[world.resourcesRelPath.length - 1] = '\0';
+            strncpy(resPrefix.ptr, val, resPrefix.length - 1);
         } else if (strcmp(key.ptr, "ACTIVE_SCENE_XML") == 0) {
             strncpy(activeXmlRel.ptr, val, activeXmlRel.length - 1);
         } else if (strcmp(key.ptr, "ACTIVE_DIALOGS_JSON") == 0) {
@@ -366,33 +384,16 @@ bool procshit_load_project(const(char)* filePath) {
             char[512] fullMapPath = 0;
             resolve_rel_to_project_file(filePath, val, fullMapPath.ptr, fullMapPath.length);
             project_add_map(fullMapPath.ptr);
-        } else if (strcmp(key.ptr, "TILESET_PNG") == 0) {
-            strncpy(tilesetPngRel.ptr, val, tilesetPngRel.length - 1);
-        } else if (strcmp(key.ptr, "TILESET_TILE_WIDTH") == 0) {
-            tsTileW = atoi(val);
-        } else if (strcmp(key.ptr, "TILESET_TILE_HEIGHT") == 0) {
-            tsTileH = atoi(val);
-        } else if (strcmp(key.ptr, "TILESET_TILE_COUNT") == 0) {
-            tsCount = atoi(val);
-        } else if (strcmp(key.ptr, "TILESET_INACTIVE") == 0) {
-            parse_inactive_list(val);
-        } else if (strcmp(key.ptr, "TILEMAP_WIDTH") == 0) {
-            tmW = atoi(val);
-            tilemap_set_size(tmW, tmH);
-            tilemap_clear();
-        } else if (strcmp(key.ptr, "TILEMAP_HEIGHT") == 0) {
-            tmH = atoi(val);
-            tilemap_set_size(tmW, tmH);
-            tilemap_clear();
-        } else if (strcmp(key.ptr, "TILEMAP_CELL") == 0) {
-            int col = 0, row = 0, tileIdx = -1;
-            if (parse_three_ints(val, col, row, tileIdx)) {
-                tilemap_set_cell(col, row, tileIdx);
-            }
+        } else if (strcmp(key.ptr, "TILESET_ENTRY") == 0) {
+            hasMultiTs = true;
+        } else if (strcmp(key.ptr, "TILESET_PNG") == 0 && val[0] != '\0') {
+            hasLegacyTs = true;
+        } else if (strcmp(key.ptr, "TILEMAP_WIDTH") == 0 || strcmp(key.ptr, "TILEMAP_CELL") == 0) {
+            hasTilemapData = true;
         }
     }
 
-    // 1. Si hay una escena XML activa definida, cargarla primero
+    // 1. Cargar escena XML activa si está definida
     if (activeXmlRel[0] != '\0') {
         char[512] fullXmlPath = 0;
         resolve_rel_to_project_file(filePath, activeXmlRel.ptr, fullXmlPath.ptr, fullXmlPath.length);
@@ -401,15 +402,107 @@ bool procshit_load_project(const(char)* filePath) {
             project_add_map(fullXmlPath.ptr);
         }
     }
-
-    // 2. Aplicar configuración de Tileset del archivo .procshit
-    tileset_set_tile_size_px(tsTileW, tsTileH);
-    tileset_set_tile_count(tsCount);
-    if (tilesetPngRel[0] != '\0') {
-        tileset_set_path_and_reload(tilesetPngRel.ptr, false);
-    } else {
-        tileset_reload_texture(false);
+    if (resPrefix[0] != '\0') {
+        strncpy(world.resourcesRelPath.ptr, resPrefix.ptr, world.resourcesRelPath.length - 1);
+        world.resourcesRelPath[world.resourcesRelPath.length - 1] = '\0';
     }
+
+    // 2. Pasada 2: Restaurar tilesets y celdas del tilemap definidos en .procshit
+    if (hasMultiTs) {
+        tileset_clear_all();
+    } else if (hasLegacyTs) {
+        tileset_clear_all();
+        tileset_add_slot("", 32, 32, 256, false);
+    }
+
+    int tmW = tilemap_get_width();
+    int tmH = tilemap_get_height();
+    bool clearedCells = false;
+    prefabs_clear_all_for_load();
+
+    pos = 0;
+    while (pos < bytesRead) {
+        char[1024] lineBuf = 0;
+        if (!read_next_kv_line(buffer, bytesRead, pos, lineBuf.ptr, lineBuf.length)) {
+            continue;
+        }
+        const(char)* eqPtr = strchr(lineBuf.ptr, '=');
+        if (eqPtr is null) continue;
+
+        char[128] key = 0;
+        const(char)* val = extract_kv(lineBuf.ptr, eqPtr, key.ptr, key.length);
+
+        if (strncmp(key.ptr, "PREFAB_", 7) == 0) {
+            prefabs_parse_procshit_line(key.ptr, val);
+            continue;
+        }
+
+        if (hasMultiTs && strcmp(key.ptr, "TILESET_ENTRY") == 0) {
+            int tsIdx = 0, tw = 32, th = 32, tc = 32;
+            const(char)* pathPtr = null;
+            if (parse_tileset_entry(val, tsIdx, tw, th, tc, &pathPtr) && tsIdx >= 0 && tsIdx < MAX_TILESETS) {
+                while (tileset_get_tileset_count() <= tsIdx) {
+                    tileset_add_slot("", 32, 32, 32, false);
+                }
+                tileset_set_tile_size_at(tsIdx, tw, th);
+                tileset_set_tile_count_at(tsIdx, tc);
+                tileset_set_path_and_reload_at(tsIdx, pathPtr, false);
+            }
+        } else if (hasMultiTs && strcmp(key.ptr, "TILESET_ENTRY_INACTIVE") == 0) {
+            const(char)* comma = strchr(val, ',');
+            if (comma !is null) {
+                int tsIdx = atoi(val);
+                parse_inactive_list_for_ts(tsIdx, comma + 1);
+            }
+        } else if (!hasMultiTs && hasLegacyTs) {
+            if (strcmp(key.ptr, "TILESET_PNG") == 0) {
+                tileset_set_path_and_reload_at(0, val, false);
+            } else if (strcmp(key.ptr, "TILESET_TILE_WIDTH") == 0) {
+                tileset_set_tile_size_at(0, atoi(val), tileset_get_tile_height_at(0));
+            } else if (strcmp(key.ptr, "TILESET_TILE_HEIGHT") == 0) {
+                tileset_set_tile_size_at(0, tileset_get_tile_width_at(0), atoi(val));
+            } else if (strcmp(key.ptr, "TILESET_TILE_COUNT") == 0) {
+                tileset_set_tile_count_at(0, atoi(val));
+            } else if (strcmp(key.ptr, "TILESET_INACTIVE") == 0) {
+                parse_inactive_list_for_ts(0, val);
+            }
+        }
+
+        if (hasTilemapData) {
+            if (strcmp(key.ptr, "TILEMAP_WIDTH") == 0) {
+                tmW = atoi(val);
+                tilemap_set_size(tmW, tmH);
+                if (!clearedCells) {
+                    tilemap_clear();
+                    clearedCells = true;
+                }
+            } else if (strcmp(key.ptr, "TILEMAP_HEIGHT") == 0) {
+                tmH = atoi(val);
+                tilemap_set_size(tmW, tmH);
+                if (!clearedCells) {
+                    tilemap_clear();
+                    clearedCells = true;
+                }
+            } else if (strcmp(key.ptr, "TILEMAP_CELL") == 0) {
+                if (!clearedCells) {
+                    tilemap_clear();
+                    clearedCells = true;
+                }
+                int col = 0, row = 0, tsIdx = 0, tileIdx = -1;
+                if (parse_four_ints(val, col, row, tsIdx, tileIdx)) {
+                    tilemap_set_cell(col, row, tile_pack(tsIdx, tileIdx));
+                } else if (parse_three_ints(val, col, row, tileIdx)) {
+                    tilemap_set_cell(col, row, tile_pack(0, tileIdx));
+                }
+            }
+        }
+    }
+
+    if (tileset_get_tileset_count() == 0) {
+        tileset_add_slot("", 32, 32, 32, false);
+    }
+    tileset_reload_all_textures(false);
+    prefabs_finalize_after_load();
 
     // 3. Si hay un archivo JSON de diálogos definido, cargarlo en el Dialogs Editor
     if (activeJsonRel[0] != '\0') {
@@ -450,7 +543,38 @@ void resolve_rel_to_project_file(
     path_resolve_for_loading(relPath, projDir.ptr, "./", outFull, maxLen);
 }
 
-void parse_inactive_list(const(char)* str) {
+bool read_next_kv_line(const(char)* buffer, size_t bytesRead, ref size_t pos, char* outBuf, size_t maxLen) {
+    if (pos >= bytesRead) return false;
+
+    size_t lineStart = pos;
+    while (pos < bytesRead && buffer[pos] != '\n' && buffer[pos] != '\r') {
+        pos++;
+    }
+    size_t lineLen = pos - lineStart;
+    while (pos < bytesRead && (buffer[pos] == '\n' || buffer[pos] == '\r')) {
+        pos++;
+    }
+    if (lineLen == 0) return false;
+
+    size_t copyLen = (lineLen < maxLen - 1) ? lineLen : (maxLen - 1);
+    for (size_t k = 0; k < copyLen; k++) {
+        outBuf[k] = buffer[lineStart + k];
+    }
+    outBuf[copyLen] = '\0';
+    return outBuf[0] != '#';
+}
+
+const(char)* extract_kv(const(char)* lineBuf, const(char)* eqPtr, char* keyBuf, size_t keyMax) {
+    size_t keyLen = cast(size_t)(eqPtr - lineBuf);
+    if (keyLen >= keyMax) keyLen = keyMax - 1;
+    for (size_t k = 0; k < keyLen; k++) {
+        keyBuf[k] = lineBuf[k];
+    }
+    keyBuf[keyLen] = '\0';
+    return eqPtr + 1;
+}
+
+void parse_inactive_list_for_ts(int tsIdx, const(char)* str) {
     if (str is null || str[0] == '\0') return;
     int currentVal = 0;
     bool inNumber = false;
@@ -461,15 +585,61 @@ void parse_inactive_list(const(char)* str) {
             inNumber = true;
         } else {
             if (inNumber) {
-                tileset_set_tile_active(currentVal, false);
+                tileset_set_tile_active_at(tsIdx, currentVal, false);
                 currentVal = 0;
                 inNumber = false;
             }
         }
     }
     if (inNumber) {
-        tileset_set_tile_active(currentVal, false);
+        tileset_set_tile_active_at(tsIdx, currentVal, false);
     }
+}
+
+bool parse_tileset_entry(const(char)* str, out int idx, out int tw, out int th, out int tc, const(char)** outPath) {
+    idx = 0;
+    tw = 32;
+    th = 32;
+    tc = 32;
+    *outPath = "";
+    if (str is null || str[0] == '\0') return false;
+
+    const(char)* p1 = strchr(str, ',');
+    if (p1 is null) return false;
+    const(char)* p2 = strchr(p1 + 1, ',');
+    if (p2 is null) return false;
+    const(char)* p3 = strchr(p2 + 1, ',');
+    if (p3 is null) return false;
+    const(char)* p4 = strchr(p3 + 1, ',');
+    if (p4 is null) return false;
+
+    idx = atoi(str);
+    tw = atoi(p1 + 1);
+    th = atoi(p2 + 1);
+    tc = atoi(p3 + 1);
+    *outPath = p4 + 1;
+    return true;
+}
+
+bool parse_four_ints(const(char)* str, out int a, out int b, out int c, out int d) {
+    a = 0;
+    b = 0;
+    c = 0;
+    d = 0;
+    if (str is null || str[0] == '\0') return false;
+
+    const(char)* p1 = strchr(str, ',');
+    if (p1 is null) return false;
+    const(char)* p2 = strchr(p1 + 1, ',');
+    if (p2 is null) return false;
+    const(char)* p3 = strchr(p2 + 1, ',');
+    if (p3 is null) return false;
+
+    a = atoi(str);
+    b = atoi(p1 + 1);
+    c = atoi(p2 + 1);
+    d = atoi(p3 + 1);
+    return true;
 }
 
 bool parse_three_ints(const(char)* str, out int a, out int b, out int c) {

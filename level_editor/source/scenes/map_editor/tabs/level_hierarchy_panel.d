@@ -9,6 +9,17 @@ import core.stdc.stdio : snprintf;
 import core.stdc.string : strcmp, strncpy;
 import scenes.map_editor.level_data;
 import scenes.map_editor.gui_widgets;
+import scenes.map_editor.tabs.level_editor_tab : level_editor_get_camera_center;
+import scenes.map_editor.tabs.prefabs_tab :
+    MAX_PREFABS,
+    prefabs_get_count,
+    prefabs_is_used,
+    prefabs_get_name,
+    prefabs_get_xml_tag,
+    prefabs_get_active_index,
+    prefabs_set_active_index,
+    prefabs_instantiate_into_world,
+    prefabs_create_from_world_object;
 
 public:
 
@@ -95,6 +106,82 @@ void draw_top_add_bar(float x, ref float y, float w, ref LevelWorld world) {
     }
 
     y += 32.0f;
+
+    // Presets rápidos para entidades del juego (Player, Enemy, NPC, Chest, SceneChanger)
+    Vector2 spawnCenter = level_editor_get_camera_center();
+    float presetW = (w - 16.0f) / 5.0f;
+    if (GuiButton(Rectangle(x, y, presetW, 24.0f), "+ Player")) {
+        level_world_push_undo(world);
+        level_world_add_player_preset(world, spawnCenter);
+    }
+    if (GuiButton(Rectangle(x + (presetW + 4.0f) * 1.0f, y, presetW, 24.0f), "+ Enemigo")) {
+        level_world_push_undo(world);
+        level_world_add_enemy_preset(world, spawnCenter);
+    }
+    if (GuiButton(Rectangle(x + (presetW + 4.0f) * 2.0f, y, presetW, 24.0f), "+ NPC")) {
+        level_world_push_undo(world);
+        level_world_add_npc_preset(world, spawnCenter);
+    }
+    if (GuiButton(Rectangle(x + (presetW + 4.0f) * 3.0f, y, presetW, 24.0f), "+ Cofre")) {
+        level_world_push_undo(world);
+        level_world_add_chest_preset(world, spawnCenter);
+    }
+    if (GuiButton(Rectangle(x + (presetW + 4.0f) * 4.0f, y, presetW, 24.0f), "+ Portal")) {
+        level_world_push_undo(world);
+        level_world_add_scene_changer_preset(world, spawnCenter);
+    }
+    y += 28.0f;
+
+    // Selector e instanciador de Prefabs definidos en la pestaña 'Prefabs' (.procshit)
+    int pfActive = prefabs_get_active_index();
+    float navW = 26.0f;
+    float midW = w - navW * 2.0f - 8.0f;
+    if (GuiButton(Rectangle(x, y, navW, 24.0f), "<")) {
+        int cur = pfActive;
+        for (int step = 1; step < MAX_PREFABS; step++) {
+            int cand = (cur - step + MAX_PREFABS) % MAX_PREFABS;
+            if (prefabs_is_used(cand)) {
+                prefabs_set_active_index(cand);
+                break;
+            }
+        }
+    }
+
+    char[128] pfLabel;
+    if (prefabs_is_used(pfActive)) {
+        snprintf(pfLabel.ptr, pfLabel.length, "Prefab: [%s] %s", prefabs_get_xml_tag(pfActive), prefabs_get_name(pfActive));
+    } else {
+        snprintf(pfLabel.ptr, pfLabel.length, "(Sin Prefabs en .procshit)");
+    }
+    DrawRectangleRec(Rectangle(x + navW + 4.0f, y, midW, 24.0f), Color(32, 38, 48, 255));
+    GuiLabel(Rectangle(x + navW + 10.0f, y, midW - 12.0f, 24.0f), pfLabel.ptr);
+
+    if (GuiButton(Rectangle(x + w - navW, y, navW, 24.0f), ">")) {
+        int cur = pfActive;
+        for (int step = 1; step < MAX_PREFABS; step++) {
+            int cand = (cur + step) % MAX_PREFABS;
+            if (prefabs_is_used(cand)) {
+                prefabs_set_active_index(cand);
+                break;
+            }
+        }
+    }
+    y += 26.0f;
+
+    float objBtnW = (w - 4.0f) * 0.5f;
+    if (GuiButton(Rectangle(x, y, objBtnW, 24.0f), GuiIconText(GuiIconName.ICON_FILE_ADD, "+ Instanciar Prefab"))) {
+        if (prefabs_is_used(pfActive)) {
+            gui_clear_active_field();
+            prefabs_instantiate_into_world(pfActive, world, spawnCenter);
+        }
+    }
+    if (GuiButton(Rectangle(x + objBtnW + 4.0f, y, objBtnW, 24.0f), GuiIconText(GuiIconName.ICON_FILE_SAVE, "Guardar a Prefabs"))) {
+        if (world.selectedUid >= 0) {
+            gui_clear_active_field();
+            prefabs_create_from_world_object(world, world.selectedUid);
+        }
+    }
+    y += 28.0f;
 
     // Si el objeto seleccionado actualmente es un Struct, ofrecemos botón rápido para agregar hijo adentro
     LevelObject* sel = level_world_find(world, world.selectedUid);
@@ -373,13 +460,17 @@ void draw_single_object_row(
     }
 
     int objIcon = get_object_icon(obj.type);
+    const(char)* typeLabel = level_object_type_label(obj.type);
+    if (obj.type == ObjectType.Struct && obj.xmlTag[0] != '\0') {
+        typeLabel = obj.xmlTag.ptr;
+    }
     char[128] rowLabel;
     snprintf(
         rowLabel.ptr,
         rowLabel.length,
         "%s [%s]",
         obj.id.ptr,
-        level_object_type_label(obj.type)
+        typeLabel
     );
 
     bool isSelected = (world.selectedUid == obj.uid);

@@ -94,6 +94,7 @@ enum int FIELD_SPRITE_ROTATION  = 4207;
 enum int FIELD_SPRITE_DELAY     = 4208;
 enum int FIELD_SPRITE_ZINDEX    = 4209;
 
+enum int FIELD_STRUCT_POS       = 4300;
 enum int FIELD_STRUCT_BASE      = 5000;
 
 __gshared Vector2 inspector_scroll = Vector2(0, 0);
@@ -107,7 +108,7 @@ float estimate_inspector_height(ref const(LevelObject) obj) {
         case ObjectType.Sprite:
             return baseH + 400.0f;
         case ObjectType.Struct:
-            return baseH + 170.0f + obj.customStruct.propCount * 95.0f;
+            return baseH + 260.0f + obj.customStruct.propCount * 95.0f;
     }
 }
 
@@ -197,6 +198,40 @@ void draw_sprite_properties(float x, ref float y, float w, ref SpriteData sprite
 }
 
 void draw_struct_properties(float x, ref float y, float w, ref LevelWorld world, ref LevelObject obj) {
+    gui_section_header(x, y, w, "Transform y Preset de Entidad");
+
+    Vector2 curAnchor;
+    if (level_world_get_struct_anchor(world, obj.uid, curAnchor)) {
+        Vector2 editedAnchor = curAnchor;
+        gui_labeled_vec2(x, y, w, "Posicion", &editedAnchor, FIELD_STRUCT_POS);
+        float dx = editedAnchor.x - curAnchor.x;
+        float dy = editedAnchor.y - curAnchor.y;
+        if (dx > 0.001f || dx < -0.001f || dy > 0.001f || dy < -0.001f) {
+            level_world_translate_struct(world, obj.uid, Vector2(dx, dy));
+        }
+    }
+
+    float presetW = (w - 8.0f) / 3.0f;
+    if (GuiButton(Rectangle(x, y, presetW, 24.0f), "Aplicar NPC")) {
+        level_world_push_undo(world);
+        snprintf(obj.xmlTag.ptr, obj.xmlTag.length, "NPC");
+        snprintf(obj.group.ptr, obj.group.length, "npcs");
+        level_struct_apply_npc_props(obj.customStruct);
+    }
+    if (GuiButton(Rectangle(x + presetW + 4.0f, y, presetW, 24.0f), "Aplicar Chest")) {
+        level_world_push_undo(world);
+        snprintf(obj.xmlTag.ptr, obj.xmlTag.length, "Chest");
+        snprintf(obj.group.ptr, obj.group.length, "chests");
+        level_struct_apply_chest_props(obj.customStruct);
+    }
+    if (GuiButton(Rectangle(x + (presetW + 4.0f) * 2.0f, y, presetW, 24.0f), "Aplicar SceneCh")) {
+        level_world_push_undo(world);
+        snprintf(obj.xmlTag.ptr, obj.xmlTag.length, "SceneChanger");
+        snprintf(obj.group.ptr, obj.group.length, "triggers");
+        level_struct_apply_scene_changer_props(obj.customStruct);
+    }
+    y += 30.0f;
+
     gui_section_header(x, y, w, "Elementos Internos del Struct");
 
     float thirdW = (w - 8.0f) / 3.0f;

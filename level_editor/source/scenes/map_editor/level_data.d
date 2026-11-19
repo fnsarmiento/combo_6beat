@@ -10,7 +10,7 @@ import engine.path_utils;
 
 public:
 
-enum MAX_LEVEL_OBJECTS = 256;
+enum MAX_LEVEL_OBJECTS = 1024;
 enum MAX_CUSTOM_PROPS = 16;
 
 enum ObjectType : int {
@@ -114,6 +114,10 @@ struct LevelWorld {
     char[512] xmlFilePath      = 0;
     char[512] xmlDir           = 0;
     char[256] resourcesRelPath = 0;
+    char[256] dialogsRelPath   = 0;
+    char[64] startDialogId     = 0;
+    float spawnX               = -1.0f;
+    float spawnY               = -1.0f;
 }
 
 /**
@@ -157,6 +161,8 @@ void scene_resolve_resource_path(const(char)* relPath, char* outFullPath, size_t
 void level_world_init(ref LevelWorld world) {
     level_world_clear(world);
     snprintf(world.resourcesRelPath.ptr, world.resourcesRelPath.length, "../");
+    world.dialogsRelPath[0] = '\0';
+    world.startDialogId[0] = '\0';
     world.xmlFilePath[0] = '\0';
     world.xmlDir[0] = '\0';
 
@@ -289,6 +295,320 @@ int level_world_add_object(ref LevelWorld world, ObjectType type, int parentUid 
 
     world.selectedUid = uid;
     return uid;
+}
+
+/**
+ * Asegura una propiedad custom dentro de un StructData (si ya existe la key, opcionalmente no la duplica).
+ */
+void level_struct_ensure_prop(
+    ref StructData st,
+    const(char)* keyName,
+    CustomValueType type,
+    const(char)* strVal = "",
+    int intVal = 0,
+    float floatVal = 0.0f,
+    bool boolVal = false
+) {
+    for (int i = 0; i < MAX_CUSTOM_PROPS; i++) {
+        if (st.props[i].used && strcmp(st.props[i].key.ptr, keyName) == 0) {
+            return;
+        }
+    }
+    int idx = level_struct_add_custom_prop(st, keyName, type);
+    if (idx >= 0) {
+        st.props[idx].intVal = intVal;
+        st.props[idx].floatVal = floatVal;
+        st.props[idx].boolVal = boolVal;
+        if (strVal !is null) {
+            strncpy(st.props[idx].stringVal.ptr, strVal, st.props[idx].stringVal.length - 1);
+            st.props[idx].stringVal[st.props[idx].stringVal.length - 1] = '\0';
+        }
+    }
+}
+
+void level_struct_apply_npc_props(ref StructData st) {
+    level_struct_ensure_prop(st, "dialogId", CustomValueType.String, "__start__");
+    level_struct_ensure_prop(st, "dialogFile", CustomValueType.String, "dialogs/debug.json");
+    level_struct_ensure_prop(st, "itemId", CustomValueType.String, "");
+    level_struct_ensure_prop(st, "itemCount", CustomValueType.Int, "", 1);
+    level_struct_ensure_prop(st, "autoTrigger", CustomValueType.Bool, "", 0, 0.0f, false);
+    level_struct_ensure_prop(st, "songScene", CustomValueType.String, "");
+    level_struct_ensure_prop(st, "type", CustomValueType.String, "GameObject");
+}
+
+void level_struct_apply_chest_props(ref StructData st) {
+    level_struct_ensure_prop(st, "itemId", CustomValueType.String, "potion_small");
+    level_struct_ensure_prop(st, "itemCount", CustomValueType.Int, "", 1);
+    level_struct_ensure_prop(st, "requiredItem", CustomValueType.String, "");
+    level_struct_ensure_prop(st, "dialogId", CustomValueType.String, "");
+    level_struct_ensure_prop(st, "opened", CustomValueType.Bool, "", 0, 0.0f, false);
+    level_struct_ensure_prop(st, "type", CustomValueType.String, "GameObject");
+}
+
+void level_struct_apply_scene_changer_props(ref StructData st) {
+    level_struct_ensure_prop(st, "targetScene", CustomValueType.String, "resources/scenes/a.xml");
+    level_struct_ensure_prop(st, "spawnX", CustomValueType.Float, "", 0, 160.0f);
+    level_struct_ensure_prop(st, "spawnY", CustomValueType.Float, "", 0, 160.0f);
+    level_struct_ensure_prop(st, "triggerOnTouch", CustomValueType.Bool, "", 0, 0.0f, true);
+    level_struct_ensure_prop(st, "requiredItem", CustomValueType.String, "");
+    level_struct_ensure_prop(st, "requiredFlag", CustomValueType.String, "");
+    level_struct_ensure_prop(st, "type", CustomValueType.String, "GameObject");
+}
+
+private int add_child_box_helper(
+    ref LevelWorld world,
+    int parentUid,
+    const(char)* idStr,
+    const(char)* xmlTag,
+    const(char)* groupStr,
+    Vector2 pos,
+    Vector2 size,
+    int layer,
+    int mask
+) {
+    int uid = level_world_add_object(world, ObjectType.Box, parentUid);
+    LevelObject* child = level_world_find(world, uid);
+    if (child !is null) {
+        snprintf(child.id.ptr, child.id.length, "%s", idStr);
+        snprintf(child.xmlTag.ptr, child.xmlTag.length, "%s", xmlTag);
+        snprintf(child.group.ptr, child.group.length, "%s", groupStr);
+        child.box.position = pos;
+        child.box.size = size;
+        child.box.layer = layer;
+        child.box.mask = mask;
+    }
+    return uid;
+}
+
+private int add_child_sprite_helper(
+    ref LevelWorld world,
+    int parentUid,
+    const(char)* idStr,
+    const(char)* groupStr,
+    const(char)* resPath,
+    Vector2 pos,
+    int zIndex,
+    int rows,
+    int cols
+) {
+    int uid = level_world_add_object(world, ObjectType.Sprite, parentUid);
+    LevelObject* child = level_world_find(world, uid);
+    if (child !is null) {
+        snprintf(child.id.ptr, child.id.length, "%s", idStr);
+        snprintf(child.group.ptr, child.group.length, "%s", groupStr);
+        snprintf(child.sprite.resourcePath.ptr, child.sprite.resourcePath.length, "%s", resPath);
+        child.sprite.position = pos;
+        child.sprite.zIndex = zIndex;
+        child.sprite.rows = rows;
+        child.sprite.cols = cols;
+        child.sprite.centerPosition = true;
+        if (resPath[0] != '\0') {
+            level_sprite_reload_texture(child.sprite);
+        }
+    }
+    return uid;
+}
+
+/**
+ * Crea un Struct preset de tipo <Player> con Body (12x12) y Sprite listos para editar.
+ */
+int level_world_add_player_preset(ref LevelWorld world, Vector2 pos) {
+    int uid = level_world_add_object(world, ObjectType.Struct, -1);
+    LevelObject* pl = level_world_find(world, uid);
+    if (pl is null) return -1;
+
+    snprintf(pl.id.ptr, pl.id.length, "player");
+    snprintf(pl.xmlTag.ptr, pl.xmlTag.length, "Player");
+    snprintf(pl.group.ptr, pl.group.length, "Player");
+    pl.customStruct = StructData.init;
+    level_struct_ensure_prop(pl.customStruct, "speed", CustomValueType.Float, "", 0, 92.0f);
+    level_struct_ensure_prop(pl.customStruct, "type", CustomValueType.String, "Struct");
+
+    add_child_box_helper(world, uid, "player_body", "Body", "Player", pos, Vector2(12.0f, 12.0f), 1, 1);
+    add_child_sprite_helper(
+        world, uid, "player_sprite", "Player",
+        "sprites/player/The Female Adventurer - Free/Idle/Idle_Down.png",
+        Vector2(pos.x + 6.0f, pos.y + 6.0f), 150, 1, 8
+    );
+
+    world.selectedUid = uid;
+    return uid;
+}
+
+/**
+ * Crea un Struct preset de tipo <Enemy> con Body, Area y Sprite listos para editar.
+ */
+int level_world_add_enemy_preset(ref LevelWorld world, Vector2 pos) {
+    int uid = level_world_add_object(world, ObjectType.Struct, -1);
+    LevelObject* en = level_world_find(world, uid);
+    if (en is null) return -1;
+
+    snprintf(en.id.ptr, en.id.length, "enemy_%d", uid);
+    snprintf(en.xmlTag.ptr, en.xmlTag.length, "Enemy");
+    snprintf(en.group.ptr, en.group.length, "Enemies");
+    en.customStruct = StructData.init;
+    level_struct_apply_npc_props(en.customStruct);
+
+    char[64] bodyId, areaId, sprId;
+    snprintf(bodyId.ptr, bodyId.length, "enemy_%d_body", uid);
+    snprintf(areaId.ptr, areaId.length, "enemy_%d_area", uid);
+    snprintf(sprId.ptr, sprId.length, "enemy_%d_sprite", uid);
+
+    add_child_box_helper(world, uid, bodyId.ptr, "Body", "Enemies", pos, Vector2(28.0f, 28.0f), 1, 0);
+    add_child_box_helper(world, uid, areaId.ptr, "Area", "Enemies", Vector2(pos.x - 8.0f, pos.y - 8.0f), Vector2(44.0f, 44.0f), 0, 2);
+    add_child_sprite_helper(
+        world, uid, sprId.ptr, "Enemies",
+        "sprites/bosses/bear.png",
+        Vector2(pos.x + 14.0f, pos.y + 6.0f), 150, 3, 3
+    );
+
+    world.selectedUid = uid;
+    return uid;
+}
+
+/**
+ * Crea un Struct preset de tipo <NPC> con Body, Area y Sprite listos para editar.
+ */
+int level_world_add_npc_preset(ref LevelWorld world, Vector2 pos) {
+    int uid = level_world_add_object(world, ObjectType.Struct, -1);
+    LevelObject* npc = level_world_find(world, uid);
+    if (npc is null) return -1;
+
+    snprintf(npc.id.ptr, npc.id.length, "npc_%d", uid);
+    snprintf(npc.xmlTag.ptr, npc.xmlTag.length, "NPC");
+    snprintf(npc.group.ptr, npc.group.length, "NPCs");
+    npc.customStruct = StructData.init;
+    level_struct_apply_npc_props(npc.customStruct);
+
+    char[64] bodyId, areaId, sprId;
+    snprintf(bodyId.ptr, bodyId.length, "npc_%d_body", uid);
+    snprintf(areaId.ptr, areaId.length, "npc_%d_area", uid);
+    snprintf(sprId.ptr, sprId.length, "npc_%d_sprite", uid);
+
+    add_child_box_helper(world, uid, bodyId.ptr, "Body", "NPCs", pos, Vector2(32.0f, 32.0f), 1, 0);
+    add_child_box_helper(world, uid, areaId.ptr, "Area", "NPCs", Vector2(pos.x - 6.0f, pos.y - 6.0f), Vector2(44.0f, 44.0f), 0, 2);
+    add_child_sprite_helper(
+        world, uid, sprId.ptr, "NPCs",
+        "sprites/player/The Female Adventurer - Free/Idle/Idle_Down.png",
+        Vector2(pos.x + 16.0f, pos.y + 16.0f), 150, 1, 8
+    );
+
+    world.selectedUid = uid;
+    return uid;
+}
+
+/**
+ * Crea un Struct preset de tipo <Chest> (Cofre) con Body, Area y Sprite listos para editar.
+ */
+int level_world_add_chest_preset(ref LevelWorld world, Vector2 pos) {
+    int uid = level_world_add_object(world, ObjectType.Struct, -1);
+    LevelObject* chest = level_world_find(world, uid);
+    if (chest is null) return -1;
+
+    snprintf(chest.id.ptr, chest.id.length, "chest_%d", uid);
+    snprintf(chest.xmlTag.ptr, chest.xmlTag.length, "Chest");
+    snprintf(chest.group.ptr, chest.group.length, "Chests");
+    chest.customStruct = StructData.init;
+    level_struct_apply_chest_props(chest.customStruct);
+
+    char[64] bodyId, areaId, sprId;
+    snprintf(bodyId.ptr, bodyId.length, "chest_%d_body", uid);
+    snprintf(areaId.ptr, areaId.length, "chest_%d_area", uid);
+    snprintf(sprId.ptr, sprId.length, "chest_%d_sprite", uid);
+
+    add_child_box_helper(world, uid, bodyId.ptr, "Body", "Chests", pos, Vector2(32.0f, 32.0f), 1, 0);
+    add_child_box_helper(world, uid, areaId.ptr, "Area", "Chests", Vector2(pos.x - 6.0f, pos.y - 6.0f), Vector2(44.0f, 44.0f), 0, 2);
+    add_child_sprite_helper(world, uid, sprId.ptr, "Chests", "", Vector2(pos.x + 16.0f, pos.y + 16.0f), 140, 1, 1);
+
+    world.selectedUid = uid;
+    return uid;
+}
+
+/**
+ * Crea un Struct preset de tipo <SceneChanger> con Area y Sprite listos para editar.
+ */
+int level_world_add_scene_changer_preset(ref LevelWorld world, Vector2 pos) {
+    int uid = level_world_add_object(world, ObjectType.Struct, -1);
+    LevelObject* changer = level_world_find(world, uid);
+    if (changer is null) return -1;
+
+    snprintf(changer.id.ptr, changer.id.length, "changer_%d", uid);
+    snprintf(changer.xmlTag.ptr, changer.xmlTag.length, "SceneChanger");
+    snprintf(changer.group.ptr, changer.group.length, "SceneChangers");
+    changer.customStruct = StructData.init;
+    level_struct_apply_scene_changer_props(changer.customStruct);
+
+    char[64] areaId, sprId;
+    snprintf(areaId.ptr, areaId.length, "changer_%d_area", uid);
+    snprintf(sprId.ptr, sprId.length, "changer_%d_sprite", uid);
+
+    add_child_box_helper(world, uid, areaId.ptr, "Area", "SceneChangers", pos, Vector2(32.0f, 64.0f), 0, 2);
+    add_child_sprite_helper(world, uid, sprId.ptr, "SceneChangers", "", Vector2(pos.x + 16.0f, pos.y + 32.0f), 120, 1, 1);
+
+    world.selectedUid = uid;
+    return uid;
+}
+
+/**
+ * Busca la posición de referencia (ancla) de un Struct tomando su primer hijo Box o Sprite.
+ */
+bool level_world_get_struct_anchor(ref const(LevelWorld) world, int structUid, out Vector2 outPos) {
+    outPos = Vector2(0.0f, 0.0f);
+    for (int i = 0; i < MAX_LEVEL_OBJECTS; i++) {
+        if (!world.objects[i].used || world.objects[i].parentUid != structUid) {
+            continue;
+        }
+        if (world.objects[i].type == ObjectType.Box) {
+            outPos = world.objects[i].box.position;
+            return true;
+        }
+    }
+    for (int i = 0; i < MAX_LEVEL_OBJECTS; i++) {
+        if (!world.objects[i].used || world.objects[i].parentUid != structUid) {
+            continue;
+        }
+        if (world.objects[i].type == ObjectType.Sprite) {
+            outPos = world.objects[i].sprite.position;
+            return true;
+        } else if (world.objects[i].type == ObjectType.Struct) {
+            if (level_world_get_struct_anchor(world, world.objects[i].uid, outPos)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Traslada todos los hijos (Box, Sprite y sub-Structs) de un Struct por el delta indicado.
+ */
+void level_world_translate_struct(ref LevelWorld world, int structUid, Vector2 delta) {
+    for (int i = 0; i < MAX_LEVEL_OBJECTS; i++) {
+        if (!world.objects[i].used || world.objects[i].parentUid != structUid) {
+            continue;
+        }
+        if (world.objects[i].type == ObjectType.Box) {
+            world.objects[i].box.position.x += delta.x;
+            world.objects[i].box.position.y += delta.y;
+        } else if (world.objects[i].type == ObjectType.Sprite) {
+            world.objects[i].sprite.position.x += delta.x;
+            world.objects[i].sprite.position.y += delta.y;
+        } else if (world.objects[i].type == ObjectType.Struct) {
+            level_world_translate_struct(world, world.objects[i].uid, delta);
+        }
+    }
+}
+
+/**
+ * Busca el valor string de una propiedad custom en un Struct por su clave.
+ */
+const(char)* level_struct_find_prop_str(ref const(StructData) st, const(char)* keyName) {
+    for (int i = 0; i < MAX_CUSTOM_PROPS; i++) {
+        if (st.props[i].used && strcmp(st.props[i].key.ptr, keyName) == 0) {
+            return st.props[i].stringVal.ptr;
+        }
+    }
+    return null;
 }
 
 /**

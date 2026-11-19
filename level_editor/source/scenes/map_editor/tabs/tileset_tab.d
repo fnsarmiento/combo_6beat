@@ -10,34 +10,66 @@ import core.stdc.string : strncpy;
 import engine.tinyfd : open_png_file_dialog;
 import scenes.map_editor.gui_widgets;
 import scenes.map_editor.level_data : scene_to_relative_resource_path, scene_resolve_resource_path;
+import scenes.map_editor.tabs.tilemap_tab : tilemap_remap_after_tileset_removed;
 
 public:
 
+enum int MAX_TILESETS      = 16;
 enum int MAX_TILESET_TILES = 1024;
 
-/**
- * Inicializa el estado del único Tileset compartido por el Tilemap.
- */
-void tileset_tab_init() {
-    unload_tileset_texture();
-    tileset_path[0] = '\0';
-    tile_width_px = 32;
-    tile_height_px = 32;
-    tile_count = 32;
-    selected_tileset_tile = 0;
-    tileset_scroll = Vector2(0, 0);
-    undo_count = 0;
-
-    for (int i = 0; i < MAX_TILESET_TILES; i++) {
-        tile_active[i] = true;
-    }
+struct TilesetSlot {
+    bool used = false;
+    char[256] path = 0;
+    Texture2D texture;
+    bool hasTexture = false;
+    int tileWidthPx = 32;
+    int tileHeightPx = 32;
+    int tileCount = 32;
+    bool[MAX_TILESET_TILES] tileActive;
 }
 
 /**
- * Libera la textura del Tileset al cerrar.
+ * Empaqueta (tilesetIdx, localTileId) en un entero positivo para almacenar en celdas del Tilemap.
+ * Para tilesetIdx == 0 coincide exactamente con localTileId (retrocompatible).
+ */
+int tile_pack(int tilesetIdx, int localTileId) {
+    if (localTileId < 0) {
+        return -1;
+    }
+    int ts = (tilesetIdx < 0) ? 0 : (tilesetIdx & 0x7FFF);
+    return (ts << 16) | (localTileId & 0xFFFF);
+}
+
+int tile_unpack_tileset(int packed) {
+    if (packed < 0) {
+        return -1;
+    }
+    return (packed >> 16) & 0x7FFF;
+}
+
+int tile_unpack_index(int packed) {
+    if (packed < 0) {
+        return -1;
+    }
+    return packed & 0xFFFF;
+}
+
+/**
+ * Inicializa la pestaña Tileset con 1 slot vacío por defecto.
+ */
+void tileset_tab_init() {
+    tileset_clear_all();
+    tileset_add_slot("", 32, 32, 32, false);
+    selected_tileset_tile = 0;
+    tileset_scroll = Vector2(0, 0);
+    undo_count = 0;
+}
+
+/**
+ * Libera todas las texturas de tilesets al cerrar.
  */
 void tileset_tab_close() {
-    unload_tileset_texture();
+    tileset_clear_all();
 }
 
 /**
@@ -49,157 +81,322 @@ void tileset_tab_undo() {
     }
     undo_count--;
     TilesetSnapshot* snap = &undo_stack[undo_count];
-    tile_width_px = snap.tileWidthPx;
-    tile_height_px = snap.tileHeightPx;
-    tile_count = snap.tileCount;
-    for (int i = 0; i < MAX_TILESET_TILES; i++) {
-        tile_active[i] = snap.tileActive[i];
+    int ts = snap.slotIndex;
+    if (ts < 0 || ts >= tileset_count) {
+        return;
     }
+    tileset_slots[ts].tileWidthPx = snap.tileWidthPx;
+    tileset_slots[ts].tileHeightPx = snap.tileHeightPx;
+    tileset_slots[ts].tileCount = snap.tileCount;
+    for (int i = 0; i < MAX_TILESET_TILES; i++) {
+        tileset_slots[ts].tileActive[i] = snap.tileActive[i];
+    }
+    active_tileset_index = ts;
 }
 
-/**
- * Retorna la cantidad total de tiles en el Tileset.
- */
-int tileset_get_tile_count() {
-    return tile_count;
+// -----------------------------------------------------------------------------
+// API Multi-Tileset
+// -----------------------------------------------------------------------------
+
+int tileset_get_tileset_count() {
+    return tileset_count;
 }
 
-/**
- * Establece la cantidad total de tiles en el Tileset.
- */
-void tileset_set_tile_count(int count) {
+int tileset_get_active_index() {
+    return active_tileset_index;
+}
+
+void tileset_set_active_index(int idx) {
+    if (tileset_count <= 0) {
+        active_tileset_index = 0;
+        return;
+    }
+    if (idx < 0) idx = 0;
+    if (idx >= tileset_count) idx = tileset_count - 1;
+    active_tileset_index = idx;
+    selected_tileset_tile = 0;
+}
+
+void tileset_clear_all() {
+    for (int i = 0; i < MAX_TILESETS; i++) {
+        unload_slot_texture(i);
+        tileset_slots[i] = TilesetSlot.init;
+        for (int t = 0; t < MAX_TILESET_TILES; t++) {
+            tileset_slots[i].tileActive[t] = true;
+        }
+    }
+    tileset_count = 0;
+    active_tileset_index = 0;
+    selected_tileset_tile = 0;
+}
+
+int tileset_add_slot(const(char)* relPath, int tw, int th, int count, bool autoCalcCount = false) {
+    if (tileset_count >= MAX_TILESETS) {
+        return -1;
+    }
+    int idx = tileset_count++;
+    tileset_slots[idx] = TilesetSlot.init;
+    tileset_slots[idx].used = true;
+    tileset_slots[idx].tileWidthPx = (tw > 0) ? tw : 32;
+    tileset_slots[idx].tileHeightPx = (th > 0) ? th : 32;
     if (count < 1) count = 1;
     if (count > MAX_TILESET_TILES) count = MAX_TILESET_TILES;
-    tile_count = count;
+    tileset_slots[idx].tileCount = count;
+    for (int t = 0; t < MAX_TILESET_TILES; t++) {
+        tileset_slots[idx].tileActive[t] = true;
+    }
+
+    if (relPath !is null && relPath[0] != '\0') {
+        strncpy(tileset_slots[idx].path.ptr, relPath, tileset_slots[idx].path.length - 1);
+        tileset_slots[idx].path[tileset_slots[idx].path.length - 1] = '\0';
+        tileset_reload_texture_at(idx, autoCalcCount);
+    }
+    return idx;
 }
 
-/**
- * Retorna el tamaño en píxeles de cada tile (ancho, alto).
- */
-int tileset_get_tile_width_px() {
-    return tile_width_px;
-}
-
-int tileset_get_tile_height_px() {
-    return tile_height_px;
-}
-
-void tileset_set_tile_size_px(int w, int h) {
-    tile_width_px = (w > 0) ? w : 32;
-    tile_height_px = (h > 0) ? h : 32;
-}
-
-/**
- * Retorna si un tile específico del tileset está activo (habilitado para usarse en el Tilemap).
- */
-bool tileset_is_tile_active(int tileId) {
-    if (tileId < 0 || tileId >= tile_count || tileId >= MAX_TILESET_TILES) {
+bool tileset_remove_slot(int idx) {
+    if (idx < 0 || idx >= tileset_count) {
         return false;
     }
-    return tile_active[tileId];
-}
 
-void tileset_set_tile_active(int tileId, bool active) {
-    if (tileId >= 0 && tileId < MAX_TILESET_TILES) {
-        tile_active[tileId] = active;
+    unload_slot_texture(idx);
+
+    if (tileset_count == 1) {
+        // Reiniciar el único slot en lugar de dejar 0 tilesets
+        tileset_slots[0] = TilesetSlot.init;
+        tileset_slots[0].used = true;
+        tileset_slots[0].tileWidthPx = 32;
+        tileset_slots[0].tileHeightPx = 32;
+        tileset_slots[0].tileCount = 32;
+        for (int t = 0; t < MAX_TILESET_TILES; t++) {
+            tileset_slots[0].tileActive[t] = true;
+        }
+        tilemap_remap_after_tileset_removed(0);
+        return true;
     }
+
+    for (int i = idx; i < tileset_count - 1; i++) {
+        tileset_slots[i] = tileset_slots[i + 1];
+    }
+    tileset_slots[tileset_count - 1] = TilesetSlot.init;
+    tileset_count--;
+
+    if (active_tileset_index >= tileset_count) {
+        active_tileset_index = tileset_count - 1;
+    }
+    if (active_tileset_index < 0) {
+        active_tileset_index = 0;
+    }
+    selected_tileset_tile = 0;
+
+    tilemap_remap_after_tileset_removed(idx);
+    return true;
 }
 
-/**
- * Retorna la ruta relativa actual del PNG del Tileset.
- */
-const(char)* tileset_get_path() {
-    return tileset_path.ptr;
+const(char)* tileset_get_path_at(int ts) {
+    if (ts < 0 || ts >= tileset_count) {
+        return "";
+    }
+    return tileset_slots[ts].path.ptr;
 }
 
-/**
- * Establece la ruta relativa del PNG del Tileset y recarga su textura.
- */
-bool tileset_set_path_and_reload(const(char)* relPath, bool autoCalcCount = false) {
+bool tileset_set_path_and_reload_at(int ts, const(char)* relPath, bool autoCalcCount = false) {
+    if (ts < 0 || ts >= tileset_count) {
+        return false;
+    }
     if (relPath is null) {
-        tileset_path[0] = '\0';
-        unload_tileset_texture();
+        tileset_slots[ts].path[0] = '\0';
+        unload_slot_texture(ts);
         return false;
     }
-    strncpy(tileset_path.ptr, relPath, tileset_path.length - 1);
-    tileset_path[tileset_path.length - 1] = '\0';
-    return tileset_reload_texture(autoCalcCount);
+    strncpy(tileset_slots[ts].path.ptr, relPath, tileset_slots[ts].path.length - 1);
+    tileset_slots[ts].path[tileset_slots[ts].path.length - 1] = '\0';
+    return tileset_reload_texture_at(ts, autoCalcCount);
 }
 
-/**
- * Recarga la textura PNG del Tileset usando la resolución relativa al XML.
- */
-bool tileset_reload_texture(bool autoCalcCount = false) {
-    unload_tileset_texture();
+int tileset_get_tile_width_at(int ts) {
+    if (ts < 0 || ts >= tileset_count) return 32;
+    return tileset_slots[ts].tileWidthPx;
+}
 
-    if (tileset_path[0] == '\0') {
+int tileset_get_tile_height_at(int ts) {
+    if (ts < 0 || ts >= tileset_count) return 32;
+    return tileset_slots[ts].tileHeightPx;
+}
+
+void tileset_set_tile_size_at(int ts, int w, int h) {
+    if (ts < 0 || ts >= tileset_count) return;
+    tileset_slots[ts].tileWidthPx = (w > 0) ? w : 32;
+    tileset_slots[ts].tileHeightPx = (h > 0) ? h : 32;
+}
+
+int tileset_get_tile_count_at(int ts) {
+    if (ts < 0 || ts >= tileset_count) return 0;
+    return tileset_slots[ts].tileCount;
+}
+
+void tileset_set_tile_count_at(int ts, int count) {
+    if (ts < 0 || ts >= tileset_count) return;
+    if (count < 1) count = 1;
+    if (count > MAX_TILESET_TILES) count = MAX_TILESET_TILES;
+    tileset_slots[ts].tileCount = count;
+}
+
+bool tileset_is_tile_active_at(int ts, int tileId) {
+    if (ts < 0 || ts >= tileset_count) return false;
+    TilesetSlot* slot = &tileset_slots[ts];
+    if (tileId < 0 || tileId >= slot.tileCount || tileId >= MAX_TILESET_TILES) {
+        return false;
+    }
+    return slot.tileActive[tileId];
+}
+
+void tileset_set_tile_active_at(int ts, int tileId, bool active) {
+    if (ts < 0 || ts >= tileset_count) return;
+    if (tileId >= 0 && tileId < MAX_TILESET_TILES) {
+        tileset_slots[ts].tileActive[tileId] = active;
+    }
+}
+
+bool tileset_reload_texture_at(int ts, bool autoCalcCount = false) {
+    if (ts < 0 || ts >= tileset_count) {
+        return false;
+    }
+    unload_slot_texture(ts);
+
+    TilesetSlot* slot = &tileset_slots[ts];
+    if (slot.path[0] == '\0') {
         return false;
     }
 
-    if (tileset_path[0] == '/') {
+    if (slot.path[0] == '/') {
         char[256] relBuf;
-        scene_to_relative_resource_path(tileset_path.ptr, relBuf.ptr, relBuf.length);
-        strncpy(tileset_path.ptr, relBuf.ptr, tileset_path.length - 1);
-        tileset_path[tileset_path.length - 1] = '\0';
+        scene_to_relative_resource_path(slot.path.ptr, relBuf.ptr, relBuf.length);
+        strncpy(slot.path.ptr, relBuf.ptr, slot.path.length - 1);
+        slot.path[slot.path.length - 1] = '\0';
     }
 
     char[1024] fullPath;
-    scene_resolve_resource_path(tileset_path.ptr, fullPath.ptr, fullPath.length);
+    scene_resolve_resource_path(slot.path.ptr, fullPath.ptr, fullPath.length);
     if (!FileExists(fullPath.ptr)) {
         return false;
     }
 
-    tileset_texture = LoadTexture(fullPath.ptr);
-    has_tileset_texture = (tileset_texture.id != 0);
+    slot.texture = LoadTexture(fullPath.ptr);
+    slot.hasTexture = (slot.texture.id != 0);
 
-    if (has_tileset_texture && autoCalcCount && tile_width_px > 0 && tile_height_px > 0) {
-        int cols = tileset_texture.width / tile_width_px;
-        int rows = tileset_texture.height / tile_height_px;
+    if (slot.hasTexture && autoCalcCount && slot.tileWidthPx > 0 && slot.tileHeightPx > 0) {
+        int cols = slot.texture.width / slot.tileWidthPx;
+        int rows = slot.texture.height / slot.tileHeightPx;
         int total = cols * rows;
         if (total > 0 && total <= MAX_TILESET_TILES) {
-            tile_count = total;
+            slot.tileCount = total;
         }
     }
 
-    return has_tileset_texture;
+    return slot.hasTexture;
 }
 
-/**
- * Dibuja el tile `tileId` dentro del rectángulo de destino `destRect`
- * usando la textura PNG del Tileset (o un color de respaldo si aún no se cargó un PNG).
- */
-void tileset_draw_tile(int tileId, Rectangle destRect, ubyte alpha = 255) {
-    if (has_tileset_texture && tileset_texture.id != 0 && tile_width_px > 0 && tile_height_px > 0) {
-        int texCols = tileset_texture.width / tile_width_px;
-        if (texCols < 1) texCols = 1;
-
-        int col = tileId % texCols;
-        int row = tileId / texCols;
-
-        Rectangle srcRect = Rectangle(
-            cast(float)(col * tile_width_px),
-            cast(float)(row * tile_height_px),
-            cast(float) tile_width_px,
-            cast(float) tile_height_px
-        );
-
-        DrawTexturePro(
-            tileset_texture,
-            srcRect,
-            destRect,
-            Vector2(0, 0),
-            0.0f,
-            Color(255, 255, 255, alpha)
-        );
-    } else {
-        Color fallbackCol = Color(
-            cast(ubyte)(50 + (tileId * 37) % 140),
-            cast(ubyte)(70 + (tileId * 53) % 140),
-            cast(ubyte)(100 + (tileId * 29) % 130),
-            alpha
-        );
-        DrawRectangleRec(destRect, fallbackCol);
+void tileset_reload_all_textures(bool autoCalcCount = false) {
+    for (int i = 0; i < tileset_count; i++) {
+        tileset_reload_texture_at(i, autoCalcCount);
     }
+}
+
+bool tileset_is_packed_tile_active(int packed) {
+    if (packed < 0) return false;
+    return tileset_is_tile_active_at(tile_unpack_tileset(packed), tile_unpack_index(packed));
+}
+
+void tileset_draw_packed_tile(int packed, Rectangle destRect, ubyte alpha = 255) {
+    if (packed < 0) return;
+    tileset_draw_tile_at(tile_unpack_tileset(packed), tile_unpack_index(packed), destRect, alpha);
+}
+
+void tileset_draw_tile_at(int ts, int tileId, Rectangle destRect, ubyte alpha = 255) {
+    if (ts >= 0 && ts < tileset_count) {
+        TilesetSlot* slot = &tileset_slots[ts];
+        if (slot.hasTexture && slot.texture.id != 0 && slot.tileWidthPx > 0 && slot.tileHeightPx > 0) {
+            int texCols = slot.texture.width / slot.tileWidthPx;
+            if (texCols < 1) texCols = 1;
+
+            int col = tileId % texCols;
+            int row = tileId / texCols;
+
+            Rectangle srcRect = Rectangle(
+                cast(float)(col * slot.tileWidthPx),
+                cast(float)(row * slot.tileHeightPx),
+                cast(float) slot.tileWidthPx,
+                cast(float) slot.tileHeightPx
+            );
+
+            DrawTexturePro(
+                slot.texture,
+                srcRect,
+                destRect,
+                Vector2(0, 0),
+                0.0f,
+                Color(255, 255, 255, alpha)
+            );
+            return;
+        }
+    }
+
+    Color fallbackCol = Color(
+        cast(ubyte)(50 + ((tileId + ts * 17) * 37) % 140),
+        cast(ubyte)(70 + ((tileId + ts * 11) * 53) % 140),
+        cast(ubyte)(100 + ((tileId + ts * 23) * 29) % 130),
+        alpha
+    );
+    DrawRectangleRec(destRect, fallbackCol);
+}
+
+// -----------------------------------------------------------------------------
+// Compatibilidad con API de un solo tileset (opera sobre active_tileset_index)
+// -----------------------------------------------------------------------------
+
+int tileset_get_tile_count() {
+    return tileset_get_tile_count_at(active_tileset_index);
+}
+
+void tileset_set_tile_count(int count) {
+    tileset_set_tile_count_at(active_tileset_index, count);
+}
+
+int tileset_get_tile_width_px() {
+    return tileset_get_tile_width_at(active_tileset_index);
+}
+
+int tileset_get_tile_height_px() {
+    return tileset_get_tile_height_at(active_tileset_index);
+}
+
+void tileset_set_tile_size_px(int w, int h) {
+    tileset_set_tile_size_at(active_tileset_index, w, h);
+}
+
+bool tileset_is_tile_active(int tileId) {
+    return tileset_is_tile_active_at(active_tileset_index, tileId);
+}
+
+void tileset_set_tile_active(int tileId, bool active) {
+    tileset_set_tile_active_at(active_tileset_index, tileId, active);
+}
+
+const(char)* tileset_get_path() {
+    return tileset_get_path_at(active_tileset_index);
+}
+
+bool tileset_set_path_and_reload(const(char)* relPath, bool autoCalcCount = false) {
+    return tileset_set_path_and_reload_at(active_tileset_index, relPath, autoCalcCount);
+}
+
+bool tileset_reload_texture(bool autoCalcCount = false) {
+    return tileset_reload_texture_at(active_tileset_index, autoCalcCount);
+}
+
+void tileset_draw_tile(int tileId, Rectangle destRect, ubyte alpha = 255) {
+    tileset_draw_tile_at(active_tileset_index, tileId, destRect, alpha);
 }
 
 /**
@@ -211,18 +408,25 @@ void tileset_tab_update(float dt) {
         tileset_tab_undo();
     }
 
-    if (tile_count < 1) tile_count = 1;
-    if (tile_count > MAX_TILESET_TILES) tile_count = MAX_TILESET_TILES;
-    if (tile_width_px < 1) tile_width_px = 1;
-    if (tile_height_px < 1) tile_height_px = 1;
-    if (selected_tileset_tile >= tile_count) selected_tileset_tile = tile_count - 1;
+    if (tileset_count <= 0) {
+        tileset_add_slot("", 32, 32, 32, false);
+    }
+    if (active_tileset_index < 0) active_tileset_index = 0;
+    if (active_tileset_index >= tileset_count) active_tileset_index = tileset_count - 1;
+
+    TilesetSlot* slot = &tileset_slots[active_tileset_index];
+    if (slot.tileCount < 1) slot.tileCount = 1;
+    if (slot.tileCount > MAX_TILESET_TILES) slot.tileCount = MAX_TILESET_TILES;
+    if (slot.tileWidthPx < 1) slot.tileWidthPx = 1;
+    if (slot.tileHeightPx < 1) slot.tileHeightPx = 1;
+    if (selected_tileset_tile >= slot.tileCount) selected_tileset_tile = slot.tileCount - 1;
     if (selected_tileset_tile < 0) selected_tileset_tile = 0;
 }
 
 /**
  * Dibuja la interfaz del Tileset Editor:
- * - Área principal izquierda: Previsualización de los tiles del PNG; click para activar/desactivar tiles.
- * - Panel lateral derecho: Selección de PNG con tinyfd, tamaño en píxeles por tile, cantidad de tiles y estado activo.
+ * - Área principal izquierda: Previsualización de los tiles del PNG del tileset activo.
+ * - Panel lateral derecho: Selector multi-tileset, PNG con tinyfd, tamaño en píxeles, cantidad y estado activo.
  */
 void tileset_tab_draw(Rectangle workspace) {
     float rightPanelWidth = 360.0f;
@@ -247,27 +451,23 @@ void tileset_tab_draw(Rectangle workspace) {
 
 private:
 
-enum int MAX_TILESET_UNDO        = 32;
-enum int FIELD_TILESET_PATH      = 1000;
-enum int FIELD_TILESET_COUNT     = 1001;
-enum int FIELD_TILESET_TILE_W    = 1002;
-enum int FIELD_TILESET_TILE_H    = 1003;
+enum int MAX_TILESET_UNDO     = 32;
+enum int FIELD_TILESET_PATH   = 1000;
+enum int FIELD_TILESET_COUNT  = 1001;
+enum int FIELD_TILESET_TILE_W = 1002;
+enum int FIELD_TILESET_TILE_H = 1003;
 
 struct TilesetSnapshot {
+    int slotIndex;
     int tileWidthPx;
     int tileHeightPx;
     int tileCount;
     bool[MAX_TILESET_TILES] tileActive;
 }
 
-__gshared char[256] tileset_path = 0;
-__gshared Texture2D tileset_texture;
-__gshared bool has_tileset_texture = false;
-
-__gshared int tile_width_px = 32;
-__gshared int tile_height_px = 32;
-__gshared int tile_count = 32;
-__gshared bool[MAX_TILESET_TILES] tile_active;
+__gshared TilesetSlot[MAX_TILESETS] tileset_slots;
+__gshared int tileset_count = 0;
+__gshared int active_tileset_index = 0;
 __gshared int selected_tileset_tile = 0;
 
 __gshared TilesetSnapshot[MAX_TILESET_UNDO] undo_stack;
@@ -276,7 +476,9 @@ __gshared int undo_count = 0;
 __gshared Vector2 tileset_scroll = Vector2(0, 0);
 __gshared Rectangle tileset_view = Rectangle(0, 0, 0, 0);
 
-void push_tileset_undo() {
+void push_tileset_undo(int ts) {
+    if (ts < 0 || ts >= tileset_count) return;
+
     if (undo_count >= MAX_TILESET_UNDO) {
         for (int i = 1; i < MAX_TILESET_UNDO; i++) {
             undo_stack[i - 1] = undo_stack[i];
@@ -284,29 +486,80 @@ void push_tileset_undo() {
         undo_count = MAX_TILESET_UNDO - 1;
     }
 
+    TilesetSlot* slot = &tileset_slots[ts];
     TilesetSnapshot* snap = &undo_stack[undo_count++];
-    snap.tileWidthPx = tile_width_px;
-    snap.tileHeightPx = tile_height_px;
-    snap.tileCount = tile_count;
+    snap.slotIndex = ts;
+    snap.tileWidthPx = slot.tileWidthPx;
+    snap.tileHeightPx = slot.tileHeightPx;
+    snap.tileCount = slot.tileCount;
     for (int i = 0; i < MAX_TILESET_TILES; i++) {
-        snap.tileActive[i] = tile_active[i];
+        snap.tileActive[i] = slot.tileActive[i];
     }
 }
 
-void unload_tileset_texture() {
-    if (has_tileset_texture && tileset_texture.id != 0) {
-        UnloadTexture(tileset_texture);
+void unload_slot_texture(int ts) {
+    if (ts < 0 || ts >= MAX_TILESETS) return;
+    if (tileset_slots[ts].hasTexture && tileset_slots[ts].texture.id != 0) {
+        UnloadTexture(tileset_slots[ts].texture);
     }
-    tileset_texture = Texture2D.init;
-    has_tileset_texture = false;
+    tileset_slots[ts].texture = Texture2D.init;
+    tileset_slots[ts].hasTexture = false;
 }
 
 void draw_tileset_side_panel(Rectangle panelBounds) {
     GuiPanel(panelBounds, "Tileset - Propiedades (Ctrl+Z: Deshacer)");
 
+    if (tileset_count <= 0) {
+        tileset_add_slot("", 32, 32, 32, false);
+    }
+    if (active_tileset_index < 0 || active_tileset_index >= tileset_count) {
+        active_tileset_index = 0;
+    }
+
+    TilesetSlot* slot = &tileset_slots[active_tileset_index];
+
     float x = panelBounds.x + 16.0f;
     float y = panelBounds.y + 38.0f;
     float w = panelBounds.width - 32.0f;
+    float halfW = (w - 6.0f) * 0.5f;
+
+    // 0. Selector Multi-Tileset
+    gui_section_header(x, y, w, "Tilesets del Mapa");
+    float navBtnW = 36.0f;
+    if (GuiButton(Rectangle(x, y, navBtnW, 24.0f), "<")) {
+        gui_clear_active_field();
+        active_tileset_index = (active_tileset_index - 1 + tileset_count) % tileset_count;
+        selected_tileset_tile = 0;
+        slot = &tileset_slots[active_tileset_index];
+    }
+
+    char[64] slotLbl;
+    snprintf(slotLbl.ptr, slotLbl.length, "Tileset #%d / %d (id=%d)", active_tileset_index + 1, tileset_count, active_tileset_index);
+    GuiLabel(Rectangle(x + navBtnW + 8.0f, y, w - navBtnW * 2.0f - 16.0f, 24.0f), slotLbl.ptr);
+
+    if (GuiButton(Rectangle(x + w - navBtnW, y, navBtnW, 24.0f), ">")) {
+        gui_clear_active_field();
+        active_tileset_index = (active_tileset_index + 1) % tileset_count;
+        selected_tileset_tile = 0;
+        slot = &tileset_slots[active_tileset_index];
+    }
+    y += 28.0f;
+
+    if (GuiButton(Rectangle(x, y, halfW, 24.0f), GuiIconText(GuiIconName.ICON_FILE_ADD, "+ Agregar Tileset"))) {
+        gui_clear_active_field();
+        int newIdx = tileset_add_slot("", 32, 32, 32, false);
+        if (newIdx >= 0) {
+            active_tileset_index = newIdx;
+            selected_tileset_tile = 0;
+            slot = &tileset_slots[active_tileset_index];
+        }
+    }
+    if (GuiButton(Rectangle(x + halfW + 6.0f, y, halfW, 24.0f), GuiIconText(GuiIconName.ICON_BIN, "Quitar"))) {
+        gui_clear_active_field();
+        tileset_remove_slot(active_tileset_index);
+        slot = &tileset_slots[active_tileset_index];
+    }
+    y += 30.0f;
 
     // 1. Archivo PNG del Tileset (modo relativo con tinyfd)
     gui_section_header(x, y, w, "Imagen del Tileset (.png)");
@@ -314,23 +567,23 @@ void draw_tileset_side_panel(Rectangle panelBounds) {
     y += 22.0f;
 
     float btnW = 92.0f;
-    if (gui_search_box(Rectangle(x, y, w - btnW - 6.0f, 24.0f), tileset_path.ptr, cast(int) tileset_path.length, FIELD_TILESET_PATH)) {
-        tileset_reload_texture(true);
+    if (gui_search_box(Rectangle(x, y, w - btnW - 6.0f, 24.0f), slot.path.ptr, cast(int) slot.path.length, FIELD_TILESET_PATH)) {
+        tileset_reload_texture_at(active_tileset_index, true);
     }
 
     if (GuiButton(Rectangle(x + w - btnW, y, btnW, 24.0f), GuiIconText(GuiIconName.ICON_FOLDER_OPEN, "PNG..."))) {
         char[512] selectedAbs;
         if (open_png_file_dialog(selectedAbs.ptr, selectedAbs.length, "Seleccionar PNG del Tileset")) {
-            push_tileset_undo();
-            scene_to_relative_resource_path(selectedAbs.ptr, tileset_path.ptr, tileset_path.length);
-            tileset_reload_texture(true);
+            push_tileset_undo(active_tileset_index);
+            scene_to_relative_resource_path(selectedAbs.ptr, slot.path.ptr, slot.path.length);
+            tileset_reload_texture_at(active_tileset_index, true);
         }
     }
     y += 30.0f;
 
-    if (has_tileset_texture) {
+    if (slot.hasTexture) {
         char[96] texStatus;
-        snprintf(texStatus.ptr, texStatus.length, "PNG cargado: %dx%d px", tileset_texture.width, tileset_texture.height);
+        snprintf(texStatus.ptr, texStatus.length, "PNG cargado: %dx%d px", slot.texture.width, slot.texture.height);
         GuiLabel(Rectangle(x, y, w, 20.0f), texStatus.ptr);
     } else {
         GuiLabel(Rectangle(x, y, w, 20.0f), "Sin PNG cargado (usando vista previa)");
@@ -339,35 +592,35 @@ void draw_tileset_side_panel(Rectangle panelBounds) {
 
     // 2. Tamaño en píxeles de cada tile y cantidad de tiles
     gui_section_header(x, y, w, "Dimensiones de Tiles");
-    int prevW = tile_width_px;
-    int prevH = tile_height_px;
-    int prevCount = tile_count;
+    int prevW = slot.tileWidthPx;
+    int prevH = slot.tileHeightPx;
+    int prevCount = slot.tileCount;
 
-    gui_labeled_int_spinner(x, y, w, "Tamano X (px)", &tile_width_px, 1, 512, FIELD_TILESET_TILE_W);
-    gui_labeled_int_spinner(x, y, w, "Tamano Y (px)", &tile_height_px, 1, 512, FIELD_TILESET_TILE_H);
-    gui_labeled_int_spinner(x, y, w, "Cantidad Tiles", &tile_count, 1, MAX_TILESET_TILES, FIELD_TILESET_COUNT);
+    gui_labeled_int_spinner(x, y, w, "Tamano X (px)", &slot.tileWidthPx, 1, 512, FIELD_TILESET_TILE_W);
+    gui_labeled_int_spinner(x, y, w, "Tamano Y (px)", &slot.tileHeightPx, 1, 512, FIELD_TILESET_TILE_H);
+    gui_labeled_int_spinner(x, y, w, "Cantidad Tiles", &slot.tileCount, 1, MAX_TILESET_TILES, FIELD_TILESET_COUNT);
 
-    if (tile_width_px != prevW || tile_height_px != prevH || tile_count != prevCount) {
-        int curW = tile_width_px;
-        int curH = tile_height_px;
-        int curC = tile_count;
-        tile_width_px = prevW;
-        tile_height_px = prevH;
-        tile_count = prevCount;
-        push_tileset_undo();
-        tile_width_px = curW;
-        tile_height_px = curH;
-        tile_count = curC;
+    if (slot.tileWidthPx != prevW || slot.tileHeightPx != prevH || slot.tileCount != prevCount) {
+        int curW = slot.tileWidthPx;
+        int curH = slot.tileHeightPx;
+        int curC = slot.tileCount;
+        slot.tileWidthPx = prevW;
+        slot.tileHeightPx = prevH;
+        slot.tileCount = prevCount;
+        push_tileset_undo(active_tileset_index);
+        slot.tileWidthPx = curW;
+        slot.tileHeightPx = curH;
+        slot.tileCount = curC;
     }
 
-    if (has_tileset_texture) {
+    if (slot.hasTexture) {
         if (GuiButton(Rectangle(x, y, w, 24.0f), "Ajustar Cantidad segun PNG")) {
-            push_tileset_undo();
-            int cols = tileset_texture.width / tile_width_px;
-            int rows = tileset_texture.height / tile_height_px;
+            push_tileset_undo(active_tileset_index);
+            int cols = slot.texture.width / slot.tileWidthPx;
+            int rows = slot.texture.height / slot.tileHeightPx;
             int total = cols * rows;
             if (total >= 1 && total <= MAX_TILESET_TILES) {
-                tile_count = total;
+                slot.tileCount = total;
             }
         }
         y += 30.0f;
@@ -378,32 +631,31 @@ void draw_tileset_side_panel(Rectangle panelBounds) {
     gui_section_header(x, y, w, "Activacion de Tiles");
 
     char[64] selText;
-    snprintf(selText.ptr, selText.length, "Tile Seleccionado: #%d", selected_tileset_tile);
+    snprintf(selText.ptr, selText.length, "Tile Seleccionado: T%d#%d", active_tileset_index, selected_tileset_tile);
     GuiLabel(Rectangle(x, y, w, 22.0f), selText.ptr);
     y += 26.0f;
 
-    if (selected_tileset_tile >= 0 && selected_tileset_tile < tile_count) {
-        bool prevAct = tile_active[selected_tileset_tile];
-        gui_labeled_checkbox(x, y, "Tile Activo (Visible en Tilemap)", &tile_active[selected_tileset_tile]);
-        if (tile_active[selected_tileset_tile] != prevAct) {
-            bool newAct = tile_active[selected_tileset_tile];
-            tile_active[selected_tileset_tile] = prevAct;
-            push_tileset_undo();
-            tile_active[selected_tileset_tile] = newAct;
+    if (selected_tileset_tile >= 0 && selected_tileset_tile < slot.tileCount) {
+        bool prevAct = slot.tileActive[selected_tileset_tile];
+        gui_labeled_checkbox(x, y, "Tile Activo (Visible en Tilemap)", &slot.tileActive[selected_tileset_tile]);
+        if (slot.tileActive[selected_tileset_tile] != prevAct) {
+            bool newAct = slot.tileActive[selected_tileset_tile];
+            slot.tileActive[selected_tileset_tile] = prevAct;
+            push_tileset_undo(active_tileset_index);
+            slot.tileActive[selected_tileset_tile] = newAct;
         }
     }
 
-    float halfW = (w - 6.0f) * 0.5f;
     if (GuiButton(Rectangle(x, y, halfW, 26.0f), "Activar Todos")) {
-        push_tileset_undo();
-        for (int i = 0; i < tile_count; i++) {
-            tile_active[i] = true;
+        push_tileset_undo(active_tileset_index);
+        for (int i = 0; i < slot.tileCount; i++) {
+            slot.tileActive[i] = true;
         }
     }
     if (GuiButton(Rectangle(x + halfW + 6.0f, y, halfW, 26.0f), "Desactivar Todos")) {
-        push_tileset_undo();
-        for (int i = 0; i < tile_count; i++) {
-            tile_active[i] = false;
+        push_tileset_undo(active_tileset_index);
+        for (int i = 0; i < slot.tileCount; i++) {
+            slot.tileActive[i] = false;
         }
     }
     y += 34.0f;
@@ -414,25 +666,28 @@ void draw_tileset_side_panel(Rectangle panelBounds) {
     y += 34.0f;
 
     int activeCount = 0;
-    for (int i = 0; i < tile_count; i++) {
-        if (tile_active[i]) activeCount++;
+    for (int i = 0; i < slot.tileCount; i++) {
+        if (slot.tileActive[i]) activeCount++;
     }
 
     char[80] summaryBuf;
-    snprintf(summaryBuf.ptr, summaryBuf.length, "Tiles habilitados: %d / %d", activeCount, tile_count);
+    snprintf(summaryBuf.ptr, summaryBuf.length, "Tiles habilitados: %d / %d", activeCount, slot.tileCount);
     GuiLabel(Rectangle(x, y, w, 22.0f), summaryBuf.ptr);
 }
 
 void draw_tileset_preview(Rectangle areaBounds) {
+    if (tileset_count <= 0) return;
+    TilesetSlot* slot = &tileset_slots[active_tileset_index];
+
     int cols = 8;
-    if (has_tileset_texture && tile_width_px > 0) {
-        int pngCols = tileset_texture.width / tile_width_px;
+    if (slot.hasTexture && slot.tileWidthPx > 0) {
+        int pngCols = slot.texture.width / slot.tileWidthPx;
         if (pngCols >= 1 && pngCols <= 16) {
             cols = pngCols;
         }
     }
 
-    int rows = (tile_count + cols - 1) / cols;
+    int rows = (slot.tileCount + cols - 1) / cols;
     float cellSize = 68.0f;
     float padding = 10.0f;
 
@@ -468,7 +723,7 @@ void draw_tileset_preview(Rectangle areaBounds) {
     float startX = tileset_view.x + padding + tileset_scroll.x;
     float startY = tileset_view.y + padding + tileset_scroll.y;
 
-    for (int i = 0; i < tile_count; i++) {
+    for (int i = 0; i < slot.tileCount; i++) {
         int r = i / cols;
         int c = i % cols;
 
@@ -479,10 +734,10 @@ void draw_tileset_preview(Rectangle areaBounds) {
             cellSize
         );
 
-        bool isActive = tile_active[i];
+        bool isActive = slot.tileActive[i];
         bool isSelected = (selected_tileset_tile == i);
 
-        tileset_draw_tile(i, tileRect, isActive ? 255 : 75);
+        tileset_draw_tile_at(active_tileset_index, i, tileRect, isActive ? 255 : 75);
 
         if (!isActive) {
             DrawRectangleRec(tileRect, Color(20, 20, 20, 140));
@@ -506,15 +761,15 @@ void draw_tileset_preview(Rectangle areaBounds) {
         if (mouseInView && CheckCollisionPointRec(mousePos, tileRect)) {
             if (IsMouseButtonPressed(MouseButton.MOUSE_BUTTON_LEFT)) {
                 if (selected_tileset_tile == i) {
-                    push_tileset_undo();
-                    tile_active[i] = !tile_active[i];
+                    push_tileset_undo(active_tileset_index);
+                    slot.tileActive[i] = !slot.tileActive[i];
                 } else {
                     selected_tileset_tile = i;
                 }
             } else if (IsMouseButtonPressed(MouseButton.MOUSE_BUTTON_RIGHT)) {
-                push_tileset_undo();
+                push_tileset_undo(active_tileset_index);
                 selected_tileset_tile = i;
-                tile_active[i] = !tile_active[i];
+                slot.tileActive[i] = !slot.tileActive[i];
             }
         }
     }

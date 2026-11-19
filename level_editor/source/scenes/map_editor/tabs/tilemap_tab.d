@@ -10,9 +10,14 @@ import core.stdc.math : floorf;
 import scenes.map_editor.gui_widgets;
 import scenes.map_editor.camera_controller;
 import scenes.map_editor.tabs.tileset_tab :
-    tileset_get_tile_count,
-    tileset_is_tile_active,
-    tileset_draw_tile;
+    tile_pack,
+    tile_unpack_tileset,
+    tile_unpack_index,
+    tileset_get_tileset_count,
+    tileset_get_tile_count_at,
+    tileset_is_tile_active_at,
+    tileset_is_packed_tile_active,
+    tileset_draw_packed_tile;
 
 public:
 
@@ -33,8 +38,9 @@ enum TilemapTool : int {
 void tilemap_tab_init() {
     map_width = 32;
     map_height = 20;
-    selected_tile_primary = 0;
+    selected_tile_primary = tile_pack(0, 0);
     selected_tile_secondary = -1;
+    palette_tileset_filter = -1;
     active_tool = cast(int) TilemapTool.Pencil;
     palette_scroll = Vector2(0, 0);
     tilemap_cam.initialized = false;
@@ -44,6 +50,54 @@ void tilemap_tab_init() {
     undo_count = 0;
     current_stroke_change_count = 0;
     clear_tilemap_cells();
+}
+
+/**
+ * Reajusta las celdas del Tilemap tras eliminar un Tileset de la lista.
+ */
+void tilemap_remap_after_tileset_removed(int removedTs) {
+    int totalCells = MAX_MAP_WIDTH * MAX_MAP_HEIGHT;
+    for (int i = 0; i < totalCells; i++) {
+        int val = map_cells[i];
+        if (val < 0) continue;
+        int ts = tile_unpack_tileset(val);
+        int tid = tile_unpack_index(val);
+        if (ts == removedTs) {
+            map_cells[i] = -1;
+        } else if (ts > removedTs) {
+            map_cells[i] = tile_pack(ts - 1, tid);
+        }
+    }
+
+    if (selected_tile_primary >= 0) {
+        int pts = tile_unpack_tileset(selected_tile_primary);
+        int ptid = tile_unpack_index(selected_tile_primary);
+        if (pts == removedTs) {
+            selected_tile_primary = find_first_active_packed_tile();
+        } else if (pts > removedTs) {
+            selected_tile_primary = tile_pack(pts - 1, ptid);
+        }
+    }
+
+    if (selected_tile_secondary >= 0) {
+        int sts = tile_unpack_tileset(selected_tile_secondary);
+        int stid = tile_unpack_index(selected_tile_secondary);
+        if (sts == removedTs) {
+            selected_tile_secondary = -1;
+        } else if (sts > removedTs) {
+            selected_tile_secondary = tile_pack(sts - 1, stid);
+        }
+    }
+
+    if (palette_tileset_filter == removedTs) {
+        palette_tileset_filter = -1;
+    } else if (palette_tileset_filter > removedTs) {
+        palette_tileset_filter--;
+    }
+
+    undo_head = 0;
+    undo_count = 0;
+    current_stroke_change_count = 0;
 }
 
 /**
@@ -114,10 +168,14 @@ void tilemap_tab_update(float dt) {
         tilemap_tab_undo();
     }
 
-    if (selected_tile_primary >= 0 && !tileset_is_tile_active(selected_tile_primary)) {
-        selected_tile_primary = find_first_active_tile();
+    if (palette_tileset_filter >= tileset_get_tileset_count()) {
+        palette_tileset_filter = -1;
     }
-    if (selected_tile_secondary >= 0 && !tileset_is_tile_active(selected_tile_secondary)) {
+
+    if (selected_tile_primary >= 0 && !tileset_is_packed_tile_active(selected_tile_primary)) {
+        selected_tile_primary = find_first_active_packed_tile();
+    }
+    if (selected_tile_secondary >= 0 && !tileset_is_packed_tile_active(selected_tile_secondary)) {
         selected_tile_secondary = -1;
     }
 }
@@ -186,8 +244,9 @@ struct TilemapUndoStep {
 
 __gshared int map_width = 32;
 __gshared int map_height = 20;
-__gshared int selected_tile_primary = 0;    // Click Izquierdo (L)
+__gshared int selected_tile_primary = 0;    // Click Izquierdo (L) (packed)
 __gshared int selected_tile_secondary = -1; // Click Derecho (R) (-1 = Borrar / Vacío)
+__gshared int palette_tileset_filter = -1; // -1 = Todos los tilesets
 __gshared int active_tool = 0;
 
 __gshared int[MAX_MAP_WIDTH * MAX_MAP_HEIGHT] map_cells;
@@ -258,25 +317,40 @@ void clear_tilemap_cells() {
     }
 }
 
-int find_first_active_tile() {
-    int total = tileset_get_tile_count();
-    for (int i = 0; i < total; i++) {
-        if (tileset_is_tile_active(i)) {
-            return i;
+int find_first_active_packed_tile() {
+    int tsCount = tileset_get_tileset_count();
+    for (int ts = 0; ts < tsCount; ts++) {
+        int total = tileset_get_tile_count_at(ts);
+        for (int i = 0; i < total; i++) {
+            if (tileset_is_tile_active_at(ts, i)) {
+                return tile_pack(ts, i);
+            }
         }
     }
     return -1;
 }
 
-int count_active_tiles() {
-    int total = tileset_get_tile_count();
+int count_active_tiles_in_filter() {
+    int tsCount = tileset_get_tileset_count();
     int active = 0;
-    for (int i = 0; i < total; i++) {
-        if (tileset_is_tile_active(i)) {
-            active++;
+    for (int ts = 0; ts < tsCount; ts++) {
+        if (palette_tileset_filter >= 0 && ts != palette_tileset_filter) continue;
+        int total = tileset_get_tile_count_at(ts);
+        for (int i = 0; i < total; i++) {
+            if (tileset_is_tile_active_at(ts, i)) {
+                active++;
+            }
         }
     }
     return active;
+}
+
+void format_packed_tile_label(int packed, char* outBuf, size_t maxLen) {
+    if (packed < 0) {
+        snprintf(outBuf, maxLen, "Vacio");
+    } else {
+        snprintf(outBuf, maxLen, "T%d#%d", tile_unpack_tileset(packed), tile_unpack_index(packed));
+    }
 }
 
 Rectangle get_canvas_inner_area(Rectangle bounds) {
@@ -567,20 +641,8 @@ void draw_tilemap_canvas(Rectangle areaBounds) {
             );
 
             int cellTile = map_cells[r * MAX_MAP_WIDTH + c];
-            if (cellTile >= 0 && tileset_is_tile_active(cellTile)) {
-                // Si el tile tiene transparencia (palmera, rocas, pasto, borde superior de muro),
-                // dibujar base de arena (#0) o adoquín (#48) debajo para evitar huecos oscuros.
-                if (cellTile >= 64 && cellTile <= 74) {
-                    tileset_draw_tile(48, cellRect);
-                } else if (cellTile == 39) {
-                    tileset_draw_tile(c >= 26 ? 50 : 0, cellRect);
-                } else if ((cellTile >= 40 && cellTile <= 42) ||
-                           cellTile == 96 || cellTile == 97 ||
-                           cellTile == 112 || cellTile == 113 ||
-                           cellTile == 128 || cellTile == 129) {
-                    tileset_draw_tile(0, cellRect);
-                }
-                tileset_draw_tile(cellTile, cellRect);
+            if (cellTile >= 0 && tileset_is_packed_tile_active(cellTile)) {
+                tileset_draw_packed_tile(cellTile, cellRect);
             }
 
             if (tilemap_cam.camera.zoom >= 0.35f) {
@@ -626,18 +688,22 @@ void draw_tilemap_canvas(Rectangle areaBounds) {
     Vector2 mw = editor_camera_screen_to_world(tilemap_cam, GetMousePosition());
     int curC = cast(int) floorf(mw.x / CELL_WORLD_SIZE);
     int curR = cast(int) floorf(mw.y / CELL_WORLD_SIZE);
+    char[24] lStr = 0;
+    char[24] rStr = 0;
+    format_packed_tile_label(selected_tile_primary, lStr.ptr, lStr.length);
+    format_packed_tile_label(selected_tile_secondary, rStr.ptr, rStr.length);
     char[128] hud;
     snprintf(
         hud.ptr,
         hud.length,
-        "Zoom: %.0f%% | Celda: (%d, %d) | L: #%d | R: #%d",
+        "Zoom: %.0f%% | Celda: (%d, %d) | L: %s | R: %s",
         tilemap_cam.camera.zoom * 100.0f,
         curC,
         curR,
-        selected_tile_primary,
-        selected_tile_secondary
+        lStr.ptr,
+        rStr.ptr
     );
-    DrawRectangle(cast(int) viewArea.x + 8, cast(int)(viewArea.y + viewArea.height - 28), 360, 22, Color(18, 20, 24, 210));
+    DrawRectangle(cast(int) viewArea.x + 8, cast(int)(viewArea.y + viewArea.height - 28), 400, 22, Color(18, 20, 24, 210));
     DrawText(hud.ptr, cast(int) viewArea.x + 14, cast(int)(viewArea.y + viewArea.height - 24), 13, Colors.RAYWHITE);
 
     EndScissorMode();
@@ -668,18 +734,49 @@ void draw_tilemap_right_panel(Rectangle panelBounds) {
 
     // 2. Indicador de Tiles Primario (Click Izq) y Alternativo (Click Der)
     gui_section_header(x, y, w, "Seleccion (Izq: Primario | Der: Alt)");
+    char[24] lLbl = 0;
+    char[24] rLbl = 0;
+    format_packed_tile_label(selected_tile_primary, lLbl.ptr, lLbl.length);
+    format_packed_tile_label(selected_tile_secondary, rLbl.ptr, rLbl.length);
     char[96] selInfo;
     snprintf(
         selInfo.ptr,
         selInfo.length,
-        "[L] Primario: %d   |   [R] Alternativo: %d",
-        selected_tile_primary,
-        selected_tile_secondary
+        "[L] Primario: %s   |   [R] Alt: %s",
+        lLbl.ptr,
+        rLbl.ptr
     );
     GuiLabel(Rectangle(x, y, w, 20.0f), selInfo.ptr);
     y += 24.0f;
 
-    // 3. Parte inferior del panel derecho: Solo los tiles activos del Tileset (+ slot -1 para borrar)
+    // 2.5 Filtro de Tileset en la paleta
+    int tsCount = tileset_get_tileset_count();
+    float navW = 34.0f;
+    if (GuiButton(Rectangle(x, y, navW, 22.0f), "<")) {
+        if (palette_tileset_filter < 0) {
+            palette_tileset_filter = (tsCount > 0) ? (tsCount - 1) : -1;
+        } else {
+            palette_tileset_filter--;
+        }
+    }
+    char[64] filterTxt;
+    if (palette_tileset_filter < 0) {
+        snprintf(filterTxt.ptr, filterTxt.length, "Paleta: Todos (%d tilesets)", tsCount);
+    } else {
+        snprintf(filterTxt.ptr, filterTxt.length, "Paleta: Tileset #%d / %d", palette_tileset_filter + 1, tsCount);
+    }
+    GuiLabel(Rectangle(x + navW + 6.0f, y, w - navW * 2.0f - 12.0f, 22.0f), filterTxt.ptr);
+    if (GuiButton(Rectangle(x + w - navW, y, navW, 22.0f), ">")) {
+        if (palette_tileset_filter < 0) {
+            palette_tileset_filter = (tsCount > 0) ? 0 : -1;
+        } else {
+            palette_tileset_filter++;
+            if (palette_tileset_filter >= tsCount) palette_tileset_filter = -1;
+        }
+    }
+    y += 28.0f;
+
+    // 3. Parte inferior del panel derecho: Tiles activos de los Tilesets (+ slot -1 para borrar)
     Rectangle tilesScrollBounds = Rectangle(
         x,
         y,
@@ -687,8 +784,7 @@ void draw_tilemap_right_panel(Rectangle panelBounds) {
         (panelBounds.y + panelBounds.height) - y - 12.0f
     );
 
-    int totalTiles = tileset_get_tile_count();
-    int activeTiles = count_active_tiles() + 1; // +1 para la casilla Vacío (-1)
+    int activeTiles = count_active_tiles_in_filter() + 1; // +1 para la casilla Vacío (-1)
     int cols = 4;
     int rows = (activeTiles + cols - 1) / cols;
     float tileSize = 62.0f;
@@ -718,21 +814,23 @@ void draw_tilemap_right_panel(Rectangle panelBounds) {
     draw_palette_slot(-1, 0, cols, startX, startY, tileSize, gap, mousePos, mouseInPalette);
 
     int visibleIndex = 1;
-    for (int tileId = 0; tileId < totalTiles; tileId++) {
-        // Los tiles desactivados en el Tileset NO se muestran en el Tilemap
-        if (!tileset_is_tile_active(tileId)) {
-            continue;
+    for (int ts = 0; ts < tsCount; ts++) {
+        if (palette_tileset_filter >= 0 && ts != palette_tileset_filter) continue;
+        int total = tileset_get_tile_count_at(ts);
+        for (int tileId = 0; tileId < total; tileId++) {
+            if (!tileset_is_tile_active_at(ts, tileId)) {
+                continue;
+            }
+            draw_palette_slot(tile_pack(ts, tileId), visibleIndex, cols, startX, startY, tileSize, gap, mousePos, mouseInPalette);
+            visibleIndex++;
         }
-
-        draw_palette_slot(tileId, visibleIndex, cols, startX, startY, tileSize, gap, mousePos, mouseInPalette);
-        visibleIndex++;
     }
 
     EndScissorMode();
 }
 
 void draw_palette_slot(
-    int tileId,
+    int packedTile,
     int visibleIndex,
     int cols,
     float startX,
@@ -752,7 +850,7 @@ void draw_palette_slot(
         tileSize
     );
 
-    if (tileId < 0) {
+    if (packedTile < 0) {
         DrawRectangleRec(itemRect, Color(35, 38, 45, 255));
         DrawLineEx(
             Vector2(itemRect.x + 8, itemRect.y + 8),
@@ -762,14 +860,15 @@ void draw_palette_slot(
         );
         DrawText("Vacio", cast(int)(itemRect.x + 12), cast(int)(itemRect.y + 24), 13, Color(200, 200, 210, 255));
     } else {
-        tileset_draw_tile(tileId, itemRect);
+        tileset_draw_packed_tile(packedTile, itemRect);
         char[16] label;
-        snprintf(label.ptr, label.length, "%d", tileId);
-        DrawText(label.ptr, cast(int)(itemRect.x + 5), cast(int)(itemRect.y + 4), 13, Colors.RAYWHITE);
+        snprintf(label.ptr, label.length, "%d:%d", tile_unpack_tileset(packedTile), tile_unpack_index(packedTile));
+        DrawRectangle(cast(int)(itemRect.x + 2), cast(int)(itemRect.y + 2), 34, 15, Color(15, 18, 25, 175));
+        DrawText(label.ptr, cast(int)(itemRect.x + 4), cast(int)(itemRect.y + 3), 12, Colors.RAYWHITE);
     }
 
-    bool isPrimary   = (selected_tile_primary == tileId);
-    bool isSecondary = (selected_tile_secondary == tileId);
+    bool isPrimary   = (selected_tile_primary == packedTile);
+    bool isSecondary = (selected_tile_secondary == packedTile);
 
     if (isPrimary) {
         DrawRectangleLinesEx(itemRect, 3.0f, Colors.YELLOW);
@@ -788,9 +887,9 @@ void draw_palette_slot(
 
     if (mouseInPalette && CheckCollisionPointRec(mousePos, itemRect)) {
         if (IsMouseButtonPressed(MouseButton.MOUSE_BUTTON_LEFT)) {
-            selected_tile_primary = tileId;
+            selected_tile_primary = packedTile;
         } else if (IsMouseButtonPressed(MouseButton.MOUSE_BUTTON_RIGHT)) {
-            selected_tile_secondary = tileId;
+            selected_tile_secondary = packedTile;
         }
     }
 }

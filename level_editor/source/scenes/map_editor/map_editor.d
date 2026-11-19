@@ -14,6 +14,7 @@ import scenes.map_editor.tabs.tilemap_tab;
 import scenes.map_editor.tabs.tileset_tab;
 import scenes.map_editor.tabs.dialogs_editor_tab;
 import scenes.map_editor.tabs.level_editor_tab;
+import scenes.map_editor.tabs.prefabs_tab;
 
 public:
 
@@ -21,7 +22,8 @@ enum EditorTab : int {
     Tilemap       = 0,
     Tileset       = 1,
     DialogsEditor = 2,
-    LevelEditor   = 3
+    LevelEditor   = 3,
+    Prefabs       = 4
 }
 
 Scene map_editor = Scene(
@@ -57,11 +59,20 @@ void on_setup() {
     tilemap_tab_init();
     dialogs_editor_tab_init();
     level_editor_tab_init();
+    prefabs_tab_init();
+
+    // Cargar automáticamente el proyecto por defecto al iniciar para que las escenas aparezcan de inmediato
+    if (FileExists("beach_ruins.procshit")) {
+        procshit_load_project("beach_ruins.procshit");
+    } else if (FileExists("../beach_ruins.procshit")) {
+        procshit_load_project("../beach_ruins.procshit");
+    }
 }
 
 void on_close() {
     tileset_tab_close();
     level_editor_tab_close();
+    prefabs_tab_close();
 }
 
 void on_update(float dt) {
@@ -81,6 +92,9 @@ void on_update(float dt) {
             break;
         case EditorTab.LevelEditor:
             level_editor_tab_update(dt);
+            break;
+        case EditorTab.Prefabs:
+            prefabs_tab_update(dt);
             break;
     }
 }
@@ -113,6 +127,9 @@ void on_draw() {
         case EditorTab.LevelEditor:
             level_editor_tab_draw(workspace);
             break;
+        case EditorTab.Prefabs:
+            prefabs_tab_draw(workspace);
+            break;
     }
 
     if (show_project_maps_panel) {
@@ -135,7 +152,7 @@ void draw_top_tabs(float screenW) {
         8.0f, 4.0f,
         screenW - rightControlsWidth - 16.0f, TOP_TABBAR_HEIGHT - 4.0f
     );
-    GuiTabBar(tabBarBounds, "Tilemap;Tileset;Dialogs Editor;Level Editor", &tab_hscroll, &active_tab);
+    GuiTabBar(tabBarBounds, "Tilemap;Tileset;Dialogs Editor;Level Editor;Prefabs", &tab_hscroll, &active_tab);
 
     if (active_tab != prevTab) {
         gui_clear_active_field();
@@ -299,7 +316,7 @@ void configure_gui_theme() {
 
     // Desactivar el botón 'x' de cerrar pestañas en GuiTabBar y dar buen ancho a cada pestaña
     GuiSetStyle(TABBAR, TAB_CLOSE_BUTTON, 0);
-    GuiSetStyle(TABBAR, TAB_ITEMS_WIDTH, 165);
+    GuiSetStyle(TABBAR, TAB_ITEMS_WIDTH, 135);
 
     // Estilo oscuro legible
     GuiSetStyle(DEFAULT, TEXT_SIZE, 16);

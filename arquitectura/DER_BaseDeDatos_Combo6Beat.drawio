@@ -1,0 +1,644 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="der-combo6beat" name="DER Combo 6Beat (Chen)">
+    <mxGraphModel dx="4285" dy="2518" grid="1" gridSize="12" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="4360" pageHeight="2940" background="#FAF8F3" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="legend_pk" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="PK" vertex="1">
+          <mxGeometry height="44" width="116" x="107" y="179" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_fk" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="FK" vertex="1">
+          <mxGeometry height="44" width="116" x="107" y="239" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_ZONAS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="ZONAS" vertex="1">
+          <mxGeometry height="68" width="200" x="540" y="446" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_ZONAS_0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_zona" vertex="1">
+          <mxGeometry height="46" width="124" x="358" y="327" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_ZONAS_attr_ZONAS_0" edge="1" parent="1" source="ent_ZONAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_ZONAS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_ZONAS_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="nombre" vertex="1">
+          <mxGeometry height="46" width="124" x="503" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_ZONAS_attr_ZONAS_1" edge="1" parent="1" source="ent_ZONAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_ZONAS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_ZONAS_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="escena_xml_relativa" vertex="1">
+          <mxGeometry height="46" width="214.5" x="642.8" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_ZONAS_attr_ZONAS_2" edge="1" parent="1" source="ent_ZONAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_ZONAS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_ZONAS_3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="orden_progresion" vertex="1">
+          <mxGeometry height="46" width="186" x="782" y="347" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_ZONAS_attr_ZONAS_3" edge="1" parent="1" source="ent_ZONAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_ZONAS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_FLAGS_PARTIDA" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="FLAGS_PARTIDA" vertex="1">
+          <mxGeometry height="68" width="240" x="1400" y="406" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_FLAGS_PARTIDA_0" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_partida" vertex="1">
+          <mxGeometry height="46" width="129" x="1250.5" y="272" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_FLAGS_PARTIDA_attr_FLAGS_PARTIDA_0" edge="1" parent="1" source="ent_FLAGS_PARTIDA" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_FLAGS_PARTIDA_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_FLAGS_PARTIDA_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="flag_nombre" vertex="1">
+          <mxGeometry height="46" width="138.5" x="1450.8" y="232" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_FLAGS_PARTIDA_attr_FLAGS_PARTIDA_1" edge="1" parent="1" source="ent_FLAGS_PARTIDA" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_FLAGS_PARTIDA_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_FLAGS_PARTIDA_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_definicion" vertex="1">
+          <mxGeometry height="46" width="186" x="1642" y="272" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_FLAGS_PARTIDA_attr_FLAGS_PARTIDA_2" edge="1" parent="1" source="ent_FLAGS_PARTIDA" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_FLAGS_PARTIDA_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_CATALOGO_BATALLAS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="CATALOGO_BATALLAS" vertex="1">
+          <mxGeometry height="72" width="275" x="502.5" y="2304" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_batalla" vertex="1">
+          <mxGeometry height="46" width="129" x="330.5" y="2187" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_0" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_1" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_zona" vertex="1">
+          <mxGeometry height="46" width="124" x="268" y="2437" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_1" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="boss_id" vertex="1">
+          <mxGeometry height="46" width="124" x="323" y="2537" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_2" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="boss_nombre" vertex="1">
+          <mxGeometry height="46" width="138.5" x="445.8" y="2592" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_3" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="especie" vertex="1">
+          <mxGeometry height="46" width="124" x="613" y="2602" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_4" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="defeat_flag" vertex="1">
+          <mxGeometry height="46" width="138.5" x="770.8" y="2572" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_5" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="escena_combate_relativa" vertex="1">
+          <mxGeometry height="46" width="252.5" x="853.8" y="2502" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_6" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_7" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_item_recompensa" vertex="1">
+          <mxGeometry height="46" width="205" x="832.5" y="2207" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_7" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_BATALLAS_8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="es_historia_principal" vertex="1">
+          <mxGeometry height="46" width="233.5" x="718.2" y="2112" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_BATALLAS_attr_CATALOGO_BATALLAS_8" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_BATALLAS_8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_BATALLAS_VENCIDAS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="BATALLAS_VENCIDAS" vertex="1">
+          <mxGeometry height="72" width="275" x="502.5" y="1304" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_0" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_partida" vertex="1">
+          <mxGeometry height="46" width="129" x="320.5" y="1172" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_0" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_1" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_batalla" vertex="1">
+          <mxGeometry height="46" width="129" x="300.5" y="1257" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_1" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="puntaje_maximo" vertex="1">
+          <mxGeometry height="46" width="167" x="281.5" y="1392" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_2" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="max_combo" vertex="1">
+          <mxGeometry height="46" width="124" x="333" y="1492" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_3" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="perfects" vertex="1">
+          <mxGeometry height="46" width="124" x="383" y="1582" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_4" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="goods" vertex="1">
+          <mxGeometry height="46" width="124" x="473" y="1642" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_5" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="safes" vertex="1">
+          <mxGeometry height="46" width="124" x="698" y="1627" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_6" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="misses" vertex="1">
+          <mxGeometry height="46" width="124" x="803" y="1542" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_7" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="intentos_totales" vertex="1">
+          <mxGeometry height="46" width="186" x="367" y="1067" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_8" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_9" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_primera_victoria" vertex="1">
+          <mxGeometry height="46" width="243" x="583.5" y="1042" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_9" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_9" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_BATALLAS_VENCIDAS_10" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_ultima_victoria" vertex="1">
+          <mxGeometry height="46" width="233.5" x="798.2" y="1107" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_BATALLAS_VENCIDAS_attr_BATALLAS_VENCIDAS_10" edge="1" parent="1" source="ent_BATALLAS_VENCIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_BATALLAS_VENCIDAS_10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_PARTIDAS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="PARTIDAS" vertex="1">
+          <mxGeometry height="72" width="220" x="1410" y="1304" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_partida" vertex="1">
+          <mxGeometry height="46" width="129" x="1176" y="1188" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_0" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="slot" vertex="1">
+          <mxGeometry height="46" width="124" x="1323" y="952" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_1" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_creacion" vertex="1">
+          <mxGeometry height="46" width="167" x="1757" y="1188" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_2" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_actualizacion" vertex="1">
+          <mxGeometry height="46" width="214.5" x="1567.8" y="952" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_3" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_4" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_zona_actual" vertex="1">
+          <mxGeometry height="46" width="167" x="1121.5" y="1422" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_4" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_5" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_zona_retorno" vertex="1">
+          <mxGeometry height="46" width="176.5" x="1136.8" y="1527" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_5" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="player_x" vertex="1">
+          <mxGeometry height="46" width="124" x="1248" y="1622" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_6" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="player_y" vertex="1">
+          <mxGeometry height="46" width="124" x="1363" y="1692" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_7" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="return_x" vertex="1">
+          <mxGeometry height="46" width="124" x="1498" y="1702" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_8" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_9" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="return_y" vertex="1">
+          <mxGeometry height="46" width="124" x="1633" y="1672" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_9" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_9" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_10" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="heal_strategy" vertex="1">
+          <mxGeometry height="46" width="157.5" x="1716.2" y="1592" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_10" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_11" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="estado_general" vertex="1">
+          <mxGeometry height="46" width="167" x="1761.5" y="1487" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_11" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_PARTIDAS_12" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="progreso_porcentaje" vertex="1">
+          <mxGeometry height="46" width="214.5" x="1727.8" y="1392" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_PARTIDAS_attr_PARTIDAS_12" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_PARTIDAS_12" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_OBJETOS_OBTENIDOS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="OBJETOS_OBTENIDOS" vertex="1">
+          <mxGeometry height="72" width="275" x="2322.5" y="464" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_OBJETOS_OBTENIDOS_0" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_partida" vertex="1">
+          <mxGeometry height="46" width="129" x="2130.5" y="387" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_OBJETOS_OBTENIDOS_attr_OBJETOS_OBTENIDOS_0" edge="1" parent="1" source="ent_OBJETOS_OBTENIDOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_OBJETOS_OBTENIDOS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_OBJETOS_OBTENIDOS_1" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_item" vertex="1">
+          <mxGeometry height="46" width="124" x="2233" y="282" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_OBJETOS_OBTENIDOS_attr_OBJETOS_OBTENIDOS_1" edge="1" parent="1" source="ent_OBJETOS_OBTENIDOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_OBJETOS_OBTENIDOS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_OBJETOS_OBTENIDOS_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="cantidad" vertex="1">
+          <mxGeometry height="46" width="124" x="2383" y="247" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_OBJETOS_OBTENIDOS_attr_OBJETOS_OBTENIDOS_2" edge="1" parent="1" source="ent_OBJETOS_OBTENIDOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_OBJETOS_OBTENIDOS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_OBJETOS_OBTENIDOS_3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="equipado" vertex="1">
+          <mxGeometry height="46" width="124" x="2543" y="267" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_OBJETOS_OBTENIDOS_attr_OBJETOS_OBTENIDOS_3" edge="1" parent="1" source="ent_OBJETOS_OBTENIDOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_OBJETOS_OBTENIDOS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_OBJETOS_OBTENIDOS_4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_obtencion" vertex="1">
+          <mxGeometry height="46" width="176.5" x="2656.8" y="342" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_OBJETOS_OBTENIDOS_attr_OBJETOS_OBTENIDOS_4" edge="1" parent="1" source="ent_OBJETOS_OBTENIDOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_OBJETOS_OBTENIDOS_4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_OBJETOS_OBTENIDOS_5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_actualizacion" vertex="1">
+          <mxGeometry height="46" width="214.5" x="2607.8" y="592" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_OBJETOS_OBTENIDOS_attr_OBJETOS_OBTENIDOS_5" edge="1" parent="1" source="ent_OBJETOS_OBTENIDOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_OBJETOS_OBTENIDOS_5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_HISTORIAL_OBJETOS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="HISTORIAL_OBJETOS" vertex="1">
+          <mxGeometry height="72" width="275" x="2322.5" y="1304" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_HISTORIAL_OBJETOS_0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_historial" vertex="1">
+          <mxGeometry height="46" width="148" x="2176" y="1102" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_HISTORIAL_OBJETOS_attr_HISTORIAL_OBJETOS_0" edge="1" parent="1" source="ent_HISTORIAL_OBJETOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_HISTORIAL_OBJETOS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_HISTORIAL_OBJETOS_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_evento" vertex="1">
+          <mxGeometry height="46" width="148" x="2596" y="1102" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_HISTORIAL_OBJETOS_attr_HISTORIAL_OBJETOS_1" edge="1" parent="1" source="ent_HISTORIAL_OBJETOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_HISTORIAL_OBJETOS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_HISTORIAL_OBJETOS_2" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_partida" vertex="1">
+          <mxGeometry height="46" width="129" x="2150.5" y="1492" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_HISTORIAL_OBJETOS_attr_HISTORIAL_OBJETOS_2" edge="1" parent="1" source="ent_HISTORIAL_OBJETOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_HISTORIAL_OBJETOS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_HISTORIAL_OBJETOS_3" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_item" vertex="1">
+          <mxGeometry height="46" width="124" x="2273" y="1577" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_HISTORIAL_OBJETOS_attr_HISTORIAL_OBJETOS_3" edge="1" parent="1" source="ent_HISTORIAL_OBJETOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_HISTORIAL_OBJETOS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_HISTORIAL_OBJETOS_4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="evento" vertex="1">
+          <mxGeometry height="46" width="124" x="2523" y="1577" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_HISTORIAL_OBJETOS_attr_HISTORIAL_OBJETOS_4" edge="1" parent="1" source="ent_HISTORIAL_OBJETOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_HISTORIAL_OBJETOS_4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_HISTORIAL_OBJETOS_5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="cantidad_delta" vertex="1">
+          <mxGeometry height="46" width="167" x="2631.5" y="1492" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_HISTORIAL_OBJETOS_attr_HISTORIAL_OBJETOS_5" edge="1" parent="1" source="ent_HISTORIAL_OBJETOS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_HISTORIAL_OBJETOS_5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_CATALOGO_ITEMS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="CATALOGO_ITEMS" vertex="1">
+          <mxGeometry height="72" width="250" x="2335" y="2304" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_ITEMS_0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_item" vertex="1">
+          <mxGeometry height="46" width="124" x="2173" y="2132" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_ITEMS_attr_CATALOGO_ITEMS_0" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_ITEMS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_ITEMS_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="nombre" vertex="1">
+          <mxGeometry height="46" width="124" x="2183" y="2487" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_ITEMS_attr_CATALOGO_ITEMS_1" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_ITEMS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_ITEMS_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="categoria" vertex="1">
+          <mxGeometry height="46" width="124" x="2338" y="2552" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_ITEMS_attr_CATALOGO_ITEMS_2" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_ITEMS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_ITEMS_3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="curacion_hp" vertex="1">
+          <mxGeometry height="46" width="138.5" x="2505.8" y="2552" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_ITEMS_attr_CATALOGO_ITEMS_3" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_ITEMS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CATALOGO_ITEMS_4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="descripcion" vertex="1">
+          <mxGeometry height="46" width="138.5" x="2645.8" y="2482" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CATALOGO_ITEMS_attr_CATALOGO_ITEMS_4" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CATALOGO_ITEMS_4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_CANCION_OBJETOS_INTENTO" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="CANCION_OBJETOS_INTENTO" vertex="1">
+          <mxGeometry height="72" width="330" x="3425" y="2304" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCION_OBJETOS_INTENTO_0" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_cancion" vertex="1">
+          <mxGeometry height="46" width="129" x="3290.5" y="2132" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCION_OBJETOS_INTENTO_attr_CANCION_OBJETOS_INTENTO_0" edge="1" parent="1" source="ent_CANCION_OBJETOS_INTENTO" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCION_OBJETOS_INTENTO_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCION_OBJETOS_INTENTO_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="tipo_registro" vertex="1">
+          <mxGeometry height="46" width="157.5" x="3466.2" y="2517" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCION_OBJETOS_INTENTO_attr_CANCION_OBJETOS_INTENTO_1" edge="1" parent="1" source="ent_CANCION_OBJETOS_INTENTO" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCION_OBJETOS_INTENTO_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCION_OBJETOS_INTENTO_2" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_item" vertex="1">
+          <mxGeometry height="46" width="124" x="3718" y="2512" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCION_OBJETOS_INTENTO_attr_CANCION_OBJETOS_INTENTO_2" edge="1" parent="1" source="ent_CANCION_OBJETOS_INTENTO" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCION_OBJETOS_INTENTO_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ent_CANCIONES_PERSONALIZADAS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2.5;fontStyle=1;fontSize=17;fontColor=light-dark(#241814,#FFFFFF);" value="CANCIONES_PERSONALIZADAS" vertex="1">
+          <mxGeometry height="76" width="355" x="3412.5" y="982" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#33FF33;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.9;fontStyle=5;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="id_cancion" vertex="1">
+          <mxGeometry height="46" width="129" x="3300.5" y="832" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_0" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_0" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="clave_unica" vertex="1">
+          <mxGeometry height="46" width="138.5" x="3255.8" y="692" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_1" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="titulo" vertex="1">
+          <mxGeometry height="46" width="124" x="3393" y="592" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_2" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="artista" vertex="1">
+          <mxGeometry height="46" width="124" x="3563" y="562" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_3" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="dificultad" vertex="1">
+          <mxGeometry height="46" width="129" x="3730.5" y="592" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_4" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="bpm" vertex="1">
+          <mxGeometry height="46" width="124" x="3878" y="677" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_5" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_record" vertex="1">
+          <mxGeometry height="46" width="148" x="3781" y="797" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_6" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="ruta_portada" vertex="1">
+          <mxGeometry height="46" width="148" x="3951" y="802" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_7" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="ruta_audio" vertex="1">
+          <mxGeometry height="46" width="129" x="3990.5" y="927" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_8" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_9" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="ruta_chart" vertex="1">
+          <mxGeometry height="46" width="129" x="3990.5" y="1057" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_9" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_9" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_10" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="cantidad_notas" vertex="1">
+          <mxGeometry height="46" width="167" x="3941.5" y="1182" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_10" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_11" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="puntaje_ultimo_intento" vertex="1">
+          <mxGeometry height="46" width="243" x="3813.5" y="1302" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_11" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_12" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="combo_ultimo_intento" vertex="1">
+          <mxGeometry height="46" width="224" x="3683" y="1402" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_12" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_12" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_13" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="precision_ultimo_intento" vertex="1">
+          <mxGeometry height="46" width="262" x="3254" y="1402" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_13" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_13" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_14" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="puntaje_mas_alto" vertex="1">
+          <mxGeometry height="46" width="186" x="3152" y="1302" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_14" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_14" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_15" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="combo_mas_alto" vertex="1">
+          <mxGeometry height="46" width="167" x="3071.5" y="1182" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_15" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_15" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_16" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="precision_mas_alta" vertex="1">
+          <mxGeometry height="46" width="205" x="3022.5" y="1057" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_16" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_16" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_17" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="veces_jugada" vertex="1">
+          <mxGeometry height="46" width="148" x="3061" y="927" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_17" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_17" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attr_CANCIONES_PERSONALIZADAS_18" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.8;fontSize=13;fontColor=light-dark(#241814,#FFFFFF);" value="fecha_ultimo_intento" vertex="1">
+          <mxGeometry height="46" width="224" x="3053" y="802" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ent_CANCIONES_PERSONALIZADAS_attr_CANCIONES_PERSONALIZADAS_18" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=1.6;fontColor=light-dark(#241814,#FFFFFF);" target="attr_CANCIONES_PERSONALIZADAS_18" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_ubicar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="ubicar" vertex="1">
+          <mxGeometry height="90" width="152" x="74" y="1295" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_ubicar_1" edge="1" parent="1" source="ent_ZONAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_ubicar" value="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="150" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_rel_ubicar_2" edge="1" parent="1" source="rel_ubicar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_CATALOGO_BATALLAS" value="N">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="150" y="2340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_estar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="estar" vertex="1">
+          <mxGeometry height="90" width="152" x="1004" y="865" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_estar_1" edge="1" parent="1" source="ent_ZONAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_estar" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_estar_2" edge="1" parent="1" source="rel_estar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_PARTIDAS" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_definir" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="definir" vertex="1">
+          <mxGeometry height="90" width="152" x="1444" y="845" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_definir_1" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_definir" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_definir_2" edge="1" parent="1" source="rel_definir" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_FLAGS_PARTIDA" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_vencer" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="vencer" vertex="1">
+          <mxGeometry height="90" width="152" x="1004" y="1295" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_vencer_1" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_vencer" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_vencer_2" edge="1" parent="1" source="rel_vencer" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_BATALLAS_VENCIDAS" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_registrar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="registrar" vertex="1">
+          <mxGeometry height="90" width="152" x="564" y="1795" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_registrar_1" edge="1" parent="1" source="ent_CATALOGO_BATALLAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_registrar" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_registrar_2" edge="1" parent="1" source="rel_registrar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_BATALLAS_VENCIDAS" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_recompensar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="recompensar" vertex="1">
+          <mxGeometry height="90" width="152" x="1474" y="2295" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_recompensar_1" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_recompensar" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_recompensar_2" edge="1" parent="1" source="rel_recompensar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_CATALOGO_BATALLAS" value="0..N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_poseer" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="poseer" vertex="1">
+          <mxGeometry height="90" width="152" x="1914" y="875" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_poseer_1" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_poseer" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_poseer_2" edge="1" parent="1" source="rel_poseer" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_OBJETOS_OBTENIDOS" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_auditar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="auditar" vertex="1">
+          <mxGeometry height="90" width="152" x="1914" y="1295" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_auditar_1" edge="1" parent="1" source="ent_PARTIDAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_auditar" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_auditar_2" edge="1" parent="1" source="rel_auditar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_HISTORIAL_OBJETOS" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_clasificar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="clasificar" vertex="1">
+          <mxGeometry height="90" width="152" x="2884" y="1295" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_clasificar_1" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_clasificar" value="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2960" y="2020" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_rel_clasificar_2" edge="1" parent="1" source="rel_clasificar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_OBJETOS_OBTENIDOS" value="N">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2960" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_referenciar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="referenciar" vertex="1">
+          <mxGeometry height="90" width="152" x="2384" y="1795" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_referenciar_1" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_referenciar" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_referenciar_2" edge="1" parent="1" source="rel_referenciar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_HISTORIAL_OBJETOS" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_incluir" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="incluir" vertex="1">
+          <mxGeometry height="90" width="152" x="2949" y="2295" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_incluir_1" edge="1" parent="1" source="ent_CATALOGO_ITEMS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_incluir" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_incluir_2" edge="1" parent="1" source="rel_incluir" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_CANCION_OBJETOS_INTENTO" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_resguardar" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFDF8;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);" value="resguardar" vertex="1">
+          <mxGeometry height="90" width="152" x="3514" y="1635" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_resguardar_1" edge="1" parent="1" source="ent_CANCIONES_PERSONALIZADAS" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="rel_resguardar" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_rel_resguardar_2" edge="1" parent="1" source="rel_resguardar" style="endArrow=none;html=1;strokeColor=light-dark(#0E0E0E,#E9E9E9);strokeWidth=2;fontStyle=1;fontSize=15;fontColor=light-dark(#241814,#FFFFFF);labelBackgroundColor=#FAF8F3;" target="ent_CANCION_OBJETOS_INTENTO" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -23,7 +23,8 @@ enum DialogNodeType : int {
     PlaySfx  = 3, // __playsfx__
     Define   = 4, // __define__ (estilo C)
     IfDef    = 5, // __ifdef__  (estilo C)
-    IfNDef   = 6  // __ifndef__ (estilo C)
+    IfNDef   = 6, // __ifndef__ (estilo C)
+    GiveItem = 7  // __give_item__ (itemId o itemId:count)
 }
 
 /**
@@ -55,6 +56,12 @@ struct DialogGraphNode {
 
     // Argumento para nodos de directiva (__load__, __save_next__, __playsfx__, __define__, __ifdef__, __ifndef__)
     char[256] argValue    = 0;
+
+    // Redirecciones condicionales a nivel de nodo (ej. tras victoria o derrota en combate)
+    char[128] nodeIfDef       = 0;
+    char[128] nodeNextIfDef   = 0;
+    char[128] nodeIfNDef      = 0;
+    char[128] nodeNextIfNDef  = 0;
 }
 
 /**
@@ -237,6 +244,9 @@ int dialog_graph_add_node(ref DialogGraph graph, DialogNodeType type, Vector2 po
         case DialogNodeType.IfNDef:
             snprintf(node.argValue.ptr, node.argValue.length, "FLAG_EVENTO");
             break;
+        case DialogNodeType.GiveItem:
+            snprintf(node.argValue.ptr, node.argValue.length, "potion_small:1");
+            break;
     }
 
     graph.selectedNodeUid = uid;
@@ -389,6 +399,7 @@ const(char)* dialog_node_type_title(DialogNodeType type) {
         case DialogNodeType.Define:   return "__define__";
         case DialogNodeType.IfDef:    return "__ifdef__";
         case DialogNodeType.IfNDef:   return "__ifndef__";
+        case DialogNodeType.GiveItem: return "__give_item__";
     }
 }
 
@@ -431,6 +442,10 @@ bool dialog_graph_save_json(const(char)* filePath, ref DialogGraph graph) {
         fprintf(fp, "  \"%s\": {\n", dNode.id.ptr);
         fprintf(fp, "    \"title\": \"%s\",\n", dNode.title.ptr);
         fprintf(fp, "    \"desc\": \"%s\"", dNode.desc.ptr);
+        if (dNode.nodeIfDef[0] != '\0') fprintf(fp, ",\n    \"__ifdef__\": \"%s\"", dNode.nodeIfDef.ptr);
+        if (dNode.nodeNextIfDef[0] != '\0') fprintf(fp, ",\n    \"__next_ifdef__\": \"%s\"", dNode.nodeNextIfDef.ptr);
+        if (dNode.nodeIfNDef[0] != '\0') fprintf(fp, ",\n    \"__ifndef__\": \"%s\"", dNode.nodeIfNDef.ptr);
+        if (dNode.nodeNextIfNDef[0] != '\0') fprintf(fp, ",\n    \"__next_ifndef__\": \"%s\"", dNode.nodeNextIfNDef.ptr);
 
         // Evaluar ramas: default, option1, option2
         BranchDirectives defBranch = collect_branch_directives(graph, dNode.uid, DialogBranchSlot.Default);
@@ -514,21 +529,25 @@ __gshared DialogGraph[MAX_DIALOG_UNDO] dlg_undo_stack;
 __gshared int dlg_undo_count = 0;
 
 struct BranchDirectives {
-    char[256] loadVal     = 0;
-    char[128] saveNextVal = 0;
-    char[256] playSfxVal  = 0;
-    char[128] defineVal   = 0;
-    char[128] ifdefVal    = 0;
-    char[128] ifndefVal   = 0;
-    char[128] nextVal     = 0;
+    char[256] loadVal         = 0;
+    char[128] saveNextVal     = 0;
+    char[128] saveNextLoseVal = 0;
+    char[256] playSfxVal      = 0;
+    char[128] defineVal       = 0;
+    char[128] ifdefVal        = 0;
+    char[128] ifndefVal       = 0;
+    char[128] giveItemVal     = 0;
+    char[128] nextVal         = 0;
 
     bool hasAny() const nothrow @nogc {
         return loadVal[0] != '\0' ||
                saveNextVal[0] != '\0' ||
+               saveNextLoseVal[0] != '\0' ||
                playSfxVal[0] != '\0' ||
                defineVal[0] != '\0' ||
                ifdefVal[0] != '\0' ||
                ifndefVal[0] != '\0' ||
+               giveItemVal[0] != '\0' ||
                nextVal[0] != '\0';
     }
 }
@@ -584,6 +603,11 @@ BranchDirectives collect_branch_directives(ref DialogGraph graph, int dialogUid,
                 strncpy(res.ifndefVal.ptr, cur.argValue.ptr, res.ifndefVal.length - 1);
                 cur = dialog_graph_get_connected_target(graph, cur.uid, 0);
                 break;
+
+            case DialogNodeType.GiveItem:
+                strncpy(res.giveItemVal.ptr, cur.argValue.ptr, res.giveItemVal.length - 1);
+                cur = dialog_graph_get_connected_target(graph, cur.uid, 0);
+                break;
         }
     }
 
@@ -612,9 +636,11 @@ void write_branch_fields(FILE* fp, const(char)* optionText, ref const(BranchDire
     emit_field("__define__", dir.defineVal.ptr);
     emit_field("__ifdef__", dir.ifdefVal.ptr);
     emit_field("__ifndef__", dir.ifndefVal.ptr);
+    emit_field("__give_item__", dir.giveItemVal.ptr);
     emit_field("__playsfx__", dir.playSfxVal.ptr);
     emit_field("__load__", dir.loadVal.ptr);
     emit_field("__save_next__", dir.saveNextVal.ptr);
+    emit_field("__save_next_lose__", dir.saveNextLoseVal.ptr);
     emit_field("next", dir.nextVal.ptr);
 
     if (needsComma) {
@@ -752,6 +778,14 @@ void parse_json_dialogs(const(char)* src, size_t len, ref DialogGraph graph) {
                         strncpy(dNode.title.ptr, strVal.ptr, dNode.title.length - 1);
                     } else if (strcmp(propName.ptr, "desc") == 0) {
                         strncpy(dNode.desc.ptr, strVal.ptr, dNode.desc.length - 1);
+                    } else if (strcmp(propName.ptr, "__ifdef__") == 0) {
+                        strncpy(dNode.nodeIfDef.ptr, strVal.ptr, dNode.nodeIfDef.length - 1);
+                    } else if (strcmp(propName.ptr, "__next_ifdef__") == 0) {
+                        strncpy(dNode.nodeNextIfDef.ptr, strVal.ptr, dNode.nodeNextIfDef.length - 1);
+                    } else if (strcmp(propName.ptr, "__ifndef__") == 0) {
+                        strncpy(dNode.nodeIfNDef.ptr, strVal.ptr, dNode.nodeIfNDef.length - 1);
+                    } else if (strcmp(propName.ptr, "__next_ifndef__") == 0) {
+                        strncpy(dNode.nodeNextIfNDef.ptr, strVal.ptr, dNode.nodeNextIfNDef.length - 1);
                     }
                 }
             } else if (pos < len && src[pos] == '{') {
@@ -798,10 +832,12 @@ void parse_json_dialogs(const(char)* src, size_t len, ref DialogGraph graph) {
                         } else if (bSlot == DialogBranchSlot.Option2) {
                             strncpy(dNode.option2Text.ptr, bVal.ptr, dNode.option2Text.length - 1);
                         }
-                    } else if (strcmp(bKey.ptr, "__load__") == 0 || strcmp(bKey.ptr, "__loadr__") == 0) {
+                    } else if (strcmp(bKey.ptr, "__load__") == 0 || strcmp(bKey.ptr, "__loadr__") == 0 || strcmp(bKey.ptr, "__loads__") == 0) {
                         strncpy(bDir.loadVal.ptr, bVal.ptr, bDir.loadVal.length - 1);
                     } else if (strcmp(bKey.ptr, "__save_next__") == 0) {
                         strncpy(bDir.saveNextVal.ptr, bVal.ptr, bDir.saveNextVal.length - 1);
+                    } else if (strcmp(bKey.ptr, "__save_next_lose__") == 0) {
+                        strncpy(bDir.saveNextLoseVal.ptr, bVal.ptr, bDir.saveNextLoseVal.length - 1);
                     } else if (strcmp(bKey.ptr, "__playsfx__") == 0) {
                         strncpy(bDir.playSfxVal.ptr, bVal.ptr, bDir.playSfxVal.length - 1);
                     } else if (strcmp(bKey.ptr, "__define__") == 0) {
@@ -810,6 +846,8 @@ void parse_json_dialogs(const(char)* src, size_t len, ref DialogGraph graph) {
                         strncpy(bDir.ifdefVal.ptr, bVal.ptr, bDir.ifdefVal.length - 1);
                     } else if (strcmp(bKey.ptr, "__ifndef__") == 0) {
                         strncpy(bDir.ifndefVal.ptr, bVal.ptr, bDir.ifndefVal.length - 1);
+                    } else if (strcmp(bKey.ptr, "__give_item__") == 0) {
+                        strncpy(bDir.giveItemVal.ptr, bVal.ptr, bDir.giveItemVal.length - 1);
                     } else if (strcmp(bKey.ptr, "next") == 0) {
                         strncpy(bDir.nextVal.ptr, bVal.ptr, bDir.nextVal.length - 1);
                     }
@@ -857,6 +895,7 @@ void parse_json_dialogs(const(char)* src, size_t len, ref DialogGraph graph) {
         append_directive_node(DialogNodeType.Define, pending[i].dir.defineVal.ptr);
         append_directive_node(DialogNodeType.IfDef, pending[i].dir.ifdefVal.ptr);
         append_directive_node(DialogNodeType.IfNDef, pending[i].dir.ifndefVal.ptr);
+        append_directive_node(DialogNodeType.GiveItem, pending[i].dir.giveItemVal.ptr);
         append_directive_node(DialogNodeType.PlaySfx, pending[i].dir.playSfxVal.ptr);
         append_directive_node(DialogNodeType.Load, pending[i].dir.loadVal.ptr);
         append_directive_node(DialogNodeType.SaveNext, pending[i].dir.saveNextVal.ptr);
