@@ -2,9 +2,8 @@
 
 > **Estado del proyecto:** Versión en desarrollo (**no completamente terminada**). El motor rítmico de 6 carriles, el selector de canciones, la configuración y la base de datos SQLite (3FN) están operativos; el Hub por salas y el modo historia/diálogos siguen en construcción.
 
-Videojuego 2D pixel art desarrollado en **Java 17 (Processing 4 + ControlP5 + TinySound + SQLite)** que combina un **Hub interactivo por salas al ritmo** (inspiración *Crypt of the NecroDancer*, `HubScene`) con **combate rítmico de 6 carriles** (inspiración *Rift of the NecroDancer*, `ROTNScene` / `ROTNCore`) y persistencia relacional completa en **SQLite (3FN)**.
+Videojuego 2D pixel art desarrollado en **Java 17 (Processing 4 + ControlP5 + TinySound + SQLite)** que combina un **Hub interactivo por salas al ritmo** con **combate rítmico de 6 carriles** y persistencia relacional completa en **SQLite**.
 
-**Institución:** Escuela Técnica Nº 35 D.E. 18 «Ing. Eduardo Latzina» (Computación)  
 **Alumno:** Francisco Nahuel Sarmiento (5º 4ª) · **Ciclo Lectivo:** 2026
 
 ---
@@ -33,7 +32,7 @@ Combo 6Beat/
 
 ---
 
-## Base de Datos SQLite (3FN)
+## Base de Datos SQLite
 
 Todo el módulo de persistencia se encuentra en [`docs/entrega_final/02_base_de_datos/`](docs/entrega_final/02_base_de_datos/) y está integrado en vivo con el juego mediante [`game/resources/db/schema.sql`](game/resources/db/schema.sql) (`DatabaseManager`, `SaveRepository`, `CustomSongRepository`):
 
@@ -72,8 +71,8 @@ sqlite3 test_restore.db < 03_consultas_reportes.sql
 
 ```bash
 cd release
-./jugar.sh          # Linux / macOS
-# o en Windows: doble clic en jugar.bat
+jugar.bat             # Windows
+# ./jugar.sh          # Linux / macOS
 ```
 
 Ver guía completa de controles y uso en [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md).
