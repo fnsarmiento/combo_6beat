@@ -37,8 +37,8 @@ Combo 6Beat/
 Todo el módulo de persistencia se encuentra en [`docs/entrega_final/02_base_de_datos/`](docs/entrega_final/02_base_de_datos/) y está integrado en vivo con el juego mediante [`game/resources/db/schema.sql`](game/resources/db/schema.sql) (`DatabaseManager`, `SaveRepository`, `CustomSongRepository`):
 
 - **Modelado:**
-  - **DER Conceptual (Chen):** [`DER_Conceptual_Combo6Beat.drawio`](docs/entrega_final/02_base_de_datos/DER_Conceptual_Combo6Beat.drawio) / [`DER_Conceptual_Combo6Beat.png`](docs/entrega_final/02_base_de_datos/DER_Conceptual_Combo6Beat.png)
-  - **Modelo Relacional (3FN, Crow's Foot):** [`Modelo_Relacional_Combo6Beat.drawio`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_Combo6Beat.drawio) / [`Modelo_Relacional_Combo6Beat.png`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_Combo6Beat.png)
+  - **DER Conceptual:** [`DER_Conceptual_Combo6Beat.drawio`](docs/entrega_final/02_base_de_datos/DER_Conceptual_Combo6Beat.drawio) / [`DER_Conceptual_Combo6Beat.png`](docs/entrega_final/02_base_de_datos/DER_Conceptual_Combo6Beat.png)
+  - **Modelo Relacional:** [`Modelo_Relacional_Combo6Beat.drawio`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_Combo6Beat.drawio) / [`Modelo_Relacional_Combo6Beat.png`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_Combo6Beat.png)
   - **Diccionario de Datos y Normalización:** [`Modelo_Relacional_3FN.md`](docs/entrega_final/02_base_de_datos/Modelo_Relacional_3FN.md)
 - **Scripts SQLite (12 tablas, 4 índices, 14 triggers, 7 vistas):**
   1. [`01_ddl_creacion.sql`](docs/entrega_final/02_base_de_datos/01_ddl_creacion.sql) — Creación de tablas (`ZONAS`, `ENEMIGOS`, `CATALOGO_ITEMS`, `CATALOGO_BATALLAS`, `PARTIDAS`, `BATALLAS_VENCIDAS`, `OBJETOS_OBTENIDOS`, `HISTORIAL_OBJETOS`, `FLAGS_PARTIDA`, `CANCIONES_PERSONALIZADAS`, `CANCION_OBJETOS_INTENTO`, `DB_META`), índices, triggers y vistas `INNER JOIN`.
