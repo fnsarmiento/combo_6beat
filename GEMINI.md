@@ -1,6 +1,14 @@
 # Combo 6Beat — Contexto Raíz del Proyecto
 
-Videojuego 2D con estética pixel art que combina exploración RPG top-down (inspiración *Everhood*) con combate rítmico de 6 carriles (inspiración *Rift of the NecroDancer*). La propuesta formal del trabajo final de 5to año está en `Propuesta de Tema.docx`.
+Videojuego 2D con estética pixel art que combina un **Hub interactivo por salas al ritmo** (inspiración *Crypt of the NecroDancer*, `HubScene`) y escenas narrativas de diálogo con **combate rítmico de 6 carriles** (inspiración *Rift of the NecroDancer*, `ROTNScene` / `ROTNCore`). El mapa 2D RPG antiguo fue eliminado en `feat/rhythm-vn` (respaldado en `backup/rpg-re`).
+
+## Base de Datos SQLite (3FN)
+
+- Esquema maestro en `game/resources/db/schema.sql` (espejado en `docs/entrega_final/02_base_de_datos/01_ddl_creacion.sql` + `02_dml_datos_iniciales.sql`).
+- **`ZONAS`** representa las **salas del Hub** (`hub`, `swamp`, `beach_ruins`).
+- **`ENEMIGOS`** guarda cada enemigo/jefe con su **canción de referencia** (`cancion_referencia`), su **posición `(hub_x, hub_y)`** dentro de la sala del Hub (`id_zona`), su sprite y su vínculo a `CATALOGO_BATALLAS`.
+- **`CATALOGO_BATALLAS`** define recompensas y **amuletos desbloqueables por puntaje** (`id_amuleto_score`, `puntaje_minimo_amuleto`), otorgados automáticamente mediante triggers al registrar/actualizar victorias en `BATALLAS_VENCIDAS`.
+- **`CANCIONES_PERSONALIZADAS`** + **`CANCION_OBJETOS_INTENTO`** gestionan el modo libre/custom con triggers automáticos de récord e ítems resguardados.
 
 ## Estructura del Workspace
 

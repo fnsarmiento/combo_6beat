@@ -1,7 +1,3 @@
--- =============================================================================
--- Combo 6Beat — Respaldo Completo de la Base de Datos (SQLite .dump)
--- Importar desde cero con: sqlite3 combo6beat.db < 04_respaldo_completo.sql
--- =============================================================================
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE DB_META (
@@ -16,10 +12,9 @@ CREATE TABLE ZONAS (
     escena_xml_relativa TEXT NOT NULL UNIQUE,
     orden_progresion    INTEGER NOT NULL DEFAULT 0
 );
-INSERT INTO ZONAS VALUES('hub','El Hub','resources/scenes/hub.xml',0);
-INSERT INTO ZONAS VALUES('swamp','Swamp (Pantano)','resources/scenes/swamp.xml',1);
-INSERT INTO ZONAS VALUES('beach_ruins','Beach','resources/scenes/beach_ruins.xml',2);
-INSERT INTO ZONAS VALUES('debug_a','Sala de Pruebas','resources/scenes/a.xml',99);
+INSERT INTO ZONAS VALUES('hub','Hub Central','resources/scenes/hub.xml',0);
+INSERT INTO ZONAS VALUES('swamp','Sala del Pantano','resources/scenes/swamp.xml',1);
+INSERT INTO ZONAS VALUES('beach_ruins','Sala de Ruinas','resources/scenes/beach_ruins.xml',2);
 CREATE TABLE CATALOGO_ITEMS (
     id_item     TEXT PRIMARY KEY,
     nombre      TEXT NOT NULL,
@@ -35,8 +30,8 @@ INSERT INTO CATALOGO_ITEMS VALUES('powerup_reaction_plus','Chip +10ms','POWERUP'
 INSERT INTO CATALOGO_ITEMS VALUES('powerup_reaction_minus','Chip -7.5ms','POWERUP',0,'-7.5ms ventana de reaccion, -20 pts coste curacion');
 INSERT INTO CATALOGO_ITEMS VALUES('powerup_invincibility','Escudo Unico','POWERUP',0,'Invencibilidad de un solo uso por pista');
 INSERT INTO CATALOGO_ITEMS VALUES('amulet_healing','Amuleto de Curacion','AMULET',0,'Aumenta la curacion por notas consecutivas del 50% al 75% del dano recibido');
-INSERT INTO CATALOGO_ITEMS VALUES('amulet_medallion_swamp','Medallon del Pantano','AMULET',0,'Eco del tercer escondite de La Gata en el Pantano');
-INSERT INTO CATALOGO_ITEMS VALUES('amulet_medallion_ruins','Medallon del Ocaso','AMULET',0,'Eco del tercer escondite de La Gata en Playas y Ruinas');
+INSERT INTO CATALOGO_ITEMS VALUES('amulet_medallion_swamp','Medallon del Pantano','AMULET',0,'Amuleto desbloqueado por puntaje alto en el Pantano');
+INSERT INTO CATALOGO_ITEMS VALUES('amulet_medallion_ruins','Medallon del Ocaso','AMULET',0,'Amuleto desbloqueado por puntaje alto en las Ruinas');
 CREATE TABLE CATALOGO_BATALLAS (
     id_batalla              TEXT PRIMARY KEY,
     boss_id                 TEXT NOT NULL UNIQUE,
@@ -46,17 +41,35 @@ CREATE TABLE CATALOGO_BATALLAS (
     escena_combate_relativa TEXT NOT NULL,
     id_zona                 TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
     id_item_recompensa      TEXT NULL REFERENCES CATALOGO_ITEMS(id_item) ON UPDATE CASCADE ON DELETE SET NULL,
+    id_amuleto_score        TEXT NULL REFERENCES CATALOGO_ITEMS(id_item) ON UPDATE CASCADE ON DELETE SET NULL,
+    puntaje_minimo_amuleto  INTEGER NOT NULL DEFAULT 0 CHECK (puntaje_minimo_amuleto >= 0),
     es_historia_principal   INTEGER NOT NULL DEFAULT 1 CHECK (es_historia_principal IN (0, 1))
 );
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_swamp_1','boss_swamp_1','Kael','Gemelo 1','BOSS_SWAMP_1_DEFEATED','resources/songs/swamp_1_kael.scene','swamp',NULL,1);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_swamp_2','boss_swamp_2','Kael & Vesper','Gemelos','BOSS_SWAMP_2_DEFEATED','resources/songs/swamp_2_twins.scene','swamp','powerup_reaction_plus',1);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_swamp_3','boss_swamp_3','Grail','Oso + Buho','BOSS_SWAMP_3_DEFEATED','resources/songs/swamp_3_grail.scene','swamp','potion_large',1);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_beach_1','boss_beach_1','Kael & Vesper','Costa','BOSS_BEACH_1_DEFEATED','resources/songs/beach_1_twins.scene','beach_ruins','potion_medium',1);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_beach_2','boss_beach_2','Kael & Vesper','Ruinas','BOSS_BEACH_2_DEFEATED','resources/songs/beach_2_twins.scene','beach_ruins','amulet_healing',1);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_beach_3','boss_grail','Grail','Oso + Buho','BOSS_BEACH_3_DEFEATED','resources/songs/grail_sanctum.scene','beach_ruins','powerup_reaction_minus',1);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_cat_7','boss_cat','La Gata','Felino','BOSS_CAT_FINAL_DEFEATED','resources/songs/glass beach.scene','hub',NULL,1);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_bear','boss_bear','Oso','Oso Guerrero','BOSS_RABY_DEFEATED','resources/songs/fiend - 2DF2.scene','beach_ruins','key_exit',0);
-INSERT INTO CATALOGO_BATALLAS VALUES('batalla_nash','boss_nash','Nash','Perico + Hiena','BOSS_NASH_DEFEATED','resources/songs/nash_storm.scene','beach_ruins','potion_large',0);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_swamp_1','boss_swamp_1','Kael','Gemelo 1','BOSS_SWAMP_1_DEFEATED','resources/songs/swamp_1_kael.scene','swamp',NULL,'amulet_medallion_swamp',15000,1);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_swamp_2','boss_swamp_2','Kael & Vesper','Gemelos','BOSS_SWAMP_2_DEFEATED','resources/songs/swamp_2_twins.scene','swamp','powerup_reaction_plus','amulet_healing',20000,1);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_swamp_3','boss_swamp_3','Grail','Oso + Buho','BOSS_SWAMP_3_DEFEATED','resources/songs/swamp_3_grail.scene','swamp','potion_large','amulet_medallion_swamp',24000,1);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_beach_1','boss_beach_1','Kael & Vesper','Costa','BOSS_BEACH_1_DEFEATED','resources/songs/beach_1_twins.scene','beach_ruins','potion_medium','amulet_medallion_ruins',25000,1);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_beach_2','boss_beach_2','Kael & Vesper','Ruinas','BOSS_BEACH_2_DEFEATED','resources/songs/beach_2_twins.scene','beach_ruins','amulet_healing','amulet_medallion_ruins',28000,1);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_beach_3','boss_grail','Grail','Oso + Buho','BOSS_BEACH_3_DEFEATED','resources/songs/grail_sanctum.scene','beach_ruins','powerup_reaction_minus','amulet_healing',30000,1);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_cat_7','boss_cat','La Gata','Felino','BOSS_CAT_FINAL_DEFEATED','resources/songs/glass beach.scene','hub',NULL,'amulet_healing',32000,1);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_bear','boss_bear','Oso','Oso Guerrero','BOSS_RABY_DEFEATED','resources/songs/fiend - 2DF2.scene','beach_ruins','key_exit',NULL,0,0);
+INSERT INTO CATALOGO_BATALLAS VALUES('batalla_nash','boss_nash','Nash','Perico + Hiena','BOSS_NASH_DEFEATED','resources/songs/nash_storm.scene','beach_ruins','potion_large','amulet_medallion_ruins',22000,0);
+CREATE TABLE ENEMIGOS (
+    id_enemigo          TEXT PRIMARY KEY,
+    nombre              TEXT NOT NULL,
+    especie             TEXT NOT NULL DEFAULT '',
+    id_zona             TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
+    hub_x               INTEGER NOT NULL DEFAULT 0 CHECK (hub_x >= 0),
+    hub_y               INTEGER NOT NULL DEFAULT 0 CHECK (hub_y >= 0),
+    cancion_referencia  TEXT NOT NULL,
+    sprite_relativo     TEXT NOT NULL DEFAULT '',
+    id_batalla          TEXT NULL UNIQUE REFERENCES CATALOGO_BATALLAS(id_batalla) ON UPDATE CASCADE ON DELETE SET NULL
+);
+INSERT INTO ENEMIGOS VALUES('enemy_kael','Kael','Gemelo 1','hub',3,1,'resources/songs/swamp_1_kael.scene','sprites/bosses/bear.png','batalla_swamp_1');
+INSERT INTO ENEMIGOS VALUES('enemy_twins','Kael & Vesper','Gemelos','hub',6,1,'resources/songs/beach_1_twins.scene','sprites/bosses/bear.png','batalla_beach_1');
+INSERT INTO ENEMIGOS VALUES('enemy_nash','Nash','Perico + Hiena','hub',8,1,'resources/songs/nash_storm.scene','sprites/bosses/bear.png','batalla_nash');
+INSERT INTO ENEMIGOS VALUES('enemy_grail','Grail','Oso + Buho','hub',11,1,'resources/songs/grail_sanctum.scene','sprites/bosses/bear.png','batalla_beach_3');
+INSERT INTO ENEMIGOS VALUES('enemy_cat','La Gata','Felino','hub',5,4,'resources/songs/glass beach.scene','sprites/npcs/cat.png','batalla_cat_7');
 CREATE TABLE PARTIDAS (
     id_partida          INTEGER PRIMARY KEY AUTOINCREMENT,
     slot                INTEGER NOT NULL UNIQUE CHECK (slot BETWEEN 1 AND 4),
@@ -72,8 +85,8 @@ CREATE TABLE PARTIDAS (
     fecha_creacion      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO PARTIDAS VALUES(1,1,'swamp',640,720,'swamp',640,720,'OPTIMAL','EN_PROGRESO',28.6,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO PARTIDAS VALUES(2,2,'beach_ruins',1824,960,'beach_ruins',1824,960,'MINIMAL','BUCLE_AGOTADO',85.7,'2026-11-16 20:17:53','2026-11-16 20:17:53');
+INSERT INTO PARTIDAS VALUES(1,1,'swamp',640,720,'swamp',640,720,'OPTIMAL','EN_PROGRESO',28.6,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO PARTIDAS VALUES(2,2,'beach_ruins',1824,960,'beach_ruins',1824,960,'MINIMAL','BUCLE_AGOTADO',85.7,'2026-11-19 01:49:13','2026-11-19 01:49:13');
 CREATE TABLE BATALLAS_VENCIDAS (
     id_partida              INTEGER NOT NULL REFERENCES PARTIDAS(id_partida) ON DELETE CASCADE,
     id_batalla              TEXT NOT NULL REFERENCES CATALOGO_BATALLAS(id_batalla) ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -88,14 +101,14 @@ CREATE TABLE BATALLAS_VENCIDAS (
     fecha_ultima_victoria   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_partida, id_batalla)
 );
-INSERT INTO BATALLAS_VENCIDAS VALUES(1,'batalla_swamp_1',14200,92,110,14,4,2,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO BATALLAS_VENCIDAS VALUES(1,'batalla_swamp_2',18550,128,165,22,6,3,2,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_swamp_1',16800,115,120,8,2,0,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_swamp_2',21400,152,180,14,2,1,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_swamp_3',24900,174,210,18,4,2,2,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_beach_1',26100,188,225,16,3,1,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_beach_2',29300,210,240,12,2,1,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_beach_3',33800,245,290,15,3,0,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
+INSERT INTO BATALLAS_VENCIDAS VALUES(1,'batalla_swamp_1',14200,92,110,14,4,2,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO BATALLAS_VENCIDAS VALUES(1,'batalla_swamp_2',18550,128,165,22,6,3,2,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_swamp_1',16800,115,120,8,2,0,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_swamp_2',21400,152,180,14,2,1,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_swamp_3',24900,174,210,18,4,2,2,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_beach_1',26100,188,225,16,3,1,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_beach_2',29300,210,240,12,2,1,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO BATALLAS_VENCIDAS VALUES(2,'batalla_beach_3',33800,245,290,15,3,0,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
 CREATE TABLE OBJETOS_OBTENIDOS (
     id_partida          INTEGER NOT NULL REFERENCES PARTIDAS(id_partida) ON DELETE CASCADE,
     id_item             TEXT NOT NULL REFERENCES CATALOGO_ITEMS(id_item) ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -105,16 +118,16 @@ CREATE TABLE OBJETOS_OBTENIDOS (
     fecha_actualizacion TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_partida, id_item)
 );
-INSERT INTO OBJETOS_OBTENIDOS VALUES(1,'potion_small',3,0,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(1,'powerup_reaction_plus',1,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(1,'powerup_invincibility',1,0,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'potion_medium',2,0,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'potion_large',1,0,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'key_exit',1,0,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'amulet_healing',1,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'powerup_reaction_minus',1,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'amulet_medallion_swamp',1,0,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'amulet_medallion_ruins',1,0,'2026-11-16 20:17:53','2026-11-16 20:17:53');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'amulet_medallion_swamp',1,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'amulet_healing',1,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'amulet_medallion_ruins',1,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(1,'potion_small',3,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(1,'powerup_reaction_plus',1,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(1,'powerup_invincibility',1,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'potion_medium',2,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'potion_large',1,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'key_exit',1,0,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO OBJETOS_OBTENIDOS VALUES(2,'powerup_reaction_minus',1,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
 CREATE TABLE HISTORIAL_OBJETOS (
     id_historial    INTEGER PRIMARY KEY AUTOINCREMENT,
     id_partida      INTEGER NOT NULL REFERENCES PARTIDAS(id_partida) ON DELETE CASCADE,
@@ -123,43 +136,42 @@ CREATE TABLE HISTORIAL_OBJETOS (
     cantidad_delta  INTEGER NOT NULL,
     fecha_evento    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO HISTORIAL_OBJETOS VALUES(1,1,'potion_small','OBTENIDO',3,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(2,1,'powerup_reaction_plus','OBTENIDO',1,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(3,1,'powerup_reaction_plus','EQUIPADO',0,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(4,1,'powerup_invincibility','OBTENIDO',1,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(5,2,'potion_medium','OBTENIDO',2,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(6,2,'potion_large','OBTENIDO',2,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(7,2,'key_exit','OBTENIDO',1,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(8,2,'amulet_healing','OBTENIDO',1,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(9,2,'amulet_healing','EQUIPADO',0,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(10,2,'powerup_reaction_minus','OBTENIDO',1,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(11,2,'powerup_reaction_minus','EQUIPADO',0,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(12,2,'amulet_medallion_swamp','OBTENIDO',1,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(13,2,'amulet_medallion_ruins','OBTENIDO',1,'2026-11-16 20:17:53');
-INSERT INTO HISTORIAL_OBJETOS VALUES(14,2,'potion_large','USADO',-1,'2026-11-16 20:17:53');
+INSERT INTO HISTORIAL_OBJETOS VALUES(1,2,'amulet_medallion_swamp','OBTENIDO',1,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(2,2,'amulet_healing','OBTENIDO',1,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(3,2,'amulet_medallion_ruins','OBTENIDO',1,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(4,1,'potion_small','OBTENIDO',3,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(5,1,'powerup_reaction_plus','OBTENIDO',1,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(6,1,'powerup_reaction_plus','EQUIPADO',0,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(7,1,'powerup_invincibility','OBTENIDO',1,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(8,2,'potion_medium','OBTENIDO',2,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(9,2,'potion_large','OBTENIDO',2,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(10,2,'key_exit','OBTENIDO',1,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(11,2,'powerup_reaction_minus','OBTENIDO',1,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(12,2,'powerup_reaction_minus','EQUIPADO',0,'2026-11-19 01:49:13');
+INSERT INTO HISTORIAL_OBJETOS VALUES(13,2,'potion_large','USADO',-1,'2026-11-19 01:49:13');
 CREATE TABLE FLAGS_PARTIDA (
     id_partida       INTEGER NOT NULL REFERENCES PARTIDAS(id_partida) ON DELETE CASCADE,
     flag_nombre      TEXT NOT NULL,
     fecha_definicion TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_partida, flag_nombre)
 );
-INSERT INTO FLAGS_PARTIDA VALUES(1,'HUB_INTRO_DONE','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(1,'SWAMP_ENTERED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(1,'BOSS_SWAMP_1_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(1,'BOSS_SWAMP_2_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(1,'CAT_SWAMP_1','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'HUB_INTRO_DONE','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'SWAMP_ENTERED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_SWAMP_1_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_SWAMP_2_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_SWAMP_3_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_BEACH_1_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_BEACH_2_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_BEACH_3_DEFEATED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'SWAMP_MEDALLION_TAKEN','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'RUINS_MEDALLION_TAKEN','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'ROUTE_TRUE_UNLOCKED','2026-11-16 20:17:53');
-INSERT INTO FLAGS_PARTIDA VALUES(2,'LOOP_EXHAUSTED_MODE','2026-11-16 20:17:53');
+INSERT INTO FLAGS_PARTIDA VALUES(1,'HUB_INTRO_DONE','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(1,'SWAMP_ENTERED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(1,'BOSS_SWAMP_1_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(1,'BOSS_SWAMP_2_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(1,'CAT_SWAMP_1','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'HUB_INTRO_DONE','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'SWAMP_ENTERED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_SWAMP_1_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_SWAMP_2_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_SWAMP_3_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_BEACH_1_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_BEACH_2_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'BOSS_BEACH_3_DEFEATED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'SWAMP_MEDALLION_TAKEN','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'RUINS_MEDALLION_TAKEN','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'ROUTE_TRUE_UNLOCKED','2026-11-19 01:49:13');
+INSERT INTO FLAGS_PARTIDA VALUES(2,'LOOP_EXHAUSTED_MODE','2026-11-19 01:49:13');
 CREATE TABLE CANCIONES_PERSONALIZADAS (
     id_cancion               INTEGER PRIMARY KEY AUTOINCREMENT,
     clave_unica              TEXT NOT NULL UNIQUE,
@@ -181,8 +193,8 @@ CREATE TABLE CANCIONES_PERSONALIZADAS (
     fecha_ultimo_intento     TEXT NULL,
     fecha_record             TEXT NULL
 );
-INSERT INTO CANCIONES_PERSONALIZADAS VALUES(1,'resources/songs/custom/fiend - 2DF2 [Custom 6K].osu','2DF2 (Custom)','fiend','Custom 6K Normal',155,'resources/songs/a1/cover.jpg','resources/songs/a1/audio.wav','resources/songs/custom/fiend - 2DF2 [Custom 6K].osu',178,9800,64,84.5,15400,112,96.8,2,'2026-11-16 20:17:53','2026-11-16 20:17:53');
-INSERT INTO CANCIONES_PERSONALIZADAS VALUES(2,'resources/songs/custom/glass beach - cold weather [Custom 6K].osu','cold weather (Custom)','glass beach','Custom 6K Hard',155,'resources/sprites/backgrounds/debug/beach_ruins.png','resources/songs/audio.wav','resources/songs/custom/glass beach - cold weather [Custom 6K].osu',1362,28900,195,94.2,28900,195,94.2,1,'2026-11-16 20:17:53','2026-11-16 20:17:53');
+INSERT INTO CANCIONES_PERSONALIZADAS VALUES(1,'resources/songs/custom/fiend - 2DF2 [Custom 6K].osu','2DF2 (Custom)','fiend','Custom 6K Normal',155,'resources/songs/a1/cover.jpg','resources/songs/a1/audio.wav','resources/songs/custom/fiend - 2DF2 [Custom 6K].osu',178,9800,64,84.5,15400,112,96.8,2,'2026-11-19 01:49:13','2026-11-19 01:49:13');
+INSERT INTO CANCIONES_PERSONALIZADAS VALUES(2,'resources/songs/custom/glass beach - cold weather [Custom 6K].osu','cold weather (Custom)','glass beach','Custom 6K Hard',155,'resources/sprites/backgrounds/debug/beach_ruins.png','resources/songs/audio.wav','resources/songs/custom/glass beach - cold weather [Custom 6K].osu',1362,28900,195,94.2,28900,195,94.2,1,'2026-11-19 01:49:13','2026-11-19 01:49:13');
 CREATE TABLE CANCION_OBJETOS_INTENTO (
     id_cancion    INTEGER NOT NULL REFERENCES CANCIONES_PERSONALIZADAS(id_cancion) ON DELETE CASCADE,
     tipo_registro TEXT NOT NULL CHECK (tipo_registro IN ('ULTIMO', 'MEJOR')),
@@ -199,7 +211,7 @@ PRAGMA writable_schema=ON;
 CREATE TABLE IF NOT EXISTS sqlite_sequence(name,seq);
 DELETE FROM sqlite_sequence;
 INSERT INTO sqlite_sequence VALUES('PARTIDAS',2);
-INSERT INTO sqlite_sequence VALUES('HISTORIAL_OBJETOS',14);
+INSERT INTO sqlite_sequence VALUES('HISTORIAL_OBJETOS',13);
 INSERT INTO sqlite_sequence VALUES('CANCIONES_PERSONALIZADAS',2);
 CREATE VIEW v_resumen_partidas AS
 SELECT
@@ -345,6 +357,25 @@ SELECT
     ), 'Ninguno') AS objetos_ultimo_intento
 FROM CANCIONES_PERSONALIZADAS cp
 ORDER BY cp.id_cancion ASC;
+CREATE VIEW v_enemigos_hub AS
+SELECT
+    e.id_enemigo,
+    e.nombre AS enemigo_nombre,
+    e.especie,
+    z.id_zona,
+    z.nombre AS sala_hub,
+    e.hub_x,
+    e.hub_y,
+    e.cancion_referencia,
+    e.sprite_relativo,
+    cb.id_batalla,
+    cb.puntaje_minimo_amuleto,
+    ci.nombre AS amuleto_por_score
+FROM ENEMIGOS e
+INNER JOIN ZONAS z ON z.id_zona = e.id_zona
+LEFT JOIN CATALOGO_BATALLAS cb ON cb.id_batalla = e.id_batalla
+LEFT JOIN CATALOGO_ITEMS ci ON ci.id_item = cb.id_amuleto_score
+ORDER BY z.orden_progresion, e.hub_x, e.hub_y;
 CREATE TRIGGER trg_canciones_validar_insert
 BEFORE INSERT ON CANCIONES_PERSONALIZADAS
 FOR EACH ROW
@@ -506,11 +537,53 @@ BEGIN
         fecha_actualizacion = CURRENT_TIMESTAMP
     WHERE id_partida = NEW.id_partida;
 END;
+CREATE TRIGGER trg_batallas_amuleto_score_insert
+AFTER INSERT ON BATALLAS_VENCIDAS
+FOR EACH ROW
+BEGIN
+    INSERT OR IGNORE INTO OBJETOS_OBTENIDOS (id_partida, id_item, cantidad, equipado)
+    SELECT NEW.id_partida, cb.id_amuleto_score, 1, 0
+    FROM CATALOGO_BATALLAS cb
+    WHERE cb.id_batalla = NEW.id_batalla
+      AND cb.id_amuleto_score IS NOT NULL
+      AND NEW.puntaje_maximo >= cb.puntaje_minimo_amuleto;
+END;
+CREATE TRIGGER trg_batallas_amuleto_score_update
+AFTER UPDATE OF puntaje_maximo ON BATALLAS_VENCIDAS
+FOR EACH ROW
+BEGIN
+    INSERT OR IGNORE INTO OBJETOS_OBTENIDOS (id_partida, id_item, cantidad, equipado)
+    SELECT NEW.id_partida, cb.id_amuleto_score, 1, 0
+    FROM CATALOGO_BATALLAS cb
+    WHERE cb.id_batalla = NEW.id_batalla
+      AND cb.id_amuleto_score IS NOT NULL
+      AND NEW.puntaje_maximo >= cb.puntaje_minimo_amuleto;
+END;
+CREATE TRIGGER trg_enemigos_validar_insert
+BEFORE INSERT ON ENEMIGOS
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.cancion_referencia LIKE '/%' OR NEW.cancion_referencia GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'cancion_referencia debe usar ruta relativa')
+        WHEN NEW.sprite_relativo LIKE '/%' OR NEW.sprite_relativo GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'sprite_relativo debe usar ruta relativa')
+    END;
+END;
+CREATE TRIGGER trg_enemigos_validar_update
+BEFORE UPDATE ON ENEMIGOS
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.cancion_referencia LIKE '/%' OR NEW.cancion_referencia GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'cancion_referencia debe usar ruta relativa')
+        WHEN NEW.sprite_relativo LIKE '/%' OR NEW.sprite_relativo GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'sprite_relativo debe usar ruta relativa')
+    END;
+END;
 CREATE INDEX idx_historial_partida_fecha
     ON HISTORIAL_OBJETOS(id_partida, fecha_evento DESC);
 CREATE INDEX idx_batallas_vencidas_partida
     ON BATALLAS_VENCIDAS(id_partida);
 CREATE INDEX idx_canciones_custom_titulo
     ON CANCIONES_PERSONALIZADAS(titulo);
+CREATE INDEX idx_enemigos_zona_pos
+    ON ENEMIGOS(id_zona, hub_x, hub_y);
 PRAGMA writable_schema=OFF;
 COMMIT;

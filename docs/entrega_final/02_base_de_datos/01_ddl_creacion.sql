@@ -38,7 +38,21 @@ CREATE TABLE IF NOT EXISTS CATALOGO_BATALLAS (
     escena_combate_relativa TEXT NOT NULL,
     id_zona                 TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
     id_item_recompensa      TEXT NULL REFERENCES CATALOGO_ITEMS(id_item) ON UPDATE CASCADE ON DELETE SET NULL,
+    id_amuleto_score        TEXT NULL REFERENCES CATALOGO_ITEMS(id_item) ON UPDATE CASCADE ON DELETE SET NULL,
+    puntaje_minimo_amuleto  INTEGER NOT NULL DEFAULT 0 CHECK (puntaje_minimo_amuleto >= 0),
     es_historia_principal   INTEGER NOT NULL DEFAULT 1 CHECK (es_historia_principal IN (0, 1))
+);
+
+CREATE TABLE IF NOT EXISTS ENEMIGOS (
+    id_enemigo          TEXT PRIMARY KEY,
+    nombre              TEXT NOT NULL,
+    especie             TEXT NOT NULL DEFAULT '',
+    id_zona             TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
+    hub_x               INTEGER NOT NULL DEFAULT 0 CHECK (hub_x >= 0),
+    hub_y               INTEGER NOT NULL DEFAULT 0 CHECK (hub_y >= 0),
+    cancion_referencia  TEXT NOT NULL,
+    sprite_relativo     TEXT NOT NULL DEFAULT '',
+    id_batalla          TEXT NULL UNIQUE REFERENCES CATALOGO_BATALLAS(id_batalla) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 -- -----------------------------------------------------------------------------
@@ -149,6 +163,9 @@ CREATE INDEX IF NOT EXISTS idx_batallas_vencidas_partida
 
 CREATE INDEX IF NOT EXISTS idx_canciones_custom_titulo
     ON CANCIONES_PERSONALIZADAS(titulo);
+
+CREATE INDEX IF NOT EXISTS idx_enemigos_zona_pos
+    ON ENEMIGOS(id_zona, hub_x, hub_y);
 
 -- -----------------------------------------------------------------------------
 -- 5. Triggers SQLite (Validación BEFORE + Récord y Auditoría Automática AFTER)
@@ -329,6 +346,52 @@ BEGIN
     WHERE id_partida = NEW.id_partida;
 END;
 
+-- 5.5 Otorgamiento automático de amuleto por puntaje al vencer una batalla
+CREATE TRIGGER IF NOT EXISTS trg_batallas_amuleto_score_insert
+AFTER INSERT ON BATALLAS_VENCIDAS
+FOR EACH ROW
+BEGIN
+    INSERT OR IGNORE INTO OBJETOS_OBTENIDOS (id_partida, id_item, cantidad, equipado)
+    SELECT NEW.id_partida, cb.id_amuleto_score, 1, 0
+    FROM CATALOGO_BATALLAS cb
+    WHERE cb.id_batalla = NEW.id_batalla
+      AND cb.id_amuleto_score IS NOT NULL
+      AND NEW.puntaje_maximo >= cb.puntaje_minimo_amuleto;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_batallas_amuleto_score_update
+AFTER UPDATE OF puntaje_maximo ON BATALLAS_VENCIDAS
+FOR EACH ROW
+BEGIN
+    INSERT OR IGNORE INTO OBJETOS_OBTENIDOS (id_partida, id_item, cantidad, equipado)
+    SELECT NEW.id_partida, cb.id_amuleto_score, 1, 0
+    FROM CATALOGO_BATALLAS cb
+    WHERE cb.id_batalla = NEW.id_batalla
+      AND cb.id_amuleto_score IS NOT NULL
+      AND NEW.puntaje_maximo >= cb.puntaje_minimo_amuleto;
+END;
+
+-- 5.6 Validación de rutas relativas en ENEMIGOS
+CREATE TRIGGER IF NOT EXISTS trg_enemigos_validar_insert
+BEFORE INSERT ON ENEMIGOS
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.cancion_referencia LIKE '/%' OR NEW.cancion_referencia GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'cancion_referencia debe usar ruta relativa')
+        WHEN NEW.sprite_relativo LIKE '/%' OR NEW.sprite_relativo GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'sprite_relativo debe usar ruta relativa')
+    END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_enemigos_validar_update
+BEFORE UPDATE ON ENEMIGOS
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.cancion_referencia LIKE '/%' OR NEW.cancion_referencia GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'cancion_referencia debe usar ruta relativa')
+        WHEN NEW.sprite_relativo LIKE '/%' OR NEW.sprite_relativo GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'sprite_relativo debe usar ruta relativa')
+    END;
+END;
+
 -- -----------------------------------------------------------------------------
 -- 6. Vistas SQL (INNER JOIN para consultas rápidas desde el juego)
 -- -----------------------------------------------------------------------------
@@ -482,3 +545,23 @@ SELECT
     ), 'Ninguno') AS objetos_ultimo_intento
 FROM CANCIONES_PERSONALIZADAS cp
 ORDER BY cp.id_cancion ASC;
+
+CREATE VIEW IF NOT EXISTS v_enemigos_hub AS
+SELECT
+    e.id_enemigo,
+    e.nombre AS enemigo_nombre,
+    e.especie,
+    z.id_zona,
+    z.nombre AS sala_hub,
+    e.hub_x,
+    e.hub_y,
+    e.cancion_referencia,
+    e.sprite_relativo,
+    cb.id_batalla,
+    cb.puntaje_minimo_amuleto,
+    ci.nombre AS amuleto_por_score
+FROM ENEMIGOS e
+INNER JOIN ZONAS z ON z.id_zona = e.id_zona
+LEFT JOIN CATALOGO_BATALLAS cb ON cb.id_batalla = e.id_batalla
+LEFT JOIN CATALOGO_ITEMS ci ON ci.id_item = cb.id_amuleto_score
+ORDER BY z.orden_progresion, e.hub_x, e.hub_y;

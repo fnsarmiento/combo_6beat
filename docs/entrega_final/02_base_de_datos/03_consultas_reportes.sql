@@ -79,3 +79,15 @@ SELECT
     categoria
 FROM v_canciones_custom_objetos
 ORDER BY id_cancion, tipo_registro, item_nombre;
+
+-- 8. Vista de enemigos ubicados en las salas del Hub (posición X/Y, canción y amuleto por score)
+SELECT
+    enemigo_nombre,
+    especie,
+    sala_hub,
+    hub_x,
+    hub_y,
+    cancion_referencia,
+    puntaje_minimo_amuleto,
+    amuleto_por_score
+FROM v_enemigos_hub;

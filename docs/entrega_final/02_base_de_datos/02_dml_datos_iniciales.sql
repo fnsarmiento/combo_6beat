@@ -16,10 +16,9 @@ INSERT OR IGNORE INTO DB_META (clave, valor) VALUES
     ('schema_version', '1.0');
 
 INSERT OR IGNORE INTO ZONAS (id_zona, nombre, escena_xml_relativa, orden_progresion) VALUES
-    ('hub',         'El Hub',           'resources/scenes/hub.xml',         0),
-    ('swamp',       'Swamp (Pantano)',  'resources/scenes/swamp.xml',       1),
-    ('beach_ruins', 'Beach',            'resources/scenes/beach_ruins.xml', 2),
-    ('debug_a',     'Sala de Pruebas',  'resources/scenes/a.xml',           99);
+    ('hub',         'Hub Central',      'resources/scenes/hub.xml',         0),
+    ('swamp',       'Sala del Pantano', 'resources/scenes/swamp.xml',       1),
+    ('beach_ruins', 'Sala de Ruinas',   'resources/scenes/beach_ruins.xml', 2);
 
 INSERT OR IGNORE INTO CATALOGO_ITEMS (id_item, nombre, categoria, curacion_hp, descripcion) VALUES
     ('potion_small',           'Pocion Pequena',        'HEAL',    25, 'Restaura 25 HP'),
@@ -30,21 +29,30 @@ INSERT OR IGNORE INTO CATALOGO_ITEMS (id_item, nombre, categoria, curacion_hp, d
     ('powerup_reaction_minus', 'Chip -7.5ms',           'POWERUP', 0,  '-7.5ms ventana de reaccion, -20 pts coste curacion'),
     ('powerup_invincibility',  'Escudo Unico',          'POWERUP', 0,  'Invencibilidad de un solo uso por pista'),
     ('amulet_healing',         'Amuleto de Curacion',   'AMULET',  0,  'Aumenta la curacion por notas consecutivas del 50% al 75% del dano recibido'),
-    ('amulet_medallion_swamp', 'Medallon del Pantano',  'AMULET',  0,  'Eco del tercer escondite de La Gata en el Pantano'),
-    ('amulet_medallion_ruins', 'Medallon del Ocaso',    'AMULET',  0,  'Eco del tercer escondite de La Gata en Playas y Ruinas');
+    ('amulet_medallion_swamp', 'Medallon del Pantano',  'AMULET',  0,  'Amuleto desbloqueado por puntaje alto en el Pantano'),
+    ('amulet_medallion_ruins', 'Medallon del Ocaso',    'AMULET',  0,  'Amuleto desbloqueado por puntaje alto en las Ruinas');
 
 INSERT OR IGNORE INTO CATALOGO_BATALLAS (
-    id_batalla, boss_id, boss_nombre, especie, defeat_flag, escena_combate_relativa, id_zona, id_item_recompensa, es_historia_principal
+    id_batalla, boss_id, boss_nombre, especie, defeat_flag, escena_combate_relativa, id_zona, id_item_recompensa, id_amuleto_score, puntaje_minimo_amuleto, es_historia_principal
 ) VALUES
-    ('batalla_swamp_1', 'boss_swamp_1', 'Kael',          'Gemelo 1',      'BOSS_SWAMP_1_DEFEATED',   'resources/songs/swamp_1_kael.scene',  'swamp',       NULL,                     1),
-    ('batalla_swamp_2', 'boss_swamp_2', 'Kael & Vesper', 'Gemelos',       'BOSS_SWAMP_2_DEFEATED',   'resources/songs/swamp_2_twins.scene', 'swamp',       'powerup_reaction_plus',  1),
-    ('batalla_swamp_3', 'boss_swamp_3', 'Grail',         'Oso + Buho',    'BOSS_SWAMP_3_DEFEATED',   'resources/songs/swamp_3_grail.scene', 'swamp',       'potion_large',           1),
-    ('batalla_beach_1', 'boss_beach_1', 'Kael & Vesper', 'Costa',         'BOSS_BEACH_1_DEFEATED',   'resources/songs/beach_1_twins.scene', 'beach_ruins', 'potion_medium',          1),
-    ('batalla_beach_2', 'boss_beach_2', 'Kael & Vesper', 'Ruinas',        'BOSS_BEACH_2_DEFEATED',   'resources/songs/beach_2_twins.scene', 'beach_ruins', 'amulet_healing',         1),
-    ('batalla_beach_3', 'boss_grail',   'Grail',         'Oso + Buho',    'BOSS_BEACH_3_DEFEATED',   'resources/songs/grail_sanctum.scene', 'beach_ruins', 'powerup_reaction_minus', 1),
-    ('batalla_cat_7',   'boss_cat',     'La Gata',       'Felino',        'BOSS_CAT_FINAL_DEFEATED', 'resources/songs/glass beach.scene',   'hub',         NULL,                     1),
-    ('batalla_bear',    'boss_bear',    'Oso',           'Oso Guerrero',  'BOSS_RABY_DEFEATED',      'resources/songs/fiend - 2DF2.scene',  'beach_ruins', 'key_exit',               0),
-    ('batalla_nash',    'boss_nash',    'Nash',          'Perico + Hiena','BOSS_NASH_DEFEATED',      'resources/songs/nash_storm.scene',    'beach_ruins', 'potion_large',           0);
+    ('batalla_swamp_1', 'boss_swamp_1', 'Kael',          'Gemelo 1',      'BOSS_SWAMP_1_DEFEATED',   'resources/songs/swamp_1_kael.scene',  'swamp',       NULL,                     'amulet_medallion_swamp', 15000, 1),
+    ('batalla_swamp_2', 'boss_swamp_2', 'Kael & Vesper', 'Gemelos',       'BOSS_SWAMP_2_DEFEATED',   'resources/songs/swamp_2_twins.scene', 'swamp',       'powerup_reaction_plus',  'amulet_healing',         20000, 1),
+    ('batalla_swamp_3', 'boss_swamp_3', 'Grail',         'Oso + Buho',    'BOSS_SWAMP_3_DEFEATED',   'resources/songs/swamp_3_grail.scene', 'swamp',       'potion_large',           'amulet_medallion_swamp', 24000, 1),
+    ('batalla_beach_1', 'boss_beach_1', 'Kael & Vesper', 'Costa',         'BOSS_BEACH_1_DEFEATED',   'resources/songs/beach_1_twins.scene', 'beach_ruins', 'potion_medium',          'amulet_medallion_ruins', 25000, 1),
+    ('batalla_beach_2', 'boss_beach_2', 'Kael & Vesper', 'Ruinas',        'BOSS_BEACH_2_DEFEATED',   'resources/songs/beach_2_twins.scene', 'beach_ruins', 'amulet_healing',         'amulet_medallion_ruins', 28000, 1),
+    ('batalla_beach_3', 'boss_grail',   'Grail',         'Oso + Buho',    'BOSS_BEACH_3_DEFEATED',   'resources/songs/grail_sanctum.scene', 'beach_ruins', 'powerup_reaction_minus', 'amulet_healing',         30000, 1),
+    ('batalla_cat_7',   'boss_cat',     'La Gata',       'Felino',        'BOSS_CAT_FINAL_DEFEATED', 'resources/songs/glass beach.scene',   'hub',         NULL,                     'amulet_healing',         32000, 1),
+    ('batalla_bear',    'boss_bear',    'Oso',           'Oso Guerrero',  'BOSS_RABY_DEFEATED',      'resources/songs/fiend - 2DF2.scene',  'beach_ruins', 'key_exit',               NULL,                     0,     0),
+    ('batalla_nash',    'boss_nash',    'Nash',          'Perico + Hiena','BOSS_NASH_DEFEATED',      'resources/songs/nash_storm.scene',    'beach_ruins', 'potion_large',           'amulet_medallion_ruins', 22000, 0);
+
+INSERT OR IGNORE INTO ENEMIGOS (
+    id_enemigo, nombre, especie, id_zona, hub_x, hub_y, cancion_referencia, sprite_relativo, id_batalla
+) VALUES
+    ('enemy_kael',  'Kael',          'Gemelo 1',       'hub', 3,  1, 'resources/songs/swamp_1_kael.scene',  'sprites/bosses/bear.png', 'batalla_swamp_1'),
+    ('enemy_twins', 'Kael & Vesper', 'Gemelos',        'hub', 6,  1, 'resources/songs/beach_1_twins.scene', 'sprites/bosses/bear.png', 'batalla_beach_1'),
+    ('enemy_nash',  'Nash',          'Perico + Hiena', 'hub', 8,  1, 'resources/songs/nash_storm.scene',    'sprites/bosses/bear.png', 'batalla_nash'),
+    ('enemy_grail', 'Grail',         'Oso + Buho',     'hub', 11, 1, 'resources/songs/grail_sanctum.scene', 'sprites/bosses/bear.png', 'batalla_beach_3'),
+    ('enemy_cat',   'La Gata',       'Felino',         'hub', 5,  4, 'resources/songs/glass beach.scene',   'sprites/npcs/cat.png',    'batalla_cat_7');
 
 -- -----------------------------------------------------------------------------
 -- 2. Partidas de Prueba (Cargador de 4 Ranuras)
