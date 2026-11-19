@@ -2,17 +2,16 @@
 <rect width="4350" height="2000" fill="#FAF8F3"/>
 <style>text{font-family:DejaVu Sans,Arial,sans-serif;text-anchor:middle;dominant-baseline:central;}</style>
 <rect x="80" y="40" width="1280" height="74" rx="10" fill="#1E2436" stroke="#111" stroke-width="2"/>
-<text x="720" y="65" fill="#FFE182" font-size="19" font-weight="bold">DER CONCEPTUAL (NOTACIÓN CHEN PURA) — COMBO 6BEAT</text>
+<text x="720" y="65" fill="#FFE182" font-size="19" font-weight="bold">DER CONCEPTUAL (NOTACIÓN CHEN) — COMBO 6BEAT</text>
 <text x="720" y="93" fill="#D5E4FF" font-size="14">Sin claves foráneas (FK) ni tablas intermedias | Hub por salas + ENEMIGOS + Amuletos por Score</text>
-<ellipse cx="167" cy="159" rx="87" ry="21" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
-<text x="167" y="159" fill="#111" font-size="13" font-weight="bold" text-decoration="underline">Clave Primaria (PK)</text>
-<rect x="275" y="140" width="155" height="38" fill="#FFF8DC" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="280" y="145" width="145" height="28" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
-<text x="352" y="159" fill="#111" font-size="12" font-weight="bold">ENTIDAD DÉBIL</text>
-<ellipse cx="522" cy="159" rx="72" ry="21" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.8" stroke-dasharray="6,4"/>
-<text x="522" y="159" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">Clave Parcial</text>
-<polygon points="670,134 725,159 670,184 615,159" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2"/>
-<text x="670" y="159" fill="#111" font-size="12" font-weight="bold">Relación</text>
+<rect x="80" y="140" width="130" height="38" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+<text x="145" y="159" fill="#111" font-size="13" font-weight="bold">Entidad</text>
+<ellipse cx="317" cy="159" rx="87" ry="21" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
+<text x="317" y="159" fill="#111" font-size="13" font-weight="bold" text-decoration="underline">Clave Primaria (PK)</text>
+<ellipse cx="485" cy="159" rx="60" ry="21" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="485" y="159" fill="#111" font-size="12">Atributo</text>
+<polygon points="620,134 675,159 620,184 565,159" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2"/>
+<text x="620" y="159" fill="#111" font-size="12" font-weight="bold">Relación</text>
 <line x1="540" y1="560" x2="405.9422224541789" y2="447.5121683048556" stroke="#555" stroke-width="1.4"/>
 <line x1="540" y1="560" x2="540.0" y2="395.0" stroke="#555" stroke-width="1.4"/>
 <line x1="540" y1="560" x2="721.8653347947321" y2="455.0" stroke="#555" stroke-width="1.4"/>
@@ -68,14 +67,10 @@
 <line x1="540" y1="920" x2="540" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="1080" y1="920" x2="540" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="1080" y1="920" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
-<line x1="1080" y1="1280" x2="540" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
-<line x1="1080" y1="1280" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1080" y1="1340" x2="540" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="1080" y1="1340" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="1620" y1="920" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="1620" y1="920" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
-<line x1="1620" y1="920" x2="1450" y2="885" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
-<line x1="1620" y1="920" x2="1450" y2="940" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
-<line x1="1620" y1="920" x2="1795" y2="885" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
-<line x1="1620" y1="920" x2="1795" y2="940" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
 <line x1="2100" y1="320" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="2100" y1="320" x2="2520" y2="320" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="2160" y1="760" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
@@ -84,15 +79,12 @@
 <line x1="2680" y1="1140" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="2160" y1="1140" x2="1620" y2="560" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="2160" y1="1140" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
-<line x1="2160" y1="1140" x2="2025" y2="1208" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
-<line x1="2160" y1="1140" x2="2160" y2="1235" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
 <line x1="2160" y1="1440" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="2160" y1="1440" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="2160" y1="1650" x2="1620" y2="1340" stroke="#1A1A1A" stroke-width="2.2"/>
 <line x1="2160" y1="1650" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
-<line x1="3180" y1="1520" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
-<line x1="3180" y1="1520" x2="3680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
-<line x1="3180" y1="1520" x2="3180" y2="1415" stroke="#2B5B84" stroke-width="1.4" stroke-dasharray="5,4"/>
+<line x1="3180" y1="1540" x2="2680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
+<line x1="3180" y1="1540" x2="3680" y2="1540" stroke="#1A1A1A" stroke-width="2.2"/>
 <rect x="445.0" y="528.0" width="190" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
 <text x="540" y="560" fill="#111" font-size="16" font-weight="bold">ZONAS</text>
 <ellipse cx="405.9422224541789" cy="447.5121683048556" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
@@ -157,10 +149,9 @@
 <text x="1710.8629262742504" y="754.8561742128798" fill="#111" font-size="12">fecha_creacion</text>
 <ellipse cx="1828.883771293693" cy="706.2619912695168" rx="89.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
 <text x="1828.883771293693" y="706.2619912695168" fill="#111" font-size="12">fecha_actualizacion</text>
-<rect x="2415.0" y="288.0" width="210" height="64" fill="#FFF8DC" stroke="#1A1A1A" stroke-width="2.5"/>
-<rect x="2420.0" y="293.0" width="200" height="54" fill="none" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="2415.0" y="288.0" width="210" height="64" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.5"/>
 <text x="2520" y="320" fill="#111" font-size="16" font-weight="bold">FLAGS_PARTIDA</text>
-<ellipse cx="2450.267986812785" cy="170.45921513895274" rx="59.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.8" stroke-dasharray="6,4"/>
+<ellipse cx="2450.267986812785" cy="170.45921513895274" rx="59.0" ry="20.0" fill="#B8F5B0" stroke="#1A1A1A" stroke-width="2"/>
 <text x="2450.267986812785" y="170.45921513895274" fill="#111" font-size="12" font-weight="bold" text-decoration="underline">flag_nombre</text>
 <ellipse cx="2650.814754519511" cy="189.18524548048873" rx="77.0" ry="20.0" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
 <text x="2650.814754519511" y="189.18524548048873" fill="#111" font-size="12">fecha_definicion</text>
@@ -227,29 +218,19 @@
 <text x="783.0" y="722.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
 <rect x="1363.0" y="1139.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="1377.0" y="1151.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
-<polygon points="1080,1239.0 1155.0,1280 1080,1321.0 1005.0,1280" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
-<text x="1080" y="1280.0" fill="#111" font-size="13" font-weight="bold">protagoniza</text>
-<rect x="769.0" y="1301.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
-<text x="783.0" y="1313.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
-<rect x="1363.0" y="1301.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
-<text x="1377.0" y="1313.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
-<polygon points="1620,877.0 1692.5,920 1620,963.0 1547.5,920" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
-<text x="1620" y="912.0" fill="#111" font-size="13" font-weight="bold">vencer</text>
-<text x="1620" y="928.0" fill="#111" font-size="13" font-weight="bold">(N:M)</text>
+<polygon points="1080,1299.0 1155.0,1340 1080,1381.0 1005.0,1340" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="1080" y="1340.0" fill="#111" font-size="13" font-weight="bold">protagoniza</text>
+<rect x="769.0" y="1328.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="783.0" y="1340.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<rect x="1363.0" y="1328.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="1377.0" y="1340.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
+<polygon points="1620,878.0 1692.5,920 1620,962.0 1547.5,920" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="1620" y="920.0" fill="#111" font-size="13" font-weight="bold">vencer</text>
 <rect x="1606.0" y="710.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="1620.0" y="722.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
 <rect x="1606.0" y="1139.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="1620.0" y="1151.0" fill="#9B1B24" font-size="15" font-weight="bold">M</text>
-<ellipse cx="1450" cy="885" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
-<text x="1450" y="885.0" fill="#111" font-size="11">puntaje_maximo</text>
-<ellipse cx="1450" cy="940" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
-<text x="1450" y="940.0" fill="#111" font-size="11">max_combo</text>
-<ellipse cx="1795" cy="885" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
-<text x="1795" y="885.0" fill="#111" font-size="11">perfects / misses</text>
-<ellipse cx="1795" cy="940" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
-<text x="1795" y="940.0" fill="#111" font-size="11">intentos_totales</text>
-<polygon points="2100,281.0 2165.0,320 2100,359.0 2035.0,320" fill="#FFF3C4" stroke="#1A1A1A" stroke-width="2.2"/>
-<polygon points="2100,287.0 2157.0,320 2100,353.0 2043.0,320" fill="none" stroke="#1A1A1A" stroke-width="1.4"/>
+<polygon points="2100,281.0 2165.0,320 2100,359.0 2035.0,320" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
 <text x="2100" y="320.0" fill="#111" font-size="13" font-weight="bold">definir</text>
 <rect x="1822.0" y="440.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="1836.0" y="452.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
@@ -267,17 +248,12 @@
 <text x="2680.0" y="931.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
 <rect x="2666.0" y="1348.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="2680.0" y="1360.0" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
-<polygon points="2160,1098.0 2230.0,1140 2160,1182.0 2090.0,1140" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
-<text x="2160" y="1132.0" fill="#111" font-size="13" font-weight="bold">poseer</text>
-<text x="2160" y="1148.0" fill="#111" font-size="13" font-weight="bold">(N:M)</text>
+<polygon points="2160,1099.0 2230.0,1140 2160,1181.0 2090.0,1140" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="2160" y="1140.0" fill="#111" font-size="13" font-weight="bold">poseer</text>
 <rect x="1849.0" y="809.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="1863.0" y="821.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
 <rect x="2432.0" y="1348.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="2446.0" y="1360.0" fill="#9B1B24" font-size="15" font-weight="bold">M</text>
-<ellipse cx="2025" cy="1208" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
-<text x="2025" y="1208.0" fill="#111" font-size="11">cantidad</text>
-<ellipse cx="2160" cy="1235" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
-<text x="2160" y="1235.0" fill="#111" font-size="11">equipado</text>
 <polygon points="2160,1400.0 2232.5,1440 2160,1480.0 2087.5,1440" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
 <text x="2160" y="1440.0" fill="#111" font-size="13" font-weight="bold">recompensa</text>
 <rect x="1849.0" y="1373.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
@@ -291,14 +267,10 @@
 <text x="1863.0" y="1479.5" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
 <rect x="2432.0" y="1577.5" width="28" height="24" rx="4" fill="#FAF8F3"/>
 <text x="2446.0" y="1589.5" fill="#9B1B24" font-size="15" font-weight="bold">1</text>
-<polygon points="3180,1477.0 3252.5,1520 3180,1563.0 3107.5,1520" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
-<text x="3180" y="1512.0" fill="#111" font-size="13" font-weight="bold">utilizar</text>
-<text x="3180" y="1528.0" fill="#111" font-size="13" font-weight="bold">(N:M)</text>
-<rect x="2891.0" y="1519.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
-<text x="2905.0" y="1531.0" fill="#9B1B24" font-size="15" font-weight="bold">M</text>
-<rect x="3441.0" y="1519.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
-<text x="3455.0" y="1531.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
-<ellipse cx="3180" cy="1415" rx="74.0" ry="21.0" fill="#F5FAFF" stroke="#2B5B84" stroke-width="1.6"/>
-<text x="3180" y="1408.0" fill="#111" font-size="11">tipo_registro</text>
-<text x="3180" y="1422.0" fill="#111" font-size="11">(ULTIMO/MEJOR)</text>
+<polygon points="3180,1498.0 3252.5,1540 3180,1582.0 3107.5,1540" fill="#E6F0FF" stroke="#1A1A1A" stroke-width="2.2"/>
+<text x="3180" y="1540.0" fill="#111" font-size="13" font-weight="bold">utilizar</text>
+<rect x="2891.0" y="1528.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="2905.0" y="1540.0" fill="#9B1B24" font-size="15" font-weight="bold">M</text>
+<rect x="3441.0" y="1528.0" width="28" height="24" rx="4" fill="#FAF8F3"/>
+<text x="3455.0" y="1540.0" fill="#9B1B24" font-size="15" font-weight="bold">N</text>
 </svg>
