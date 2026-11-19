@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Scene resources="../" return-scene="resources/scenes/beach_ruins.xml">
+  <Song
+      file="songs/glass beach - cold weather (-Enma-) [6K Hard].osu"
+      scroll-speed="0.20"
+  />
+  <Boss
+      id="boss_grail"
+      name="Grail"
+      species="Oso + Buho"
+      max-hp="2000"
+      attack-damage="16"
+      hit-damage="7"
+      sprite="sprites/player/The Female Adventurer - Free/Walk/walk_Down.png"
+      rows="1"
+      cols="8"
+      scale-x="2.1"
+      scale-y="2.1"
+      delay="0.09"
+      position-x="240"
+      position-y="54"
+      defeat-flag="BOSS_BEACH_3_DEFEATED"
+      reward-item="powerup_reaction_minus"
+  />
+  <Combat
+      player-max-hp="200"
+      heal-threshold="60"
+      heal-active-duration="6.5"
+      lane-lock-interval="11000"
+      lane-lock-duration="2600"
+  />
+</Scene>

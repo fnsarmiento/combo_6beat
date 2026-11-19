@@ -1,5 +1,7 @@
 # Combo 6Beat
 
+> **Estado del proyecto:** Versión en desarrollo (**no completamente terminada**). El motor rítmico de 6 carriles, el selector de canciones, la configuración y la base de datos SQLite (3FN) están operativos; el Hub por salas y el modo historia/diálogos siguen en construcción.
+
 Videojuego 2D pixel art desarrollado en **Java 17 (Processing 4 + ControlP5 + TinySound + SQLite)** que combina un **Hub interactivo por salas al ritmo** (inspiración *Crypt of the NecroDancer*, `HubScene`) con **combate rítmico de 6 carriles** (inspiración *Rift of the NecroDancer*, `ROTNScene` / `ROTNCore`) y persistencia relacional completa en **SQLite (3FN)**.
 
 **Institución:** Escuela Técnica Nº 35 D.E. 18 «Ing. Eduardo Latzina» (Computación)  
@@ -11,12 +13,14 @@ Videojuego 2D pixel art desarrollado en **Java 17 (Processing 4 + ControlP5 + Ti
 
 ```text
 Combo 6Beat/
-├── game/                      # Juego y motor en Java 17 + Maven (Processing 4)
+├── release/                   # Carpeta ejecutable lista para jugar con Java 17 (combo6beat.jar + libs + jugar.sh/.bat)
+├── game/                      # Código fuente Java 17 + Maven (Processing 4)
 │   ├── src/main/java/engine/  # Motor reutilizable (escenas, audio, diálogos, física, sprites)
 │   ├── src/main/java/game/    # Lógica del juego (InitScene, HubScene, ROTNScene/ROTNCore, SQLite)
 │   ├── resources/             # Canciones (.osu/.scene), diálogo del Hub, sprites, SFX y schema.sql
 │   └── pom.xml
 ├── docs/
+│   ├── MANUAL_USUARIO.md      # Manual de usuario básico y guía de ejecución
 │   ├── entrega_final/         # Paquete integrador de entrega final:
 │   │   ├── 01_documentacion/  # Documentación integral (Markdown y PDF)
 │   │   ├── 02_base_de_datos/  # DER Chen, Modelo Relacional 3FN (Draw.io/PNG) y scripts SQLite
@@ -64,7 +68,17 @@ sqlite3 test_restore.db < 03_consultas_reportes.sql
 
 ## Compilación y Ejecución
 
-### Juego (Java 17 + Maven)
+### Ejecutable listo con Java 17 (`release/`)
+
+```bash
+cd release
+./jugar.sh          # Linux / macOS
+# o en Windows: doble clic en jugar.bat
+```
+
+Ver guía completa de controles y uso en [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md).
+
+### Desde código fuente (Java 17 + Maven)
 
 ```bash
 cd game

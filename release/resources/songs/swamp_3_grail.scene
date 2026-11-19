@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Scene resources="../" return-scene="resources/scenes/swamp.xml">
+  <Song
+      file="songs/glass beach - cold weather (-Enma-) [6K Hard].osu"
+      scroll-speed="0.23"
+  />
+  <Boss
+      id="boss_swamp_3"
+      name="Grail"
+      species="Oso + Buho"
+      max-hp="1800"
+      attack-damage="14"
+      hit-damage="6"
+      sprite="sprites/bosses/bear.png"
+      rows="3"
+      cols="3"
+      scale-x="1.0"
+      scale-y="1.0"
+      width="48"
+      height="48"
+      delay="0.14"
+      position-x="240"
+      position-y="54"
+      defeat-flag="BOSS_SWAMP_3_DEFEATED"
+      reward-item="potion_large"
+  />
+  <Combat
+      player-max-hp="200"
+      heal-threshold="55"
+      heal-active-duration="6.0"
+      lane-lock-interval="9500"
+      lane-lock-duration="2800"
+  />
+</Scene>
