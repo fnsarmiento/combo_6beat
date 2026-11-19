@@ -1,0 +1,87 @@
+{
+  "__start__": {
+    "title": "[Guardian Raby]",
+    "desc": "Demuestra tu ritmo si quieres conseguir la llave de estas ruinas.",
+    "__ifdef__": "BOSS_RABY_DEFEATED",
+    "__next_ifdef__": "raby_defeated",
+    "default": {
+      "__load__": "resources/songs/glass beach.scene",
+      "__save_next__": "return",
+      "__save_next_lose__": "return_defeat"
+    }
+  },
+  "return": {
+    "title": "[Narrador]",
+    "desc": "Ganaste el combate ritmico contra Raby.",
+    "__ifndef__": "BOSS_RABY_DEFEATED",
+    "__next_ifndef__": "return_defeat",
+    "option1": {
+      "text": "Seguir explorando"
+    },
+    "option2": {
+      "text": "Escuchar comentario",
+      "next": "narrator_response"
+    }
+  },
+  "return_defeat": {
+    "title": "[Guardian Raby]",
+    "desc": "Aun no logras seguir mi ritmo. Ajusta tus amuletos e intentalo de nuevo.",
+    "option1": {
+      "text": "Reintentar duelo",
+      "__load__": "resources/songs/glass beach.scene",
+      "__save_next__": "return",
+      "__save_next_lose__": "return_defeat"
+    },
+    "option2": {
+      "text": "Volver luego"
+    }
+  },
+  "raby_defeated": {
+    "title": "[Guardian Raby]",
+    "desc": "Ya demostraste tu ritmo y conseguiste la Llave Virtual de estas ruinas.",
+    "option1": {
+      "text": "Seguir explorando"
+    },
+    "option2": {
+      "text": "Revancha",
+      "__load__": "resources/songs/glass beach.scene",
+      "__save_next__": "return",
+      "__save_next_lose__": "return_defeat"
+    }
+  },
+  "narrator_response": {
+    "title": "[Narrador]",
+    "desc": "Recuerda abrir el Menu con ESC para ajustar la curacion o activar amuletos."
+  },
+  "debug_greeting": {
+    "title": "[Tester]",
+    "desc": "Esta sala de pruebas conecta con Beach Ruins a traves del SceneChanger.",
+    "default": {
+      "next": "debug_greeting_tip"
+    }
+  },
+  "debug_greeting_tip": {
+    "title": "[Tester]",
+    "desc": "Si necesitas apoyo en combate, abre el cofre cercano o habla con los NPCs."
+  },
+  "npc_gift": {
+    "title": "[Escriba de las Ruinas]",
+    "desc": "Tengo un amuleto protector para tu primer duelo.",
+    "option1": {
+      "text": "Aceptar escudo",
+      "__ifndef__": "GIFT_SHIELD_TAKEN",
+      "__define__": "GIFT_SHIELD_TAKEN",
+      "__give_item__": "powerup_invincibility:1",
+      "next": "npc_gift_done"
+    },
+    "option2": {
+      "text": "Ya lo tengo",
+      "__ifdef__": "GIFT_SHIELD_TAKEN",
+      "next": "npc_gift_done"
+    }
+  },
+  "npc_gift_done": {
+    "title": "[Escriba de las Ruinas]",
+    "desc": "Usa TAB en el mapa para activar tus power-ups cuando lo necesites."
+  }
+}

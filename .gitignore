@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+tools/level_editor/level_editor
+game/target/

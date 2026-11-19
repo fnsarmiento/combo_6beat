@@ -1,0 +1,178 @@
+{
+  "__start__": {
+    "title": "[La Gata]",
+    "desc": "Bienvenido al Conservatorio Dormido, viajero. La Puerta del Nucleo al este pide 3 Sellos para abrirse.",
+    "__ifdef__": "RE_INTRO_DONE",
+    "__next_ifdef__": "re_cat_hint",
+    "default": {
+      "next": "re_intro_2"
+    }
+  },
+  "re_intro_2": {
+    "title": "[La Gata]",
+    "desc": "Usa [SHIFT] para hacer Dash y encadenar carrera, y [SPACE] para lanzar un Pulso Sonoro en area.",
+    "default": {
+      "next": "re_intro_3"
+    }
+  },
+  "re_intro_3": {
+    "title": "[La Gata]",
+    "desc": "El Pulso activa cristales, atraviesa rejas finas y aturde Centinelas. Explora el Ala Norte primero.",
+    "default": {
+      "__define__": "RE_INTRO_DONE"
+    }
+  },
+  "re_cat_hint": {
+    "title": "[La Gata]",
+    "desc": "Recuerda: [SHIFT] = Dash + Correr, [SPACE] = Pulso Sonoro, [E] = Interactuar, [ESC] = Inventario y Chips."
+  },
+  "re_core_plaque": {
+    "title": "[Placa del Nucleo]",
+    "desc": "Cerradura Triple del Nucleo: reune el Sello de Bruma (Norte), Sello de Marea (Archivo Sur) y Sello de Eco (Santuario SE)."
+  },
+  "re_twins_start": {
+    "title": "[Kael y Vesper]",
+    "desc": "Ey, lograste llegar hasta el Archivo! Si quieres nuestro Sello de Marea, sigamos este compas!",
+    "__ifdef__": "RE_TWINS_DEFEATED",
+    "__next_ifdef__": "re_twins_done",
+    "option1": {
+      "text": "Aceptar duelo (Archivo Sur)",
+      "__load__": "resources/songs/beach_1_twins.scene",
+      "__save_next__": "re_twins_win",
+      "__save_next_lose__": "re_twins_lose"
+    },
+    "option2": {
+      "text": "Explorar un poco mas"
+    }
+  },
+  "re_twins_lose": {
+    "title": "[Vesper]",
+    "desc": "Uy, casi! Equipa algun chip o amuleto con [ESC] y vuelve cuando quieras.",
+    "option1": {
+      "text": "Reintentar duelo",
+      "__load__": "resources/songs/beach_1_twins.scene",
+      "__save_next__": "re_twins_win",
+      "__save_next_lose__": "re_twins_lose"
+    },
+    "option2": {
+      "text": "Luego"
+    }
+  },
+  "re_twins_win": {
+    "title": "[Kael]",
+    "desc": "Brutal! Aqui tienes el Sello de Marea. Tip: busca un cristal al otro lado del muro oeste del archivo!",
+    "default": {
+      "__define__": "RE_TWINS_DEFEATED",
+      "__give_item__": "key_crest_b:1"
+    }
+  },
+  "re_twins_done": {
+    "title": "[Kael y Vesper]",
+    "desc": "Ya tienes el Sello de Marea! Grail te espera al sureste por el ultimo sello.",
+    "option1": {
+      "text": "Volver a jugar la cancion",
+      "__load__": "resources/songs/beach_1_twins.scene",
+      "__save_next__": "re_twins_done",
+      "__save_next_lose__": "re_twins_lose"
+    },
+    "option2": {
+      "text": "Seguir explorando"
+    }
+  },
+  "re_grail_start": {
+    "title": "[Grail]",
+    "desc": "Has abierto los atajos del Conservatorio con astucia, viajero. Demuestra tu pulso por el Sello de Eco.",
+    "__ifdef__": "RE_GRAIL_DEFEATED",
+    "__next_ifdef__": "re_grail_done",
+    "option1": {
+      "text": "Comenzar prueba de Grail",
+      "__load__": "resources/songs/swamp_3_grail.scene",
+      "__save_next__": "re_grail_win",
+      "__save_next_lose__": "re_grail_lose"
+    },
+    "option2": {
+      "text": "Prepararme antes"
+    }
+  },
+  "re_grail_lose": {
+    "title": "[Grail]",
+    "desc": "Tu compas dudo en el tramo final. Respira hondo y vuelve al Santuario cuando estes listo.",
+    "option1": {
+      "text": "Reintentar prueba",
+      "__load__": "resources/songs/swamp_3_grail.scene",
+      "__save_next__": "re_grail_win",
+      "__save_next_lose__": "re_grail_lose"
+    },
+    "option2": {
+      "text": "Luego"
+    }
+  },
+  "re_grail_win": {
+    "title": "[Grail]",
+    "desc": "Excelente ejecucion. Recibe el Sello de Eco y abre el Nucleo Central usando tu atajo norte.",
+    "default": {
+      "__define__": "RE_GRAIL_DEFEATED",
+      "__give_item__": "key_crest_c:1"
+    }
+  },
+  "re_grail_done": {
+    "title": "[Grail]",
+    "desc": "El Nucleo Central aguarda tus 3 Sellos. Que el ritmo guie tu ultimo compas."
+  },
+  "re_final_start": {
+    "title": "[La Gata]",
+    "desc": "Abriste la Puerta del Nucleo! Todos los atajos y llaves te trajeron hasta nuestro ultimo compas.",
+    "__ifdef__": "RE_FINAL_DEFEATED",
+    "__next_ifdef__": "re_final_done",
+    "option1": {
+      "text": "Ultimo duelo del Conservatorio",
+      "__load__": "resources/songs/glass beach.scene",
+      "__save_next__": "re_final_win",
+      "__save_next_lose__": "re_final_lose"
+    },
+    "option2": {
+      "text": "Aun no"
+    }
+  },
+  "re_final_lose": {
+    "title": "[La Gata]",
+    "desc": "Estuviste muy cerca! Revisa tus chips o pociones con [ESC] e intentalo otra vez.",
+    "option1": {
+      "text": "Reintentar ultimo duelo",
+      "__load__": "resources/songs/glass beach.scene",
+      "__save_next__": "re_final_win",
+      "__save_next_lose__": "re_final_lose"
+    },
+    "option2": {
+      "text": "Salir un momento"
+    }
+  },
+  "re_final_win": {
+    "title": "[La Gata]",
+    "desc": "Miau! Completaste el Conservatorio Dormido! Dominaste cada llave, atajo, pulso y compas.",
+    "default": {
+      "__define__": "RE_FINAL_DEFEATED",
+      "next": "re_final_ending"
+    }
+  },
+  "re_final_ending": {
+    "title": "[NIVEL COMPLETADO]",
+    "desc": "Felicidades! Has superado la Nueva Campana de Exploracion. Puedes seguir recorriendo el mapa o volver al menu con [ESC].",
+    "default": {
+      "__define__": "GAME_ENDING_TRUE"
+    }
+  },
+  "re_final_done": {
+    "title": "[La Gata]",
+    "desc": "El Conservatorio resuena en paz gracias a ti. Quieres repetir la cancion final?",
+    "option1": {
+      "text": "Tocar de nuevo",
+      "__load__": "resources/songs/glass beach.scene",
+      "__save_next__": "re_final_done",
+      "__save_next_lose__": "re_final_lose"
+    },
+    "option2": {
+      "text": "Seguir paseando"
+    }
+  }
+}

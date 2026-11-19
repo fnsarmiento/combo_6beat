@@ -1,0 +1,7 @@
+target/
+.save
+.save*
+.config
+*.db
+*.db-wal
+*.db-shm

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Scene resources="../" return-scene="resources/scenes/beach_ruins.xml">
+  <Song
+      file="songs/a1/fiend - 2DF2 (devilcity) [ayako's Normal].osu"
+      scroll-speed="0.22"
+  />
+  <Boss
+      id="boss_bear"
+      name="Oso"
+      species="Oso Guerrero"
+      max-hp="1500"
+      attack-damage="12"
+      hit-damage="6"
+      sprite="sprites/bosses/bear.png"
+      rows="3"
+      cols="3"
+      scale-x="1.0"
+      scale-y="1.0"
+      width="48"
+      height="48"
+      delay="0.14"
+      position-x="240"
+      position-y="56"
+      defeat-flag="BOSS_RABY_DEFEATED"
+      reward-item="key_exit"
+  />
+  <Combat
+      player-max-hp="200"
+      heal-threshold="50"
+      heal-active-duration="6.0"
+      lane-lock-interval="10000"
+      lane-lock-duration="2800"
+  />
+</Scene>

@@ -1,0 +1,10 @@
+[
+	{
+		"label": "Run Main (Maven)",
+		"command": "mvn",
+		"args": ["-o", "compile", "exec:java", "-Dexec.mainClass=game.Main"],
+		"use_new_terminal": false,
+		"reveal_target": "center",
+		"allow_concurrent_runs": false,
+	},
+]
