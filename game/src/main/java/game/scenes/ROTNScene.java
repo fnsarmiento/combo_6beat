@@ -76,6 +76,7 @@ public class ROTNScene extends Scene {
 	private boolean _bgmPausedByScene = false;
 	private float _introCountdown = 3.0f;
 	private boolean _bgmStarted = false;
+	private float _bgAnimTime = 0.0f;
 	private static final float BGM_FADE_OUT_DURATION = 3.0f;
 	private float _bgmFadeOutTimer = -1.0f;
 	private Sound _hitSfx;
@@ -625,6 +626,10 @@ public class ROTNScene extends Scene {
 
 		if (_rhythmCore == null) return;
 
+		if (!_rhythmCore.isPaused()) {
+			_bgAnimTime += dt;
+		}
+
 		ROTNCore.BattleState state = _rhythmCore.getBattleState();
 		if (state != ROTNCore.BattleState.PLAYING) {
 			if (state == ROTNCore.BattleState.VICTORY) {
@@ -1106,7 +1111,7 @@ public class ROTNScene extends Scene {
 			songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
 		}
 
-		drawArenaBackground(g, Math.max(0, songTimeMs));
+		drawArenaBackground(g, _bgAnimTime);
 
 		if (_rhythmCore != null) {
 			drawPerspectiveHighway(g, songTimeMs);
@@ -1175,7 +1180,7 @@ public class ROTNScene extends Scene {
 		return new float[] { lx, ly, s, u };
 	}
 
-	private void drawArenaBackground(PGraphics g, int songTimeMs) {
+	private void drawArenaBackground(PGraphics g, float bgTimeSec) {
 		// Cielo nocturno oscuro púrpura-vino (estilo arena de combate de la referencia)
 		g.noStroke();
 		g.background(14, 7, 22);
@@ -1213,10 +1218,10 @@ public class ROTNScene extends Scene {
 		}
 		g.endShape();
 
-		// Conjuntos de luces amarillas (ciudades) y caminos de luces rotando en perspectiva real
+		// Conjuntos de luces amarillas (ciudades) y caminos de luces rotando despacio desde que carga la escena
 		g.noStroke();
-		float rotProgress = songTimeMs * 0.00012f;
-		float tSec = songTimeMs * 0.001f;
+		float rotProgress = bgTimeSec * 0.042f;
+		float tSec = bgTimeSec;
 
 		// Clusters bien separados alrededor del planeta: { xiCentro, tFase (0..1), cantidadLuces }
 		final float[][] clusters = {
