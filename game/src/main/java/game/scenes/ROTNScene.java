@@ -1099,15 +1099,16 @@ public class ROTNScene extends Scene {
 	public void draw(PGraphics g) {
 		g.pushStyle();
 
-		drawArenaBackground(g);
+		int songTimeMs;
+		if (_introCountdown > 0.0f) {
+			songTimeMs = -Math.round(_introCountdown * 1000.0f);
+		} else {
+			songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
+		}
+
+		drawArenaBackground(g, Math.max(0, songTimeMs));
 
 		if (_rhythmCore != null) {
-			int songTimeMs;
-			if (_introCountdown > 0.0f) {
-				songTimeMs = -Math.round(_introCountdown * 1000.0f);
-			} else {
-				songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
-			}
 			drawPerspectiveHighway(g, songTimeMs);
 			drawPerspectiveReceptors(g);
 			drawPerspectiveNotes(g, songTimeMs);
@@ -1160,7 +1161,7 @@ public class ROTNScene extends Scene {
 		g.popStyle();
 	}
 
-	private void drawArenaBackground(PGraphics g) {
+	private void drawArenaBackground(PGraphics g, int songTimeMs) {
 		// Cielo nocturno oscuro púrpura-vino (estilo arena de combate de la referencia)
 		g.noStroke();
 		g.background(14, 7, 22);
@@ -1170,13 +1171,13 @@ public class ROTNScene extends Scene {
 			g.rect(0, y0, BASE_W, 18.0f);
 		}
 
-		// Halo carmesí detrás del jefe
+		// Halo carmesí detrás del horizonte
 		for (int r = 5; r >= 1; r--) {
 			g.fill(180, 32, 36, 18 + (6 - r) * 8);
 			g.ellipse(CENTER_X, 54.0f, r * 30.0f, r * 20.0f);
 		}
 
-		// Horizonte curvo de la arena debajo del jefe
+		// Horizonte curvo oscuro (planeta abajo)
 		g.fill(10, 11, 18);
 		g.beginShape();
 		g.vertex(0, BASE_H);
@@ -1190,8 +1191,8 @@ public class ROTNScene extends Scene {
 		g.vertex(BASE_W, BASE_H);
 		g.endShape(PConstants.CLOSE);
 
-		// Borde cálido del horizonte curvo (puesta de sol alrededor del mundo)
-		g.stroke(140, 68, 52, 175);
+		// Borde difuso original del horizonte curvo
+		g.stroke(42, 26, 48, 170);
 		g.noFill();
 		g.beginShape();
 		for (int i = 0; i <= 24; i++) {
@@ -1202,22 +1203,46 @@ public class ROTNScene extends Scene {
 		}
 		g.endShape();
 
-		// Puntitos amarillos (luces de ciudad / brillo cálido) sobre el círculo negro de abajo
+		// Conjuntos de luces amarillas (ciudades) rotando con el avance de la canción
 		g.noStroke();
-		float tSec = Engine.getApp().millis() * 0.001f;
-		for (int i = 0; i < 42; i++) {
-			float fracX = ((i * 73 + 17) % 1000) / 1000.0f;
-			float dx = fracX * BASE_W;
-			float nx = -1.0f + 2.0f * fracX;
-			float horizonY = Y_FAR - 4.0f + 18.0f * (nx * nx);
-			float depth = (((i * 41 + 29) % 100) / 100.0f);
-			float dy = horizonY + 5.0f + depth * (BASE_H - horizonY - 10.0f);
+		float rotFrac = (songTimeMs * 0.000018f) % 1.0f;
+		float tSec = songTimeMs * 0.001f;
+		// 7 clusters alrededor del globo: { longitudBase (0..1), profundidadRel (0..1), cantidadLuces }
+		final float[][] clusters = {
+			{ 0.06f, 0.14f, 9 },
+			{ 0.21f, 0.34f, 11 },
+			{ 0.36f, 0.18f, 8 },
+			{ 0.51f, 0.42f, 10 },
+			{ 0.67f, 0.22f, 9 },
+			{ 0.81f, 0.38f, 11 },
+			{ 0.93f, 0.16f, 8 }
+		};
+		for (int c = 0; c < clusters.length; c++) {
+			float lon = (clusters[c][0] + rotFrac) % 1.0f;
+			float baseX = lon * BASE_W;
+			float depthBase = clusters[c][1];
+			int count = (int) clusters[c][2];
 
-			float twinkle = 0.55f + 0.45f * (float) Math.sin(tSec * (1.8f + (i % 5) * 0.45f) + i * 1.3f);
-			int alpha = Math.round((115 + 125 * twinkle) * (1.0f - depth * 0.35f));
-			int sz = (i % 5 == 0) ? 2 : 1;
-			g.fill(255, 220 + (i % 3) * 12, 95, alpha);
-			g.rect(Math.round(dx), Math.round(dy), sz, sz);
+			for (int k = 0; k < count; k++) {
+				// Offsets compactos para formar un grupo denso de luces de ciudad
+				int hash = c * 31 + k * 17;
+				float offX = (((hash * 23) % 29) - 14) * 1.15f;
+				float offY = (((hash * 13) % 15) - 7) * 1.05f;
+				float lx = baseX + offX;
+				if (lx < 0.0f) lx += BASE_W;
+				else if (lx >= BASE_W) lx -= BASE_W;
+
+				float nx = -1.0f + 2.0f * (lx / BASE_W);
+				float horizonY = Y_FAR - 4.0f + 18.0f * (nx * nx);
+				float ly = horizonY + 6.0f + depthBase * (BASE_H - horizonY - 22.0f) + offY;
+				if (ly <= horizonY + 2.0f || ly >= BASE_H - 2.0f) continue;
+
+				float twinkle = 0.65f + 0.35f * (float) Math.sin(tSec * (2.2f + (k % 4) * 0.5f) + hash);
+				int alpha = Math.round((135 + 115 * twinkle) * (1.0f - depthBase * 0.30f));
+				int sz = (k == 0 || k == 3) ? 2 : 1;
+				g.fill(255, 222 + (k % 3) * 10, 95, alpha);
+				g.rect(Math.round(lx), Math.round(ly), sz, sz);
+			}
 		}
 	}
 
@@ -1245,7 +1270,7 @@ public class ROTNScene extends Scene {
 		float sBottom = scaleFromT(1.13f);
 		float uBottom = uFromScale(sBottom);
 
-		// 1. Fondos trapezoidales por carril (warning, locked o tecla presionada)
+		// 1. Fondos trapezoidales por carril (sin pintar todo el carril al bloquear)
 		for (int lane = 0; lane < 6; lane++) {
 			float xiL = -1.0f + lane * (2.0f / 6.0f);
 			float xiR = xiL + (2.0f / 6.0f);
@@ -1258,12 +1283,7 @@ public class ROTNScene extends Scene {
 				? g.color(20, 22, 34, 115)
 				: g.color(28, 30, 44, 115);
 
-			if (lane == lockedLane) {
-				fillCol = g.color(185, 25, 40, 125);
-			} else if (lane == warningLane) {
-				float pulse = (float) (0.5 + 0.5 * Math.sin(System.currentTimeMillis() * 0.02));
-				fillCol = g.color(255, 165, 30, 45 + pulse * 85);
-			} else if (keyDown) {
+			if (keyDown && lane != lockedLane) {
 				fillCol = g.color(255, 120, 130, 65);
 			}
 
@@ -1275,6 +1295,52 @@ public class ROTNScene extends Scene {
 				projectX(xiR, sBottom), projectY(xiR, uBottom, sBottom),
 				projectX(xiL, sBottom), projectY(xiL, uBottom, sBottom)
 			);
+		}
+
+		// 1b. Bloque rojo continuo viajando por la pista (como nota larga) para el bloqueo de carril
+		int lockVisLane = _rhythmCore.getLockVisualLane();
+		int lockStartMs = _rhythmCore.getLockStartMs();
+		int lockEndMs = _rhythmCore.getLockEndMs();
+		if (lockVisLane >= 0 && lockVisLane < 6 && lockEndMs > lockStartMs) {
+			float appMs = getApproachTimeMs();
+			float tHead = 1.0f - ((lockStartMs - songTimeMs) / appMs);
+			float tTail = 1.0f - ((lockEndMs - songTimeMs) / appMs);
+			float tA = PApplet.constrain(tTail, 0.0f, 1.06f);
+			float tB = PApplet.constrain(tHead, 0.0f, 1.06f);
+			if (tB > tA + 0.005f) {
+				float xiL = -1.0f + lockVisLane * (2.0f / 6.0f) + 0.025f;
+				float xiR = -1.0f + (lockVisLane + 1) * (2.0f / 6.0f) - 0.025f;
+				int segs = 10;
+				g.noStroke();
+				for (int sIdx = 0; sIdx < segs; sIdx++) {
+					float ft0 = PApplet.lerp(tA, tB, sIdx / (float) segs);
+					float ft1 = PApplet.lerp(tA, tB, (sIdx + 1) / (float) segs);
+					float sc0 = scaleFromT(ft0);
+					float sc1 = scaleFromT(ft1);
+					float uu0 = uFromScale(sc0);
+					float uu1 = uFromScale(sc1);
+
+					g.fill(215, 28, 48, 175);
+					g.quad(
+						projectX(xiL, sc0), projectY(xiL, uu0, sc0),
+						projectX(xiR, sc0), projectY(xiR, uu0, sc0),
+						projectX(xiR, sc1), projectY(xiR, uu1, sc1),
+						projectX(xiL, sc1), projectY(xiL, uu1, sc1)
+					);
+				}
+				// Borde brillante en los laterales y en el frente/cola del bloque rojo
+				float scHead = scaleFromT(tB);
+				float scTail = scaleFromT(tA);
+				float uuHead = uFromScale(scHead);
+				float uuTail = uFromScale(scTail);
+				g.stroke(255, 95, 110, 235);
+				g.strokeWeight(1.5f);
+				g.line(projectX(xiL, scTail), projectY(xiL, uuTail, scTail), projectX(xiL, scHead), projectY(xiL, uuHead, scHead));
+				g.line(projectX(xiR, scTail), projectY(xiR, uuTail, scTail), projectX(xiR, scHead), projectY(xiR, uuHead, scHead));
+				g.line(projectX(xiL, scHead), projectY(xiL, uuHead, scHead), projectX(xiR, scHead), projectY(xiR, uuHead, scHead));
+				g.line(projectX(xiL, scTail), projectY(xiL, uuTail, scTail), projectX(xiR, scTail), projectY(xiR, uuTail, scTail));
+				g.strokeWeight(1.0f);
+			}
 		}
 
 		// 2. Líneas horizontales (arcos de beat) viajando a la misma velocidad exacta que las notas

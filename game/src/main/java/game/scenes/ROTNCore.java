@@ -77,6 +77,8 @@ public class ROTNCore {
 	private float lockWarningTimer = 0.0f;
 	private int lockedLane = -1;
 	private float lockedLaneTimer = 0.0f;
+	private int lockStartMs = -1;
+	private int lockEndMs = -1;
 	private int lockCycleCounter = 0;
 
 	private long firstNoteStartTimeMs = Long.MAX_VALUE;
@@ -225,14 +227,18 @@ public class ROTNCore {
 		if (laneLockIntervalMs <= 0 || notes == null || notes.length == 0 || songTimeMs < firstNoteStartTimeMs) {
 			lockedLane = -1;
 			warningLane = -1;
+			lockStartMs = -1;
+			lockEndMs = -1;
 			return;
 		}
 
 		if (lockedLane != -1) {
 			lockedLaneTimer -= dt;
-			if (lockedLaneTimer <= 0.0f) {
+			if (lockedLaneTimer <= 0.0f || (lockEndMs > 0 && songTimeMs >= lockEndMs)) {
 				lockedLane = -1;
 				lockedLaneTimer = 0.0f;
+				lockStartMs = -1;
+				lockEndMs = -1;
 				nextLockTriggerMs = songTimeMs + laneLockIntervalMs;
 			}
 			return;
@@ -240,7 +246,7 @@ public class ROTNCore {
 
 		if (warningLane != -1) {
 			lockWarningTimer -= dt;
-			if (lockWarningTimer <= 0.0f) {
+			if (lockWarningTimer <= 0.0f || (lockStartMs > 0 && songTimeMs >= lockStartMs)) {
 				lockedLane = warningLane;
 				warningLane = -1;
 				lockWarningTimer = 0.0f;
@@ -266,6 +272,8 @@ public class ROTNCore {
 			lockCycleCounter++;
 			warningLane = candidate;
 			lockWarningTimer = 1.4f;
+			lockStartMs = songTimeMs + 1400;
+			lockEndMs = lockStartMs + laneLockDurationMs;
 		}
 	}
 
@@ -543,4 +551,7 @@ public class ROTNCore {
 
 	public int getWarningLane() { return warningLane; }
 	public int getLockedLane() { return lockedLane; }
+	public int getLockVisualLane() { return (lockedLane != -1) ? lockedLane : warningLane; }
+	public int getLockStartMs() { return lockStartMs; }
+	public int getLockEndMs() { return lockEndMs; }
 }
