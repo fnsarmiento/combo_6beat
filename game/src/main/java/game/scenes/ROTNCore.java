@@ -538,7 +538,7 @@ public class ROTNCore {
 	 * Devuelve {@code true} cuando la pista ya terminó (no quedan notas pendientes ni holds activos
 	 * o se superó el último tiempo de nota + ventana de captura), evitando misses al finalizar la canción.
 	 */
-	private boolean isTrackFinishedForInput(int songTimeMs) {
+	public boolean isTrackFinished(int songTimeMs) {
 		if (notes == null || notes.length == 0) return true;
 		if (songTimeMs > lastNoteEndTimeMs + getCaptureWindowMs()) return true;
 		for (int i = 0; i < notes.length; i++) {
@@ -548,6 +548,10 @@ public class ROTNCore {
 			if (isHoldingLane[l]) return false;
 		}
 		return true;
+	}
+
+	private boolean isTrackFinishedForInput(int songTimeMs) {
+		return isTrackFinished(songTimeMs);
 	}
 
 	/**

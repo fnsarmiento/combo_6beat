@@ -29,6 +29,7 @@ import java.util.List;
 import kuusisto.tinysound.Sound;
 import processing.core.PApplet;
 import processing.core.PConstants;
+import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.data.XML;
@@ -136,9 +137,12 @@ public class ROTNScene extends Scene {
 	private int _pauseSongTimeMs = 0;
 	private float _bgmFadeOutTimer = -1.0f;
 
-	// Animación del planeta, sistema de partículas y textos flotantes de juicio
+	// Animación del planeta, sistema de partículas, HUD pixelado derecho y textos flotantes
 	private float _bgAnimTime = 0.0f;
 	private int _lastPlayerHp = 0;
+	private int _prevMultiplier = 1;
+	private float _multAnimTimer = 0.0f;
+	private static PFont _pixelHudFont;
 	private final ParticleSystem _particles = new ParticleSystem(320);
 	private final float[] _holdParticleTimers = new float[LANE_COUNT];
 	private final ArrayList<FloatingRating> _floatingRatings = new ArrayList<>();
@@ -158,8 +162,6 @@ public class ROTNScene extends Scene {
 	// private Button _uiBossHpFill;
 
 	private Textlabel _uiScoreLbl;
-	private Textlabel _uiComboLbl;
-	private Textlabel _uiMultLbl;
 
 	private Textlabel _uiHealRatioLbl;
 	private Button _uiHealFill;
@@ -317,6 +319,7 @@ public class ROTNScene extends Scene {
 		_lastPlayerHp = _rhythmCore.getPlayerHp();
 
 		_hitSfx = ResourcesManager.loadSFX("sfx/Normal-Hitnormal.wav");
+		ensurePixelHudFont();
 
 		setupCombatUI();
 		syncCombatUI();
@@ -630,10 +633,8 @@ public class ROTNScene extends Scene {
 		// addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
 		// _uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
 
-		// 3. Arriba-Derecha: Score, Combo y Multiplicador (hasta 16x cada 7 GOOD/PERFECT)
+		// 3. Arriba-Derecha: solo Score (multiplicador y combo se dibujan grandes a la derecha en pixel-art)
 		_uiScoreLbl = addUILabel("ui_rotn_score_lbl", null, "SCORE: 0", 356, 8, app.color(255), fontMed);
-		_uiComboLbl = addUILabel("ui_rotn_combo_lbl", null, "COMBO: 0x", 356, 20, app.color(110, 225, 255), fontMed);
-		_uiMultLbl = addUILabel("ui_rotn_mult_lbl", null, "MULT: 1x (0/7)", 356, 32, app.color(185, 220, 255), fontSmall);
 
 		// 4. Abajo-Izquierda: Barra Vertical de Curación Dinámica
 		_uiHealRatioLbl = addUILabel("ui_rotn_heal_ratio_lbl", null, "0/2", 12, 162, app.color(230, 60, 60), fontBig);
@@ -766,6 +767,16 @@ public class ROTNScene extends Scene {
 	}
 
 	private void beginResumeCountdown() {
+		if (_rhythmCore == null) return;
+		if (_rhythmCore.getBattleState() != ROTNCore.BattleState.PLAYING || _rhythmCore.isTrackFinished(_pauseSongTimeMs)) {
+			_resumeCountdown = 0.0f;
+			if (_bgm != null && _bgm.isLoaded() && _bgmPausedByScene) {
+				_bgmPausedByScene = false;
+				Audio.resumeBGM();
+				Audio.syncTrackVolume(_bgm);
+			}
+			return;
+		}
 		if (_introCountdown > 0.0f) {
 			_introCountdown = INTRO_COUNTDOWN_DURATION;
 			return;
@@ -780,6 +791,21 @@ public class ROTNScene extends Scene {
 			}
 			_bgmPausedByScene = true;
 			_bgm.setPausedPositionMs(_resumeTargetMs);
+		}
+	}
+
+	private static void ensurePixelHudFont() {
+		if (_pixelHudFont != null) return;
+		PApplet app = Engine.getApp();
+		if (app == null) return;
+		try {
+			String fontPath = ResourcesManager.getResourceAbsPath("fonts/born2bsporty-fs.otf");
+			if (new File(fontPath).exists()) {
+				_pixelHudFont = app.createFont(fontPath, 24, false);
+			}
+		} catch (Exception ignored) {}
+		if (_pixelHudFont == null) {
+			_pixelHudFont = Engine.titleFont;
 		}
 	}
 
@@ -890,28 +916,9 @@ public class ROTNScene extends Scene {
 		// 	);
 		// }
 
-		// 3. Score, Combo y Multiplicador
+		// 3. Score arriba a la derecha (multiplicador y combo se dibujan en el canvas pixelado)
 		if (_uiScoreLbl != null) {
 			_uiScoreLbl.setText("SCORE: " + _rhythmCore.getScore());
-		}
-		if (_uiComboLbl != null) {
-			_uiComboLbl.setText("COMBO: " + _rhythmCore.getCombo() + "x");
-		}
-		if (_uiMultLbl != null) {
-			int mult = _rhythmCore.getScoreMultiplier();
-			int maxMult = _rhythmCore.getMaxScoreMultiplier();
-			int prog = _rhythmCore.getMultiplierProgress();
-			int step = _rhythmCore.getMultiplierStepHits();
-			if (mult >= maxMult) {
-				_uiMultLbl.setText("MULT: " + mult + "x [MAX]");
-				_uiMultLbl.setColorValue(app.color(255, 210, 75));
-			} else if (mult > 1) {
-				_uiMultLbl.setText("MULT: " + mult + "x (" + prog + "/" + step + ")");
-				_uiMultLbl.setColorValue(app.color(255, 232, 125));
-			} else {
-				_uiMultLbl.setText("MULT: 1x (" + prog + "/" + step + ")");
-				_uiMultLbl.setColorValue(app.color(185, 220, 255));
-			}
 		}
 
 		// 4. Barra vertical de Curación Dinámica (abajo-izquierda)
@@ -1115,6 +1122,14 @@ public class ROTNScene extends Scene {
 		if (!_rhythmCore.isPaused()) {
 			_bgAnimTime += dt;
 		}
+		if (_multAnimTimer > 0.0f) {
+			_multAnimTimer = Math.max(0.0f, _multAnimTimer - dt);
+		}
+		int curMult = _rhythmCore.getScoreMultiplier();
+		if (curMult > _prevMultiplier) {
+			_multAnimTimer = 0.42f;
+		}
+		_prevMultiplier = curMult;
 
 		// 2. Fin del encuentro (Victoria con fade-out de 3s o Derrota inmediata)
 		ROTNCore.BattleState state = _rhythmCore.getBattleState();
@@ -1685,6 +1700,7 @@ public class ROTNScene extends Scene {
 			drawPerspectiveNotes(g, songTimeMs);
 			_particles.draw(g);
 			drawFloatingRatings(g);
+			drawRightMultiplierAndCombo(g);
 			drawIntroCountdownOverlay(g);
 		}
 
@@ -2342,6 +2358,64 @@ public class ROTNScene extends Scene {
 			g.fill((alpha << 24) | rgb);
 			g.text(fr.text, fr.x, fr.y);
 		}
+		g.popStyle();
+	}
+
+	/**
+	 * Dibuja a la derecha de la pista el multiplicador (en amarillo, con animación al aumentar)
+	 * y debajo el combo (en azul), ambos grandes y con fuente pixelada sin antialiasing.
+	 */
+	private void drawRightMultiplierAndCombo(PGraphics g) {
+		if (_rhythmCore == null) return;
+
+		int mult = _rhythmCore.getScoreMultiplier();
+		int combo = _rhythmCore.getCombo();
+
+		float rightX = 424.0f;
+		float multY = 104.0f;
+		float comboY = 142.0f;
+
+		float multJumpY = 0.0f;
+		float multShakeX = 0.0f;
+		float multSize = 24.0f;
+		if (_multAnimTimer > 0.0f) {
+			float p = 1.0f - (_multAnimTimer / 0.42f);
+			multJumpY = (float) (-Math.sin(p * Math.PI) * 8.0f);
+			multShakeX = (float) (Math.sin(p * Math.PI * 6.0f) * (1.0f - p) * 4.0f);
+			multSize = 24.0f + (1.0f - p) * 5.0f;
+		}
+
+		g.pushStyle();
+		g.textAlign(PConstants.CENTER, PConstants.CENTER);
+
+		// 1. Multiplicador en amarillo arriba (sin cartel)
+		int mx = Math.round(rightX + multShakeX);
+		int my = Math.round(multY + multJumpY);
+		String multText = "x" + mult;
+		if (_pixelHudFont != null) {
+			g.textFont(_pixelHudFont, Math.round(multSize));
+		} else {
+			g.textSize(Math.round(multSize));
+		}
+		g.fill(0, 0, 0, 225);
+		g.text(multText, mx + 2, my + 2);
+		g.fill(255, 224, 58, 255);
+		g.text(multText, mx, my);
+
+		// 2. Combo en azul debajo del multiplicador con el mismo tamaño (sin cartel)
+		int cx = Math.round(rightX);
+		int cy = Math.round(comboY);
+		String comboText = String.valueOf(combo);
+		if (_pixelHudFont != null) {
+			g.textFont(_pixelHudFont, 24);
+		} else {
+			g.textSize(24);
+		}
+		g.fill(0, 0, 0, 225);
+		g.text(comboText, cx + 2, cy + 2);
+		g.fill(75, 190, 255, 255);
+		g.text(comboText, cx, cy);
+
 		g.popStyle();
 	}
 
