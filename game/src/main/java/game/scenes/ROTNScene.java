@@ -521,10 +521,9 @@ public class ROTNScene extends Scene {
 		_uiHpFill = addUIBox("ui_rotn_hp_fill", null, 38, 21, 96, 7, app.color(230, 65, 85, 245));
 		_uiShieldLbl = addUILabel("ui_rotn_shield_lbl", null, "", 38, 31, app.color(110, 235, 255), fontSmall);
 
-		// 2. Arriba-Centro: Nombre, HP del Jefe y Avisos de ataque
-		_uiBossLbl = addUILabel("ui_rotn_boss_lbl", null, _bossName, 182, 6, app.color(255, 215, 145), fontMed);
-		_uiBossHpBg = addUIBox("ui_rotn_boss_hp_bg", null, 175, 17, 130, 6, app.color(42, 18, 26, 220));
-		_uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 17, 130, 6, app.color(235, 65, 85, 245));
+		// 2. Arriba-Centro: HP del Jefe (sin título del jefe) y Avisos de ataque
+		_uiBossHpBg = addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
+		_uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
 		_uiAlertLbl = addUILabel("ui_rotn_alert_lbl", null, "", 170, 80, app.color(255, 190, 60), fontMed);
 
 		// 3. Arriba-Derecha: Score, Combo y Juicio
@@ -1191,8 +1190,8 @@ public class ROTNScene extends Scene {
 		g.vertex(BASE_W, BASE_H);
 		g.endShape(PConstants.CLOSE);
 
-		// Borde difuso del horizonte curvo
-		g.stroke(42, 26, 48, 170);
+		// Borde cálido del horizonte curvo (puesta de sol alrededor del mundo)
+		g.stroke(140, 68, 52, 175);
 		g.noFill();
 		g.beginShape();
 		for (int i = 0; i <= 24; i++) {
@@ -1203,25 +1202,22 @@ public class ROTNScene extends Scene {
 		}
 		g.endShape();
 
-		// Sprite animado del jefe o portada de canción custom centrado al fondo
-		if (_bossSprite != null) {
-			if (_rhythmCore != null && _rhythmCore.getBossFlashTimer() > 0) {
-				g.noStroke();
-				g.fill(255, 240, 240, 120);
-				g.ellipse(_bossSprite.position.x, _bossSprite.position.y, 44, 34);
-			}
-			_bossSprite.draw(g);
-		} else if (_customCoverImg != null && _customCoverImg.width > 0) {
-			g.stroke(245, 225, 150, 220);
-			g.strokeWeight(1.5f);
-			g.fill(16, 12, 24);
-			g.rect(CENTER_X - 20.0f, 34.0f, 40.0f, 40.0f);
-			g.image(_customCoverImg, CENTER_X - 18.0f, 36.0f, 36.0f, 36.0f);
-			g.strokeWeight(1.0f);
-		} else {
-			g.noStroke();
-			g.fill(190, 40, 50);
-			g.ellipse(CENTER_X, 54.0f, 38, 28);
+		// Puntitos amarillos (luces de ciudad / brillo cálido) sobre el círculo negro de abajo
+		g.noStroke();
+		float tSec = Engine.getApp().millis() * 0.001f;
+		for (int i = 0; i < 42; i++) {
+			float fracX = ((i * 73 + 17) % 1000) / 1000.0f;
+			float dx = fracX * BASE_W;
+			float nx = -1.0f + 2.0f * fracX;
+			float horizonY = Y_FAR - 4.0f + 18.0f * (nx * nx);
+			float depth = (((i * 41 + 29) % 100) / 100.0f);
+			float dy = horizonY + 5.0f + depth * (BASE_H - horizonY - 10.0f);
+
+			float twinkle = 0.55f + 0.45f * (float) Math.sin(tSec * (1.8f + (i % 5) * 0.45f) + i * 1.3f);
+			int alpha = Math.round((115 + 125 * twinkle) * (1.0f - depth * 0.35f));
+			int sz = (i % 5 == 0) ? 2 : 1;
+			g.fill(255, 220 + (i % 3) * 12, 95, alpha);
+			g.rect(Math.round(dx), Math.round(dy), sz, sz);
 		}
 	}
 

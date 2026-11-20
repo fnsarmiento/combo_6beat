@@ -150,7 +150,6 @@ public class InitScene extends Scene {
 	private Textlabel _setSfxLbl;
 	private Button _setSfxBarFill;
 	private Button _setMuteBtn;
-	private Button _setResBtn;
 	private Button _setAltModeBtn;
 	private Button _setResetBtn;
 	private Button _setBackBtn;
@@ -834,19 +833,16 @@ public class InitScene extends Scene {
 		addUIButton("ui_set_sfx_plus", _settingsGroup, "+", 198, 86, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
 			() -> { _settingsFocusIdx = 1; adjustSfxVolume(0.1f); });
 
-		_setMuteBtn = addUIButton("ui_set_mute_btn", _settingsGroup, "MUTE GENERAL: OFF", 22, 110, 198, 20,
+		_setMuteBtn = addUIButton("ui_set_mute_btn", _settingsGroup, "MUTE GENERAL: OFF", 22, 114, 198, 22,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> { _settingsFocusIdx = 2; toggleMuteSetting(); });
 
-		addUILabel("ui_set_video_hdr", _settingsGroup, "Video", 22, 138, app.color(140, 215, 255), fontSmall);
-		_setResBtn = addUIButton("ui_set_res_btn", _settingsGroup, "Resolucion: 1920x1080 (4x)", 22, 150, 198, 22,
-			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> { _settingsFocusIdx = 3; toggleWindowResolution(); });
-		_setAltModeBtn = addUIButton("ui_set_alt_mode_btn", _settingsGroup, "CONTROLES: PRINCIPALES", 22, 176, 198, 22,
-			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> { _settingsFocusIdx = 4; toggleAltControlsMode(); });
-		_setResetBtn = addUIButton("ui_set_reset_btn", _settingsGroup, "RESTAURAR CONTROLES", 22, 204, 198, 20,
-			app.color(65, 52, 32), app.color(110, 88, 52), fontSmall, () -> { _settingsFocusIdx = 5; resetAllControlsSetting(); });
-		_setBackBtn = addUIButton("ui_set_back_btn", _settingsGroup, "GUARDAR Y VOLVER", 22, 230, 198, 22,
+		_setAltModeBtn = addUIButton("ui_set_alt_mode_btn", _settingsGroup, "CONTROLES: PRINCIPALES", 22, 148, 198, 24,
+			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> { _settingsFocusIdx = 3; toggleAltControlsMode(); });
+		_setResetBtn = addUIButton("ui_set_reset_btn", _settingsGroup, "RESTAURAR CONTROLES", 22, 184, 198, 22,
+			app.color(65, 52, 32), app.color(110, 88, 52), fontSmall, () -> { _settingsFocusIdx = 4; resetAllControlsSetting(); });
+		_setBackBtn = addUIButton("ui_set_back_btn", _settingsGroup, "GUARDAR Y VOLVER", 22, 220, 198, 24,
 			app.color(35, 115, 78), app.color(55, 160, 110), fontSmall, () -> {
-				_settingsFocusIdx = 6;
+				_settingsFocusIdx = 5;
 				_rebindCategory = 0;
 				Config.saveConfig(".config");
 				switchView(ViewMode.MAIN);
@@ -917,20 +913,6 @@ public class InitScene extends Scene {
 		Config.resetDefaultControls();
 		Config.saveConfig(".config");
 		syncSettingsUI();
-	}
-
-	private void toggleWindowResolution() {
-		_savedSettingsFocusIdx = _settingsFocusIdx;
-		if (Config.windowWidth == 1920) {
-			Config.windowWidth = 1280;
-			Config.windowHeight = 720;
-		} else {
-			Config.windowWidth = 1920;
-			Config.windowHeight = 1080;
-		}
-		Config.saveConfig(".config");
-		Config.applyVideoConfig();
-		Engine.changeScene(new InitScene(ViewMode.SETTINGS));
 	}
 
 	private void switchView(ViewMode mode) {
@@ -1308,15 +1290,8 @@ public class InitScene extends Scene {
 			);
 		}
 
-		if (_setResBtn != null) {
-			boolean f = (_settingsFocusIdx == 3);
-			String tag = (Config.windowWidth == 1920) ? "1920x1080 (1080p - 4x)" : "1280x720 (720p)";
-			_setResBtn.setLabel((f ? "> " : "") + "Resolucion: " + tag);
-			_setResBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
-		}
-
 		if (_setAltModeBtn != null) {
-			boolean f = (_settingsFocusIdx == 4);
+			boolean f = (_settingsFocusIdx == 3);
 			_setAltModeBtn.setLabel((f ? "> " : "") + "CONTROLES: " + (_editingAltControls ? "ALTERNATIVOS" : "PRINCIPALES"));
 			_setAltModeBtn.setColorBackground(
 				f ? app.color(55, 110, 195)
@@ -1325,13 +1300,13 @@ public class InitScene extends Scene {
 		}
 
 		if (_setResetBtn != null) {
-			boolean f = (_settingsFocusIdx == 5);
+			boolean f = (_settingsFocusIdx == 4);
 			_setResetBtn.setLabel((f ? "> " : "") + "RESTAURAR CONTROLES");
 			_setResetBtn.setColorBackground(f ? app.color(130, 102, 55) : app.color(65, 52, 32));
 		}
 
 		if (_setBackBtn != null) {
-			boolean f = (_settingsFocusIdx == 6);
+			boolean f = (_settingsFocusIdx == 5);
 			_setBackBtn.setLabel((f ? "> " : "") + "GUARDAR Y VOLVER");
 			_setBackBtn.setColorBackground(f ? app.color(55, 165, 110) : app.color(35, 115, 78));
 		}
@@ -1633,12 +1608,12 @@ public class InitScene extends Scene {
 	}
 
 	private void updateSettingsNavigation(boolean up, boolean down, boolean left, boolean right, boolean accept) {
-		if (_settingsFocusIdx <= 6) {
+		if (_settingsFocusIdx <= 5) {
 			if (up) {
-				_settingsFocusIdx = (_settingsFocusIdx - 1 + 7) % 7;
+				_settingsFocusIdx = (_settingsFocusIdx - 1 + 6) % 6;
 				syncSettingsUI();
 			} else if (down) {
-				_settingsFocusIdx = (_settingsFocusIdx + 1) % 7;
+				_settingsFocusIdx = (_settingsFocusIdx + 1) % 6;
 				syncSettingsUI();
 			} else {
 				switch (_settingsFocusIdx) {
@@ -1655,18 +1630,14 @@ public class InitScene extends Scene {
 						else if (accept) toggleMuteSetting();
 					}
 					case 3 -> {
-						if (right) { _settingsFocusIdx = 8; syncSettingsUI(); }
-						else if (accept) toggleWindowResolution();
-					}
-					case 4 -> {
 						if (right) { _settingsFocusIdx = 9; syncSettingsUI(); }
 						else if (accept) toggleAltControlsMode();
 					}
-					case 5 -> {
+					case 4 -> {
 						if (right) { _settingsFocusIdx = 13; syncSettingsUI(); }
 						else if (accept) resetAllControlsSetting();
 					}
-					case 6 -> {
+					case 5 -> {
 						if (right) { _settingsFocusIdx = 15; syncSettingsUI(); }
 						else if (accept) {
 							_savedSettingsFocusIdx = 0;
@@ -1719,9 +1690,9 @@ public class InitScene extends Scene {
 				_settingsFocusIdx = switch (row) {
 					case 0 -> 2;
 					case 1 -> 3;
-					case 2 -> 4;
-					case 3 -> 5;
-					default -> 6;
+					case 2 -> 3;
+					case 3 -> 4;
+					default -> 5;
 				};
 			}
 			syncSettingsUI();
