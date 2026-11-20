@@ -390,7 +390,7 @@ public class GameState {
 		));
 	}
 
-	/** Devuelve en orden la lista de amuletos del catalogo disponibles en la tienda (`shopPrice > 0`). */
+	/** Devuelve la lista de amuletos del catalogo disponibles en la tienda (`shopPrice > 0`), ordenada por precio. */
 	public static List<ItemDef> getShopAmulets() {
 		ensureCatalogLoaded();
 		List<ItemDef> list = new ArrayList<>();
@@ -399,6 +399,10 @@ public class GameState {
 				list.add(def);
 			}
 		}
+		list.sort((a, b) -> {
+			int cmp = Integer.compare(a.shopPrice, b.shopPrice);
+			return (cmp != 0) ? cmp : a.name.compareToIgnoreCase(b.name);
+		});
 		return list;
 	}
 

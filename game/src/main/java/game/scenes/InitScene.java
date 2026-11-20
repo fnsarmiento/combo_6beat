@@ -66,7 +66,7 @@ public class InitScene extends Scene {
 	// --- Selector de Canciones y Tienda ---
 	private static final int SONG_TAB_SONGS = 0;
 	private static final int SONG_TAB_SHOP = 1;
-	private static final int SONG_VISIBLE_ROWS = 5;
+	private static final int SONG_VISIBLE_ROWS = 6;
 	private static final int AMULET_DROP_VISIBLE_ROWS = 4;
 	private static final int SONG_COL_LIST = 0;
 	private static final int SONG_COL_OPTIONS = 1;
@@ -349,7 +349,102 @@ public class InitScene extends Scene {
 	}
 
 	private void drawSongSelectOverlay(PGraphics g) {
-		// Los controles del selector de canciones se renderizan mediante ControlP5 (_songsGroup)
+		if (_songTab != SONG_TAB_SHOP) return;
+
+		float cardX = 220.0f;
+		float cardY = 40.0f;
+		float cardW = 238.0f;
+		float cardH = 176.0f; // Desde el margen bajo los tabs (y=40) hasta justo arriba del botón COMPRAR/EQUIPAR (y=222)
+
+		g.fill(20, 24, 38, 240);
+		g.stroke(62, 86, 138, 220);
+		g.strokeWeight(1.0f);
+		g.rect(cardX, cardY, cardW, cardH);
+
+		List<GameState.ItemDef> shopList = GameState.getShopAmulets();
+		if (shopList.isEmpty() || _shopSelectedIdx < 0 || _shopSelectedIdx >= shopList.size()) {
+			g.noStroke();
+			g.fill(200, 210, 230);
+			if (Engine.descriptionFont != null) g.textFont(Engine.descriptionFont, 9);
+			else g.textSize(9);
+			g.textAlign(PConstants.LEFT, PConstants.TOP);
+			g.text("No hay amuletos disponibles.", cardX + 12, cardY + 14);
+			return;
+		}
+
+		GameState.ItemDef def = shopList.get(_shopSelectedIdx);
+		boolean owned = GameState.hasItem(def.id);
+		boolean canAfford = GameState.getShopPoints() >= def.shopPrice;
+
+		int nameCol = owned
+			? g.color(80, 235, 135)    // Verde si ya se compró
+			: (canAfford ? g.color(255, 224, 65) : g.color(255, 85, 95)); // Amarillo si alcanza, Rojo si no
+
+		float padX = 12.0f;
+		float textMaxW = cardW - padX * 2.0f;
+		float cursorY = cardY + 14.0f;
+
+		g.noStroke();
+		g.textAlign(PConstants.LEFT, PConstants.TOP);
+
+		// 1. Nombre en grande
+		if (Engine.titleFont != null) g.textFont(Engine.titleFont, 14);
+		else g.textSize(14);
+		List<String> nameLines = wrapTextLines(g, def.name, textMaxW);
+		g.fill(nameCol);
+		for (String line : nameLines) {
+			g.text(line, cardX + padX, cursorY);
+			cursorY += 16.0f;
+		}
+
+		cursorY += 4.0f;
+
+		// 2. Precio en amarillo más chico que el nombre (ej. "1800 pts.")
+		if (Engine.descriptionFont != null) g.textFont(Engine.descriptionFont, 10);
+		else g.textSize(10);
+		g.fill(255, 224, 65);
+		g.text(def.shopPrice + " pts.", cardX + padX, cursorY);
+		cursorY += 15.0f;
+
+		// Separación visual entre precio y descripción
+		g.stroke(65, 86, 132, 185);
+		g.line(cardX + padX, cursorY, cardX + cardW - padX, cursorY);
+		cursorY += 10.0f;
+
+		// 3. Descripción en blanco (ligeramente más chica que el precio)
+		g.noStroke();
+		if (Engine.descriptionFont != null) g.textFont(Engine.descriptionFont, 9);
+		else g.textSize(9);
+		List<String> descLines = wrapTextLines(g, def.description, textMaxW);
+		g.fill(245, 248, 255);
+		for (String line : descLines) {
+			if (cursorY + 11.0f > cardY + cardH - 6.0f) break;
+			g.text(line, cardX + padX, cursorY);
+			cursorY += 12.0f;
+		}
+	}
+
+	/** Divide un texto en líneas ajustadas a {@code maxWidth} en coordenadas virtuales. */
+	private List<String> wrapTextLines(PGraphics g, String text, float maxWidth) {
+		List<String> lines = new ArrayList<>();
+		if (text == null || text.isEmpty()) return lines;
+		String[] words = text.split("\\s+");
+		StringBuilder current = new StringBuilder();
+		for (String word : words) {
+			String candidate = (current.length() == 0) ? word : (current + " " + word);
+			if (g.textWidth(candidate) <= maxWidth || current.length() == 0) {
+				current.setLength(0);
+				current.append(candidate);
+			} else {
+				lines.add(current.toString());
+				current.setLength(0);
+				current.append(word);
+			}
+		}
+		if (current.length() > 0) {
+			lines.add(current.toString());
+		}
+		return lines;
 	}
 
 	private void drawSettingsOverlay(PGraphics g) {
@@ -608,13 +703,13 @@ public class InitScene extends Scene {
 
 		for (int i = 0; i < _songListBtns.length; i++) {
 			final int visibleRow = i;
-			_songListBtns[i] = addUIButton("ui_song_slot_" + i, _songsGroup, "", 22, 40 + i * 31, 188, 27,
+			_songListBtns[i] = addUIButton("ui_song_slot_" + i, _songsGroup, "", 22, 38 + i * 27, 188, 24,
 				app.color(26, 30, 46), app.color(50, 95, 165), fontSmall, () -> selectSongFromVisibleRow(visibleRow));
 		}
 
-		_songImportBtn = addUIButton("ui_song_import_btn", _songsGroup, "+ IMPORTAR .OSU", 22, 198, 122, 20,
+		_songImportBtn = addUIButton("ui_song_import_btn", _songsGroup, "+ IMPORTAR .OSU", 22, 204, 122, 20,
 			app.color(35, 95, 130), app.color(55, 140, 185), fontSmall, this::openCustomOsuFilePicker);
-		_songRescanBtn = addUIButton("ui_song_rescan_btn", _songsGroup, "ACTUALIZAR", 148, 198, 62, 20,
+		_songRescanBtn = addUIButton("ui_song_rescan_btn", _songsGroup, "ACTUALIZAR", 148, 204, 62, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				scanSongsDirectory(true);
 				refreshCustomSongs(true);
@@ -622,7 +717,7 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			});
 
-		_songListFooterLbl = addUILabel("ui_song_footer_lbl", _songsGroup, "", 22, 224, app.color(175, 200, 235), fontSmall);
+		_songListFooterLbl = addUILabel("ui_song_footer_lbl", _songsGroup, "", 22, 234, app.color(175, 200, 235), fontSmall);
 
 		_songInfoArea = addUITextarea("ui_song_info_area", _songsGroup, "Sin canciones", 220, 40, 164, 88,
 			app.color(235, 240, 255), app.color(20, 24, 38), fontSmall);
@@ -834,10 +929,10 @@ public class InitScene extends Scene {
 			if (!_songStatusMsg.isEmpty()) {
 				_songListFooterLbl.setText(_songStatusMsg);
 			} else if (_allPacks.isEmpty()) {
-				_songListFooterLbl.setText("0 canciones | TAB: Tienda | ESC: Salir");
+				_songListFooterLbl.setText("0 canciones | TAB: Tienda");
 			} else {
 				_songListFooterLbl.setText(
-					"Cancion " + (_selectedSongIdx + 1) + "/" + _allPacks.size() + " | TAB: Tienda | ESC: Salir"
+					"Cancion " + (_selectedSongIdx + 1) + "/" + _allPacks.size() + " | TAB: Tienda"
 				);
 			}
 		}
@@ -1010,10 +1105,10 @@ public class InitScene extends Scene {
 			if (!_songStatusMsg.isEmpty()) {
 				_songListFooterLbl.setText(_songStatusMsg);
 			} else if (shopList.isEmpty()) {
-				_songListFooterLbl.setText("Tienda vacia | TAB: Canciones | ESC: Salir");
+				_songListFooterLbl.setText("Tienda vacia | TAB: Canciones");
 			} else {
 				_songListFooterLbl.setText(
-					"Amuleto " + (_shopSelectedIdx + 1) + "/" + shopList.size() + " | TAB: Canciones | ESC: Salir"
+					"Amuleto " + (_shopSelectedIdx + 1) + "/" + shopList.size() + " | TAB: Canciones"
 				);
 			}
 		}
@@ -1023,21 +1118,7 @@ public class InitScene extends Scene {
 			: null;
 
 		if (_songInfoArea != null) {
-			_songInfoArea.setSize(Math.max(1, (int) scaleW(238)), Math.max(1, (int) scaleH(130)));
-			if (selectedDef == null) {
-				_songInfoArea.setText("No hay amuletos disponibles en la tienda.");
-			} else {
-				boolean owned = GameState.hasItem(selectedDef.id);
-				boolean equipped = GameState.isPowerUpEquipped(selectedDef.id);
-				_songInfoArea.setText(
-					"Amuleto: " + selectedDef.name + "\n" +
-					"Precio: " + selectedDef.shopPrice + " puntos  |  Tus puntos: " + GameState.getShopPoints() + "\n" +
-					"Estado: " + (owned ? (equipped ? "COMPRADO Y EQUIPADO" : "COMPRADO (En inventario)") : "DISPONIBLE PARA COMPRAR") + "\n" +
-					"Equipados: " + GameState.getEquippedPowerUps().size() + "/" + GameState.getMaxEquippedAmulets() + "\n\n" +
-					selectedDef.description
-				);
-			}
-			_songInfoArea.show();
+			_songInfoArea.hide();
 		}
 
 		if (_songPlayBtn != null) {
