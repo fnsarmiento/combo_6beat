@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -403,6 +404,82 @@ public class CustomSongRepository {
 		} catch (SQLException e) {
 			System.err.println("Error registrando intento de canción custom: " + e.getMessage());
 		}
+	}
+
+	/**
+	 * Elimina de disco los archivos {@code .osu} indicados (y su carpeta contenedora dentro de
+	 * {@code resources/songs/base/} o {@code resources/songs/custom/} si ya no quedan otros charts en ella)
+	 * junto con sus filas asociadas en {@code CANCIONES_PERSONALIZADAS}.
+	 */
+	public static boolean deleteSongPack(List<String> osuAbsPaths, List<Long> customSongIds) {
+		boolean deletedAny = false;
+		Path baseRoot = Path.of(ResourcesManager.getAbsPathFromProject("resources/songs/base")).toAbsolutePath().normalize();
+		Path customRoot = Path.of(ResourcesManager.getAbsPathFromProject(CUSTOM_SONGS_DIR)).toAbsolutePath().normalize();
+		Set<Path> candidateDirs = new LinkedHashSet<>();
+
+		if (osuAbsPaths != null) {
+			for (String rawPath : osuAbsPaths) {
+				if (rawPath == null || rawPath.isEmpty()) continue;
+				try {
+					Path osuPath = Path.of(rawPath).toAbsolutePath().normalize();
+					boolean inCustom = osuPath.startsWith(customRoot) && !osuPath.equals(customRoot);
+					boolean inBase = osuPath.startsWith(baseRoot) && !osuPath.equals(baseRoot);
+					if (!inCustom && !inBase) continue;
+
+					Path parent = osuPath.getParent();
+					if (Files.deleteIfExists(osuPath)) {
+						deletedAny = true;
+					}
+					if (parent != null && !parent.equals(customRoot) && !parent.equals(baseRoot)
+						&& (parent.startsWith(customRoot) || parent.startsWith(baseRoot))) {
+						candidateDirs.add(parent);
+					}
+				} catch (Exception e) {
+					System.err.println("Error eliminando archivo .osu '" + rawPath + "': " + e.getMessage());
+				}
+			}
+		}
+
+		for (Path dir : candidateDirs) {
+			if (!Files.exists(dir) || !Files.isDirectory(dir)) continue;
+			try {
+				boolean hasOtherOsu;
+				try (Stream<Path> walk = Files.walk(dir)) {
+					hasOtherOsu = walk.filter(Files::isRegularFile)
+						.anyMatch(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".osu"));
+				}
+				if (!hasOtherOsu) {
+					try (Stream<Path> walk = Files.walk(dir)) {
+						walk.sorted(Comparator.reverseOrder()).forEach(p -> {
+							try {
+								Files.deleteIfExists(p);
+							} catch (IOException ignored) {}
+						});
+					}
+					deletedAny = true;
+				}
+			} catch (Exception e) {
+				System.err.println("Error limpiando carpeta de cancion '" + dir + "': " + e.getMessage());
+			}
+		}
+
+		if (customSongIds != null && !customSongIds.isEmpty()) {
+			try (Connection conn = DatabaseManager.getConnection();
+				 PreparedStatement del = conn.prepareStatement("DELETE FROM CANCIONES_PERSONALIZADAS WHERE id_cancion = ?")) {
+				for (Long id : customSongIds) {
+					if (id != null && id > 0) {
+						del.setLong(1, id);
+						del.addBatch();
+					}
+				}
+				del.executeBatch();
+				deletedAny = true;
+			} catch (SQLException e) {
+				System.err.println("Error eliminando cancion custom de SQLite: " + e.getMessage());
+			}
+		}
+		pruneMissingCustomSongs();
+		return deletedAny;
 	}
 
 	// =========================================================================

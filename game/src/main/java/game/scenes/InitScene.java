@@ -77,6 +77,7 @@ public class InitScene extends Scene {
 	private static final int RIGHT_FOCUS_M2 = 2;   // Modificador 2: Estrategia de Cura
 	private static final int RIGHT_FOCUS_M3 = 3;   // Modificador 3: Multiplicador de Velocidad
 	private static final int RIGHT_FOCUS_PLAY = 4; // Botón PLAY
+	private static final int RIGHT_FOCUS_DELETE = 5; // Botón BORRAR CANCION
 
 	private static final float[] SPEED_OPTIONS = { 0.85f, 1.0f, 1.25f };
 
@@ -147,6 +148,7 @@ public class InitScene extends Scene {
 	private int _songTopFocus = -1; // -1 = lista de canciones, 0 = + IMPORTAR .OSU, 1 = ACTUALIZAR
 	private boolean _songOptionsOpen = false;
 	private int _songRightIdx = RIGHT_FOCUS_DIFF;
+	private int _confirmDeleteSongIdx = -1;
 	private int _songSpeedIdx = 1;
 
 	// Estado de la lista desplegable de amuletos en la pestaña CANCIONES
@@ -183,6 +185,7 @@ public class InitScene extends Scene {
 	private Button _songHealBtn;
 	private Button _songSpeedBtn;
 	private Button _songPlayBtn;
+	private Button _songDeleteBtn;
 
 	// Controles de la tarjeta de presentación en la pestaña TIENDA (ControlP5)
 	private Button _shopCardBg;
@@ -394,6 +397,7 @@ public class InitScene extends Scene {
 			_amuletDropdownOpen = false;
 			_songFocusCol = SONG_COL_LIST;
 			_songRightIdx = RIGHT_FOCUS_DIFF;
+			_confirmDeleteSongIdx = -1;
 			refreshCustomSongs(false);
 			_songTopFocus = (_allPacks.isEmpty() ? 0 : -1);
 		} else if (mode == ViewMode.SETTINGS) {
@@ -693,15 +697,22 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			});
 
-		_songPlayBtn = addUIButton("ui_song_play_btn", _songsGroup, "PLAY", 220, 218, 238, 30,
+		_songPlayBtn = addUIButton("ui_song_play_btn", _songsGroup, "PLAY", 220, 218, 152, 30,
 			app.color(35, 125, 85), app.color(55, 170, 115), fontMed, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_PLAY;
+				_confirmDeleteSongIdx = -1;
 				if (_songTab == SONG_TAB_SHOP) {
 					executeShopPrimaryAction();
 				} else {
 					launchSelectedSong();
 				}
+			});
+		_songDeleteBtn = addUIButton("ui_song_delete_btn", _songsGroup, "BORRAR", 376, 218, 82, 30,
+			app.color(95, 36, 48), app.color(160, 52, 72), fontSmall, () -> {
+				_songFocusCol = SONG_COL_OPTIONS;
+				_songRightIdx = RIGHT_FOCUS_DELETE;
+				deleteSelectedSongAction();
 			});
 
 		// Tarjeta de presentación completa en ControlP5 para la pestaña TIENDA (cubre todo de y=40 a y=216)
@@ -793,7 +804,10 @@ public class InitScene extends Scene {
 			int actualIdx = _songScrollOffset + visibleRow;
 			if (actualIdx >= 0 && actualIdx < _allPacks.size()) {
 				_songTopFocus = -1;
-				if (_selectedSongIdx != actualIdx) _selectedDiffIdx = 0;
+				if (_selectedSongIdx != actualIdx) {
+					_selectedDiffIdx = 0;
+					_confirmDeleteSongIdx = -1;
+				}
 				_selectedSongIdx = actualIdx;
 				_amuletDropdownOpen = false;
 				_songOptionsOpen = true;
@@ -810,6 +824,7 @@ public class InitScene extends Scene {
 		_savedSongTab = _songTab;
 		_songOptionsOpen = false;
 		_amuletDropdownOpen = false;
+		_confirmDeleteSongIdx = -1;
 		_songFocusCol = SONG_COL_LIST;
 		_songTopFocus = (_allPacks.isEmpty() ? 0 : -1);
 		_songStatusMsg = "";
@@ -916,6 +931,7 @@ public class InitScene extends Scene {
 			if (_songHealBtn != null) _songHealBtn.hide();
 			if (_songSpeedBtn != null) _songSpeedBtn.hide();
 			if (_songPlayBtn != null) _songPlayBtn.hide();
+			if (_songDeleteBtn != null) _songDeleteBtn.hide();
 			syncAmuletDropdownUI(app);
 		} else {
 			hideAmuletDropdownControls();
@@ -1048,6 +1064,7 @@ public class InitScene extends Scene {
 		if (_songChipBtn != null) _songChipBtn.hide();
 		if (_songHealBtn != null) _songHealBtn.hide();
 		if (_songSpeedBtn != null) _songSpeedBtn.hide();
+		if (_songDeleteBtn != null) _songDeleteBtn.hide();
 
 		List<GameState.ItemDef> shopList = GameState.getShopAmulets();
 		if (_shopSelectedIdx >= shopList.size()) {
@@ -1136,6 +1153,7 @@ public class InitScene extends Scene {
 			if (selectedDef == null) {
 				_songPlayBtn.hide();
 			} else {
+				_songPlayBtn.setSize(Math.max(1, (int) scaleW(238)), Math.max(1, (int) scaleH(30)));
 				boolean owned = GameState.hasItem(selectedDef.id);
 				boolean equipped = GameState.isPowerUpEquipped(selectedDef.id);
 				boolean f = (_songFocusCol == SONG_COL_OPTIONS);
@@ -1332,6 +1350,7 @@ public class InitScene extends Scene {
 		}
 		if (_songPlayBtn != null) {
 			if (showOpts) {
+				_songPlayBtn.setSize(Math.max(1, (int) scaleW(152)), Math.max(1, (int) scaleH(30)));
 				boolean f = rightActive && (_songRightIdx == RIGHT_FOCUS_PLAY);
 				_songPlayBtn.setLabel((f ? "> " : "") + "PLAY");
 				_songPlayBtn.setColorBackground(f ? app.color(55, 185, 120) : app.color(35, 130, 85));
@@ -1340,6 +1359,65 @@ public class InitScene extends Scene {
 				_songPlayBtn.hide();
 			}
 		}
+		if (_songDeleteBtn != null) {
+			if (showOpts) {
+				boolean f = rightActive && (_songRightIdx == RIGHT_FOCUS_DELETE);
+				boolean confirming = (_confirmDeleteSongIdx == _selectedSongIdx);
+				_songDeleteBtn.setLabel((f ? "> " : "") + (confirming ? "CONFIRMAR" : "BORRAR"));
+				if (confirming) {
+					_songDeleteBtn.setColorBackground(f ? app.color(205, 42, 58) : app.color(165, 34, 48));
+				} else {
+					_songDeleteBtn.setColorBackground(f ? app.color(155, 52, 72) : app.color(95, 36, 48));
+				}
+				_songDeleteBtn.show();
+			} else {
+				_songDeleteBtn.hide();
+			}
+		}
+	}
+
+	/** Borra la canción seleccionada (en 2 pasos: Borrar -> Confirmar), limpiando archivos locales y SQLite. */
+	private void deleteSelectedSongAction() {
+		SongPackLoader.SongPack pack = getActivePack();
+		if (pack == null) {
+			_confirmDeleteSongIdx = -1;
+			syncSongSelectUI();
+			return;
+		}
+		if (_confirmDeleteSongIdx != _selectedSongIdx) {
+			_confirmDeleteSongIdx = _selectedSongIdx;
+			_songStatusMsg = "Pulsa Confirmar para borrar: " + pack.title;
+			syncSongSelectUI();
+			return;
+		}
+
+		String deletedTitle = pack.title;
+		List<String> osuPaths = new ArrayList<>();
+		List<Long> customIds = new ArrayList<>();
+		for (SongPackLoader.ChartVariant v : pack.difficulties) {
+			if (v.osuAbsPath != null && !v.osuAbsPath.isEmpty()) {
+				osuPaths.add(v.osuAbsPath);
+			}
+			if (v.customDbSummary != null && v.customDbSummary.idCancion > 0) {
+				customIds.add(v.customDbSummary.idCancion);
+			}
+		}
+
+		boolean removed = CustomSongRepository.deleteSongPack(osuPaths, customIds);
+		_confirmDeleteSongIdx = -1;
+		_coverCache.clear();
+		SongPackLoader.invalidateBaseCache();
+		scanSongsDirectory(true);
+		refreshCustomSongs(true);
+
+		_songOptionsOpen = false;
+		_songFocusCol = SONG_COL_LIST;
+		_selectedDiffIdx = 0;
+		_songTopFocus = _allPacks.isEmpty() ? 0 : -1;
+		_songStatusMsg = removed
+			? ("Cancion borrada: " + deletedTitle)
+			: ("No se pudo borrar: " + deletedTitle);
+		syncSongSelectUI();
 	}
 
 	/** Aplica los modificadores elegidos, guarda la partida e inicia la pista rítmica de la canción seleccionada. */
@@ -1684,6 +1762,7 @@ public class InitScene extends Scene {
 		}
 
 		if (back) {
+			_confirmDeleteSongIdx = -1;
 			if (_songOptionsOpen) {
 				_songOptionsOpen = false;
 				_songFocusCol = SONG_COL_LIST;
@@ -1714,15 +1793,18 @@ public class InitScene extends Scene {
 					_songTopFocus = -1;
 					_selectedSongIdx = listSize - 1;
 					_selectedDiffIdx = 0;
+					_confirmDeleteSongIdx = -1;
 					syncSongSelectUI();
 				} else if (down && listSize > 0) {
 					_songTopFocus = -1;
 					_selectedSongIdx = 0;
 					_selectedDiffIdx = 0;
+					_confirmDeleteSongIdx = -1;
 					syncSongSelectUI();
 				}
 			} else {
 				if (up) {
+					_confirmDeleteSongIdx = -1;
 					if (_selectedSongIdx <= 0) {
 						_songTopFocus = 0;
 					} else {
@@ -1731,6 +1813,7 @@ public class InitScene extends Scene {
 					}
 					syncSongSelectUI();
 				} else if (down) {
+					_confirmDeleteSongIdx = -1;
 					if (_selectedSongIdx >= listSize - 1) {
 						_songTopFocus = 0;
 					} else {
@@ -1739,6 +1822,7 @@ public class InitScene extends Scene {
 					}
 					syncSongSelectUI();
 				} else if ((accept || right) && listSize > 0) {
+					_confirmDeleteSongIdx = -1;
 					_songOptionsOpen = true;
 					_songFocusCol = SONG_COL_OPTIONS;
 					_songRightIdx = RIGHT_FOCUS_DIFF;
@@ -1841,25 +1925,31 @@ public class InitScene extends Scene {
 		boolean accept
 	) {
 		if (up) {
+			_confirmDeleteSongIdx = -1;
 			_songRightIdx = switch (_songRightIdx) {
 				case RIGHT_FOCUS_DIFF -> RIGHT_FOCUS_PLAY;
 				case RIGHT_FOCUS_M1 -> RIGHT_FOCUS_DIFF;
 				case RIGHT_FOCUS_M2, RIGHT_FOCUS_M3 -> RIGHT_FOCUS_M1;
+				case RIGHT_FOCUS_DELETE -> RIGHT_FOCUS_M3;
 				default -> RIGHT_FOCUS_M2;
 			};
 			syncSongSelectUI();
 		} else if (down) {
+			_confirmDeleteSongIdx = -1;
 			_songRightIdx = switch (_songRightIdx) {
 				case RIGHT_FOCUS_DIFF -> RIGHT_FOCUS_M1;
 				case RIGHT_FOCUS_M1 -> RIGHT_FOCUS_M2;
-				case RIGHT_FOCUS_M2, RIGHT_FOCUS_M3 -> RIGHT_FOCUS_PLAY;
+				case RIGHT_FOCUS_M2 -> RIGHT_FOCUS_PLAY;
+				case RIGHT_FOCUS_M3 -> RIGHT_FOCUS_DELETE;
 				default -> RIGHT_FOCUS_DIFF;
 			};
 			syncSongSelectUI();
 		} else if (left) {
+			_confirmDeleteSongIdx = -1;
 			switch (_songRightIdx) {
 				case RIGHT_FOCUS_DIFF -> cycleSelectedDifficulty(-1);
 				case RIGHT_FOCUS_M3 -> { _songRightIdx = RIGHT_FOCUS_M2; syncSongSelectUI(); }
+				case RIGHT_FOCUS_DELETE -> { _songRightIdx = RIGHT_FOCUS_PLAY; syncSongSelectUI(); }
 				default -> {
 					_songOptionsOpen = false;
 					_songFocusCol = SONG_COL_LIST;
@@ -1868,8 +1958,9 @@ public class InitScene extends Scene {
 			}
 		} else if (right) {
 			switch (_songRightIdx) {
-				case RIGHT_FOCUS_DIFF -> cycleSelectedDifficulty(1);
-				case RIGHT_FOCUS_M2 -> { _songRightIdx = RIGHT_FOCUS_M3; syncSongSelectUI(); }
+				case RIGHT_FOCUS_DIFF -> { _confirmDeleteSongIdx = -1; cycleSelectedDifficulty(1); }
+				case RIGHT_FOCUS_M2 -> { _confirmDeleteSongIdx = -1; _songRightIdx = RIGHT_FOCUS_M3; syncSongSelectUI(); }
+				case RIGHT_FOCUS_PLAY -> { _confirmDeleteSongIdx = -1; _songRightIdx = RIGHT_FOCUS_DELETE; syncSongSelectUI(); }
 			}
 		} else if (accept) {
 			activateSongRightOption(_songRightIdx);
@@ -1889,6 +1980,7 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			}
 			case RIGHT_FOCUS_PLAY -> launchSelectedSong();
+			case RIGHT_FOCUS_DELETE -> deleteSelectedSongAction();
 		}
 	}
 
