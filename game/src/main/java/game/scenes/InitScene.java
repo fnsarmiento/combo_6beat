@@ -107,7 +107,7 @@ public class InitScene extends Scene {
 	// Catálogos dinámicos agrupados por SongPack (con múltiples dificultades)
 	private final List<SongPackLoader.SongPack> _basePacks = new ArrayList<>();
 	private final List<SongPackLoader.SongPack> _customPacks = new ArrayList<>();
-	private final Map<String, PImage> _coverCache = new HashMap<>();
+	private static final Map<String, PImage> _coverCache = new HashMap<>();
 	private volatile boolean _importDialogBusy = false;
 	private volatile boolean _pendingCustomRefresh = false;
 	private volatile String _songStatusMsg = "";
@@ -187,8 +187,8 @@ public class InitScene extends Scene {
 		_builtAppHeight = app.height;
 
 		initBackgroundStars();
-		scanSongsDirectory();
-		refreshCustomSongs(true);
+		scanSongsDirectory(false);
+		refreshCustomSongs(false);
 		syncChipSelectionFromState();
 		setupMainUI();
 		setupSaveSelectUI();
@@ -223,9 +223,9 @@ public class InitScene extends Scene {
 		}
 	}
 
-	private void scanSongsDirectory() {
+	private void scanSongsDirectory(boolean forceRefresh) {
 		_basePacks.clear();
-		_basePacks.addAll(SongPackLoader.loadBasePacks());
+		_basePacks.addAll(SongPackLoader.loadBasePacks(forceRefresh));
 		if (_selectedSongIdx >= _basePacks.size()) {
 			_selectedSongIdx = Math.max(0, _basePacks.size() - 1);
 		}
@@ -546,7 +546,7 @@ public class InitScene extends Scene {
 			app.color(35, 95, 130), app.color(55, 140, 185), fontSmall, this::openImportOsuDialog);
 		_songRescanBtn = addUIButton("ui_song_rescan_btn", _songsGroup, "ACTUALIZAR", 148, 198, 62, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
-				scanSongsDirectory();
+				scanSongsDirectory(true);
 				refreshCustomSongs(true);
 				_songStatusMsg = "Actualizado: " + _basePacks.size() + " base, " + _customPacks.size() + " custom.";
 				syncSongSelectUI();

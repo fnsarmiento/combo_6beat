@@ -126,7 +126,10 @@ public class Audio {
 			_actualBGM = _persistentBGM;
 			_persistentBGM.setVolume(_BGMVolume);
 			_persistentBGM.setMute(_isMuted);
-			_persistentBGM.play(_persistentBGMPosMs, true);
+			_persistentBGM.resume();
+			if (!_persistentBGM.isPlaying()) {
+				_persistentBGM.play(_persistentBGMPosMs, true);
+			}
 			return;
 		}
 
@@ -153,8 +156,13 @@ public class Audio {
 
 	public static void stopTransientBGM() {
 		if (_actualBGM != null && _actualBGM != _persistentBGM) {
-			_actualBGM.close();
+			final MusicTrack toClose = _actualBGM;
 			_actualBGM = null;
+			toClose.stop();
+			// Cerrar el Clip en segundo plano para no bloquear el hilo gráfico al salir de la canción
+			Thread t = new Thread(() -> toClose.close(), "bgm-close");
+			t.setDaemon(true);
+			t.start();
 		}
 	}
 

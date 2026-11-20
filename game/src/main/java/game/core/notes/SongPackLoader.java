@@ -68,11 +68,24 @@ public class SongPackLoader {
 		public final List<ChartVariant> difficulties = new ArrayList<>();
 	}
 
+	private static List<SongPack> _cachedBasePacks = null;
+
+	public static void invalidateBaseCache() {
+		_cachedBasePacks = null;
+	}
+
 	/**
 	 * Escanea dinámicamente resources/songs/base/ agrupando todos los .osu por carpeta/canción
 	 * y aplicando metadatos opcionales de resources/songs/songs.xml si existen.
 	 */
 	public static List<SongPack> loadBasePacks() {
+		return loadBasePacks(false);
+	}
+
+	public static List<SongPack> loadBasePacks(boolean forceRefresh) {
+		if (!forceRefresh && _cachedBasePacks != null) {
+			return _cachedBasePacks;
+		}
 		Map<String, XML[]> manifestOverrides = readManifestOverrides();
 		Map<String, SongPack> packMap = new LinkedHashMap<>();
 
@@ -132,6 +145,7 @@ public class SongPackLoader {
 				.thenComparing(c -> c.difficulty, String.CASE_INSENSITIVE_ORDER));
 		}
 		result.sort(Comparator.comparing(p -> p.title, String.CASE_INSENSITIVE_ORDER));
+		_cachedBasePacks = result;
 		return result;
 	}
 

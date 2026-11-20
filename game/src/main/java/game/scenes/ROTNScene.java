@@ -1161,6 +1161,20 @@ public class ROTNScene extends Scene {
 		g.popStyle();
 	}
 
+	private static float horizonYAtX(float x) {
+		float nx = -1.0f + 2.0f * (x / BASE_W);
+		return Y_FAR - 4.0f + 18.0f * (nx * nx);
+	}
+
+	private float[] projectWorldPoint(float xi, float t) {
+		float s = scaleFromT(t);
+		float u = uFromScale(s);
+		float lx = projectX(xi, s);
+		float hy = horizonYAtX(lx);
+		float ly = hy + u * (Y_HIT - Y_FAR + 14.0f);
+		return new float[] { lx, ly, s, u };
+	}
+
 	private void drawArenaBackground(PGraphics g, int songTimeMs) {
 		// Cielo nocturno oscuro púrpura-vino (estilo arena de combate de la referencia)
 		g.noStroke();
@@ -1183,10 +1197,8 @@ public class ROTNScene extends Scene {
 		g.vertex(0, BASE_H);
 		g.vertex(0, Y_FAR + 14.0f);
 		for (int i = 0; i <= 24; i++) {
-			float nx = -1.0f + (2.0f * i) / 24.0f;
 			float hx = i * (BASE_W / 24.0f);
-			float hy = Y_FAR - 4.0f + 18.0f * (nx * nx);
-			g.vertex(hx, hy);
+			g.vertex(hx, horizonYAtX(hx));
 		}
 		g.vertex(BASE_W, BASE_H);
 		g.endShape(PConstants.CLOSE);
@@ -1196,69 +1208,85 @@ public class ROTNScene extends Scene {
 		g.noFill();
 		g.beginShape();
 		for (int i = 0; i <= 24; i++) {
-			float nx = -1.0f + (2.0f * i) / 24.0f;
 			float hx = i * (BASE_W / 24.0f);
-			float hy = Y_FAR - 4.0f + 18.0f * (nx * nx);
-			g.vertex(hx, hy);
+			g.vertex(hx, horizonYAtX(hx));
 		}
 		g.endShape();
 
-		// Conjuntos de luces amarillas (ciudades) rotando hacia la cámara en la dirección de las notas
+		// Conjuntos de luces amarillas (ciudades) y caminos de luces rotando en perspectiva real
 		g.noStroke();
-		float rotProgress = songTimeMs * 0.00016f;
+		float rotProgress = songTimeMs * 0.00012f;
 		float tSec = songTimeMs * 0.001f;
-		// Clusters alrededor del mundo: { xiCentro, tFase (0..1), cantidadLuces }
-		// Se distribuyen principalmente a ambos lados de la pista (|xi| > 1.15) y algunos en todo el ancho
+
+		// Clusters bien separados alrededor del planeta: { xiCentro, tFase (0..1), cantidadLuces }
 		final float[][] clusters = {
-			{ -2.45f, 0.05f, 11 },
-			{  2.35f, 0.14f, 10 },
-			{ -1.55f, 0.27f, 12 },
-			{  1.65f, 0.36f, 11 },
-			{ -2.90f, 0.49f, 10 },
-			{  2.85f, 0.58f, 12 },
-			{ -1.85f, 0.71f, 10 },
-			{  1.95f, 0.80f, 11 },
-			{ -1.30f, 0.91f, 9  },
-			{  1.35f, 0.96f, 9  }
+			{ -2.45f, 0.06f, 11 }, // 0: Izquierda lejano
+			{  2.35f, 0.14f, 11 }, // 1: Derecha lejano
+			{ -1.65f, 0.34f, 10 }, // 2: Izquierda medio
+			{  1.70f, 0.44f, 10 }, // 3: Derecha medio
+			{ -2.15f, 0.62f, 12 }, // 4: Izquierda otro continente
+			{  2.25f, 0.72f, 12 }, // 5: Derecha otro continente
+			{ -1.45f, 0.88f,  9 }, // 6: Izquierda cercano
+			{  1.50f, 0.94f,  9 }  // 7: Derecha cercano
 		};
 
+		// Mini caminos de luces chiquititas entre algunos conjuntos muy distantes entre sí
+		final int[][] roadPairs = {
+			{ 0, 4 }, // gran distancia en fase (0.06 -> 0.62)
+			{ 1, 5 }  // gran distancia en fase (0.14 -> 0.72)
+		};
+		for (int rp = 0; rp < roadPairs.length; rp++) {
+			int ia = roadPairs[rp][0];
+			int ib = roadPairs[rp][1];
+			float xiA = clusters[ia][0];
+			float xiB = clusters[ib][0];
+			float phaseA = clusters[ia][1];
+			float phaseB = clusters[ib][1];
+			final int roadDots = 14;
+			for (int d = 2; d <= roadDots - 2; d++) {
+				float frac = d / (float) roadDots;
+				float tPhase = (PApplet.lerp(phaseA, phaseB, frac) + rotProgress) % 1.0f;
+				float tWorld = tPhase * 1.15f;
+				if (tWorld < 0.02f || tWorld > 1.15f) continue;
+
+				float xiRoad = PApplet.lerp(xiA, xiB, frac) + (float) Math.sin(frac * Math.PI) * (xiA < 0 ? -0.14f : 0.14f);
+				float[] pt = projectWorldPoint(xiRoad, tWorld);
+				float lx = pt[0], ly = pt[1];
+				if (lx < 1.0f || lx >= BASE_W - 1.0f || ly < horizonYAtX(lx) + 1.0f || ly >= BASE_H - 1.0f) continue;
+
+				float fade = PApplet.constrain(tWorld / 0.16f, 0.0f, 1.0f);
+				int alpha = Math.round((85 + 35 * (float) Math.sin(tSec * 2.0f + d)) * fade);
+				g.fill(255, 210, 90, alpha);
+				g.rect(Math.round(lx), Math.round(ly), 1, 1);
+			}
+		}
+
+		// Dibujar los grupos densos de luces de ciudad (1x1 px, moviéndose en perspectiva real)
 		for (int c = 0; c < clusters.length; c++) {
 			float xiCenter = clusters[c][0];
 			float tCluster = (clusters[c][1] + rotProgress) % 1.0f;
-			// Mapear tCluster (0..1) desde justo detrás del horizonte hasta el borde inferior
-			float tWorld = tCluster * 1.18f;
-			float sCenter = scaleFromT(tWorld);
-			float uCenter = uFromScale(sCenter);
-			int count = (int) clusters[c][2];
-
-			// Aparece suavemente al cruzar el horizonte
+			float tWorld = tCluster * 1.15f;
 			float horizonFade = PApplet.constrain(tWorld / 0.14f, 0.0f, 1.0f);
+			int count = (int) clusters[c][2];
 
 			for (int k = 0; k < count; k++) {
 				int hash = c * 37 + k * 19;
-				float offXi = (((hash * 23) % 29) - 14) * 0.026f;
-				float offT  = (((hash * 13) % 17) - 8) * 0.0075f;
+				float offXi = (((hash * 23) % 29) - 14) * 0.017f;
+				float offT  = (((hash * 13) % 17) - 8) * 0.0055f;
 
 				float lt = tWorld + offT;
-				if (lt < 0.0f || lt > 1.18f) continue;
+				if (lt < 0.0f || lt > 1.15f) continue;
 
-				float ls = scaleFromT(lt);
-				float lu = uFromScale(ls);
 				float lxi = xiCenter + offXi;
-
-				float lx = projectX(lxi, ls);
-				float ly = projectY(lxi, lu, ls);
+				float[] pt = projectWorldPoint(lxi, lt);
+				float lx = pt[0], ly = pt[1];
 				if (lx < 1.0f || lx >= BASE_W - 1.0f || ly < 0.0f || ly >= BASE_H - 1.0f) continue;
-
-				float nx = -1.0f + 2.0f * (lx / BASE_W);
-				float horizonY = Y_FAR - 4.0f + 18.0f * (nx * nx);
-				if (ly < horizonY + 1.0f) continue;
+				if (ly < horizonYAtX(lx) + 1.0f) continue;
 
 				float twinkle = 0.65f + 0.35f * (float) Math.sin(tSec * (2.2f + (k % 4) * 0.5f) + hash);
 				int alpha = Math.round((130 + 120 * twinkle) * horizonFade);
-				int sz = (lt > 0.55f && (k % 3 == 0)) ? 2 : 1;
 				g.fill(255, 222 + (k % 3) * 10, 95, alpha);
-				g.rect(Math.round(lx), Math.round(ly), sz, sz);
+				g.rect(Math.round(lx), Math.round(ly), 1, 1);
 			}
 		}
 	}
@@ -1380,7 +1408,7 @@ public class ROTNScene extends Scene {
 			boolean downbeat = ((n % 4 + 4) % 4) == 0;
 			int baseAlpha = downbeat ? 95 : 50;
 			int alpha = (int) PApplet.constrain(baseAlpha + tArc * 95 + beatImpulse * 25, 45, 210);
-			drawPerspectiveArc(g, uArc, sArc, 2.0f, g.color(150, 155, 175, alpha), downbeat ? 1.3f : 1.0f);
+			drawPerspectiveArc(g, uArc, sArc, 1.48f, g.color(150, 155, 175, alpha), downbeat ? 1.3f : 1.0f);
 		}
 
 		// 3. 7 líneas divisorias de carriles que divergen hacia la cámara
@@ -1399,7 +1427,7 @@ public class ROTNScene extends Scene {
 
 		// 4. Línea blanca principal (arco de impacto t = 1.0, S = 1.0) pulsando al ritmo
 		float hitWeight = 1.8f + beatImpulse * 1.1f;
-		drawPerspectiveArc(g, 1.0f, 1.0f, 2.15f, g.color(255, 255, 255, 245), hitWeight);
+		drawPerspectiveArc(g, 1.0f, 1.0f, 1.58f, g.color(255, 255, 255, 245), hitWeight);
 		g.strokeWeight(1.0f);
 	}
 
