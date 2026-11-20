@@ -178,8 +178,8 @@ public class InitScene extends Scene {
 
 	// Controles de la tarjeta de presentación en la pestaña TIENDA (ControlP5)
 	private Button _shopCardBg;
-	private Textarea _shopNameArea;
-	private Textarea _shopPriceArea;
+	private Textlabel _shopNameLbl;
+	private Textlabel _shopPriceLbl;
 	private Button _shopDividerBox;
 	private Textarea _shopDescArea;
 
@@ -688,17 +688,18 @@ public class InitScene extends Scene {
 			});
 
 		// Tarjeta de presentación completa en ControlP5 para la pestaña TIENDA (cubre todo de y=40 a y=216)
-		ControlFont fontShopName = makeFont(13.5f, true);
+		int shopCardCol = app.color(24, 30, 50);
+		ControlFont fontShopName = makeFont(12.5f, true);
 		ControlFont fontShopPrice = makeFont(9.5f, false);
 		ControlFont fontShopDesc = makeFont(8.5f, false);
-		_shopCardBg = addUIBox("ui_shop_card_bg", _songsGroup, 220, 40, 238, 176, app.color(20, 24, 40, 238));
-		_shopNameArea = addUITextarea("ui_shop_name_area", _songsGroup, "", 228, 48, 222, 42,
-			app.color(255, 224, 65), app.color(0, 0), fontShopName);
-		_shopPriceArea = addUITextarea("ui_shop_price_area", _songsGroup, "", 228, 94, 222, 22,
-			app.color(255, 224, 65), app.color(0, 0), fontShopPrice);
-		_shopDividerBox = addUIBox("ui_shop_divider", _songsGroup, 230, 118, 218, 1, app.color(72, 96, 150, 210));
-		_shopDescArea = addUITextarea("ui_shop_desc_area", _songsGroup, "", 228, 128, 222, 82,
-			app.color(245, 248, 255), app.color(0, 0), fontShopDesc);
+		_shopCardBg = addUIBox("ui_shop_card_bg", _songsGroup, 220, 40, 238, 176, shopCardCol);
+		_shopNameLbl = addUILabel("ui_shop_name_lbl", _songsGroup, "", 230, 49,
+			app.color(255, 224, 65), fontShopName);
+		_shopPriceLbl = addUILabel("ui_shop_price_lbl", _songsGroup, "", 230, 67,
+			app.color(255, 224, 65), fontShopPrice);
+		_shopDividerBox = addUIBox("ui_shop_divider", _songsGroup, 230, 86, 218, 1, app.color(72, 96, 150, 210));
+		_shopDescArea = addUITextarea("ui_shop_desc_area", _songsGroup, "", 228, 96, 222, 112,
+			app.color(245, 248, 255), shopCardCol, fontShopDesc);
 
 		// Controles de la lista desplegable de amuletos (ocultos por defecto)
 		_amuletDropHeaderLbl = addUILabel("ui_amulet_drop_hdr", _songsGroup, "AMULETOS EQUIPADOS", 220, 40,
@@ -971,8 +972,8 @@ public class InitScene extends Scene {
 
 	private void hideShopCardControls() {
 		if (_shopCardBg != null) _shopCardBg.hide();
-		if (_shopNameArea != null) _shopNameArea.hide();
-		if (_shopPriceArea != null) _shopPriceArea.hide();
+		if (_shopNameLbl != null) _shopNameLbl.hide();
+		if (_shopPriceLbl != null) _shopPriceLbl.hide();
 		if (_shopDividerBox != null) _shopDividerBox.hide();
 		if (_shopDescArea != null) _shopDescArea.hide();
 	}
@@ -1057,10 +1058,10 @@ public class InitScene extends Scene {
 
 		if (selectedDef == null) {
 			if (_shopCardBg != null) _shopCardBg.show();
-			if (_shopNameArea != null) {
-				_shopNameArea.setColorValue(app.color(200, 210, 230)).setText("Sin amuletos").show();
+			if (_shopNameLbl != null) {
+				_shopNameLbl.setColorValue(app.color(200, 210, 230)).setText("Sin amuletos").show();
 			}
-			if (_shopPriceArea != null) _shopPriceArea.hide();
+			if (_shopPriceLbl != null) _shopPriceLbl.hide();
 			if (_shopDividerBox != null) _shopDividerBox.hide();
 			if (_shopDescArea != null) {
 				_shopDescArea.setColorValue(app.color(200, 210, 230)).setText("No hay amuletos disponibles.").show();
@@ -1073,11 +1074,11 @@ public class InitScene extends Scene {
 				: (canAfford ? app.color(255, 224, 65) : app.color(255, 85, 95));
 
 			if (_shopCardBg != null) _shopCardBg.show();
-			if (_shopNameArea != null) {
-				_shopNameArea.setColorValue(nameCol).setText(selectedDef.name).show();
+			if (_shopNameLbl != null) {
+				_shopNameLbl.setColorValue(nameCol).setText(selectedDef.name).show();
 			}
-			if (_shopPriceArea != null) {
-				_shopPriceArea.setColorValue(app.color(255, 224, 65)).setText(selectedDef.shopPrice + " pts.").show();
+			if (_shopPriceLbl != null) {
+				_shopPriceLbl.setColorValue(app.color(255, 224, 65)).setText(selectedDef.shopPrice + " pts.").show();
 			}
 			if (_shopDividerBox != null) _shopDividerBox.show();
 			if (_shopDescArea != null) {

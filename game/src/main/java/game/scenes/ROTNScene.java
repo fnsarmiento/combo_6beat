@@ -157,9 +157,9 @@ public class ROTNScene extends Scene {
 	// Controladores dinámicos de ControlP5 (actualizados en syncCombatUI)
 	private static final float[] SCORE_CHUNK_BASE_SIZES = { 14.0f, 17.0f, 20.0f, 23.0f, 26.0f };
 	private final Textlabel[] _uiScoreChunkLbls = new Textlabel[SCORE_CHUNK_BASE_SIZES.length];
-	private Button _uiMultBox;
-	private Button _uiComboBox;
-	private Button _uiCountdownBox;
+	private Textlabel _uiMultLbl;
+	private Textlabel _uiComboLbl;
+	private Textlabel _uiCountdownLbl;
 	private ControlFont _multBaseFont;
 	private ControlFont _multPopFont;
 
@@ -641,31 +641,12 @@ public class ROTNScene extends Scene {
 		_multBaseFont = makeFont(24.0f, true);
 		_multPopFont = makeFont(34.0f, true);
 
-		_uiMultBox = addUIBox("ui_rotn_mult_box", null, 368, 86, 112, 42, app.color(0, 0));
-		_uiMultBox.setColorForeground(app.color(0, 0))
-			.setColorActive(app.color(0, 0))
-			.setColorLabel(app.color(255, 224, 58))
-			.setLabel("x1");
-		_uiMultBox.getCaptionLabel().toUpperCase(false).align(PConstants.CENTER, PConstants.CENTER);
-		if (_multBaseFont != null) _uiMultBox.setFont(_multBaseFont);
+		_uiMultLbl = addUILabel("ui_rotn_mult_lbl", null, "x1", 412, 95, app.color(255, 224, 58), _multBaseFont);
+		_uiComboLbl = addUILabel("ui_rotn_combo_lbl", null, "0", 416, 134, app.color(75, 190, 255), _multBaseFont);
 
-		_uiComboBox = addUIBox("ui_rotn_combo_box", null, 368, 128, 112, 34, app.color(0, 0));
-		_uiComboBox.setColorForeground(app.color(0, 0))
-			.setColorActive(app.color(0, 0))
-			.setColorLabel(app.color(75, 190, 255))
-			.setLabel("0");
-		_uiComboBox.getCaptionLabel().toUpperCase(false).align(PConstants.CENTER, PConstants.CENTER);
-		if (_multBaseFont != null) _uiComboBox.setFont(_multBaseFont);
-
-		_uiCountdownBox = addUIBox("ui_rotn_countdown_box", null, CENTER_X - 40, 106, 80, 44, app.color(0, 0));
-		_uiCountdownBox.setColorForeground(app.color(0, 0))
-			.setColorActive(app.color(0, 0))
-			.setColorLabel(app.color(255, 235, 110))
-			.setLabel("");
-		_uiCountdownBox.getCaptionLabel().toUpperCase(false).align(PConstants.CENTER, PConstants.CENTER);
 		ControlFont fontCountdown = makeFont(30.0f, true);
-		if (fontCountdown != null) _uiCountdownBox.setFont(fontCountdown);
-		_uiCountdownBox.hide();
+		_uiCountdownLbl = addUILabel("ui_rotn_countdown_lbl", null, "", CENTER_X - 10, 113, app.color(255, 235, 110), fontCountdown);
+		_uiCountdownLbl.hide();
 
 		// 4. Abajo-Izquierda: Barra Vertical de Curación Dinámica
 		_uiHealRatioLbl = addUILabel("ui_rotn_heal_ratio_lbl", null, "0/2", 12, 162, app.color(230, 60, 60), fontBig);
@@ -876,34 +857,43 @@ public class ROTNScene extends Scene {
 		}
 
 		// 2. Multiplicador a la derecha en amarillo (con animación de salto y tamaño al subir)
-		if (_uiMultBox != null) {
-			_uiMultBox.setLabel("x" + _rhythmCore.getScoreMultiplier());
+		if (_uiMultLbl != null) {
+			String multText = "x" + _rhythmCore.getScoreMultiplier();
+			_uiMultLbl.setText(multText);
 			if (_multAnimTimer > 0.0f) {
 				float p = 1.0f - (_multAnimTimer / 0.42f);
 				float jumpY = (float) (-Math.sin(p * Math.PI) * 9.0f);
 				float shakeX = (float) (Math.sin(p * Math.PI * 6.0f) * (1.0f - p) * 5.0f);
-				_uiMultBox.setPosition(scaleW(368.0f + shakeX), scaleH(86.0f + jumpY));
-				if (_multPopFont != null) _uiMultBox.setFont(_multPopFont);
+				if (_multPopFont != null) _uiMultLbl.setFont(_multPopFont);
+				float w = measurePhysicalTextWidth(app, multText, Math.max(8, (int) scaleH(34.0f)));
+				_uiMultLbl.setPosition(scaleW(424.0f + shakeX) - w * 0.5f, scaleH(90.0f + jumpY));
 			} else {
-				_uiMultBox.setPosition(scaleW(368.0f), scaleH(86.0f));
-				if (_multBaseFont != null) _uiMultBox.setFont(_multBaseFont);
+				if (_multBaseFont != null) _uiMultLbl.setFont(_multBaseFont);
+				float w = measurePhysicalTextWidth(app, multText, Math.max(8, (int) scaleH(24.0f)));
+				_uiMultLbl.setPosition(scaleW(424.0f) - w * 0.5f, scaleH(95.0f));
 			}
 		}
 
 		// 3. Combo debajo en azul (sin etiqueta "COMBO")
-		if (_uiComboBox != null) {
-			_uiComboBox.setLabel(String.valueOf(_rhythmCore.getCombo()));
+		if (_uiComboLbl != null) {
+			String comboText = String.valueOf(_rhythmCore.getCombo());
+			_uiComboLbl.setText(comboText);
+			float w = measurePhysicalTextWidth(app, comboText, Math.max(8, (int) scaleH(24.0f)));
+			_uiComboLbl.setPosition(scaleW(424.0f) - w * 0.5f, scaleH(134.0f));
 		}
 
 		// 4. Contador regresivo 3..2..1 en ControlP5
-		if (_uiCountdownBox != null) {
+		if (_uiCountdownLbl != null) {
 			float activeCountdown = Math.max(_introCountdown, _resumeCountdown);
 			if (activeCountdown > 0.0f) {
 				int sec = PApplet.constrain((int) Math.ceil(activeCountdown), 1, 3);
-				_uiCountdownBox.setLabel(String.valueOf(sec));
-				_uiCountdownBox.show();
+				String secText = String.valueOf(sec);
+				_uiCountdownLbl.setText(secText);
+				float w = measurePhysicalTextWidth(app, secText, Math.max(8, (int) scaleH(30.0f)));
+				_uiCountdownLbl.setPosition(scaleW(CENTER_X) - w * 0.5f, scaleH(113.0f));
+				_uiCountdownLbl.show();
 			} else {
-				_uiCountdownBox.hide();
+				_uiCountdownLbl.hide();
 			}
 		}
 	}
