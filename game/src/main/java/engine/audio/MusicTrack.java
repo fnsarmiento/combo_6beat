@@ -148,6 +148,14 @@ public class MusicTrack {
 		return 0;
 	}
 
+	/** Ajusta la posición en milisegundos mientras la pista está pausada (ej. retroceso tras pausa). */
+	public void setPausedPositionMs(int ms) {
+		if (_clip == null) return;
+		long targetMicros = Math.max(0L, Math.min(_clip.getMicrosecondLength(), ms * 1000L));
+		_pausedMicros = targetMicros;
+		_clip.setMicrosecondPosition(targetMicros);
+	}
+
 	public float getPositionSeconds() {
 		if (_clip != null) {
 			return _clip.getMicrosecondPosition() / 1_000_000.0f;

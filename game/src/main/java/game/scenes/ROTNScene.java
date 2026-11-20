@@ -67,6 +67,8 @@ public class ROTNScene extends Scene {
 	private static final float DEFAULT_SCROLL_SPEED = 0.22f;
 	private static final float BASE_APPROACH_TIME_MS = 1400.0f;
 	private static final float INTRO_COUNTDOWN_DURATION = 3.0f;
+	private static final float RESUME_COUNTDOWN_DURATION = 3.0f;
+	private static final int PAUSE_REWIND_MS = 2000;
 	private static final float BGM_FADE_OUT_DURATION = 3.0f;
 	private static final float HOLD_PARTICLE_INTERVAL_SEC = 0.025f;
 
@@ -128,6 +130,10 @@ public class ROTNScene extends Scene {
 	private boolean _bgmPausedByScene = false;
 	private boolean _bgmStarted = false;
 	private float _introCountdown = INTRO_COUNTDOWN_DURATION;
+	private float _resumeCountdown = 0.0f;
+	private int _resumeTargetMs = 0;
+	private int _lastSongTimeMs = 0;
+	private int _pauseSongTimeMs = 0;
 	private float _bgmFadeOutTimer = -1.0f;
 
 	// Animación del planeta, sistema de partículas y textos flotantes de juicio
@@ -149,10 +155,11 @@ public class ROTNScene extends Scene {
 	private Textlabel _uiHpLbl;
 	private Textlabel _uiShieldLbl;
 
-	private Button _uiBossHpFill;
+	// private Button _uiBossHpFill;
 
 	private Textlabel _uiScoreLbl;
 	private Textlabel _uiComboLbl;
+	private Textlabel _uiMultLbl;
 
 	private Textlabel _uiHealRatioLbl;
 	private Button _uiHealFill;
@@ -620,12 +627,13 @@ public class ROTNScene extends Scene {
 		_uiShieldLbl = addUILabel("ui_rotn_shield_lbl", null, "", 38, 31, app.color(110, 235, 255), fontSmall);
 
 		// 2. Arriba-Centro: Barra de HP del Jefe y Avisos de bloqueo de carril
-		addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
-		_uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
+		// addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
+		// _uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
 
-		// 3. Arriba-Derecha: Score y Combo
+		// 3. Arriba-Derecha: Score, Combo y Multiplicador (hasta 16x cada 7 GOOD/PERFECT)
 		_uiScoreLbl = addUILabel("ui_rotn_score_lbl", null, "SCORE: 0", 356, 8, app.color(255), fontMed);
 		_uiComboLbl = addUILabel("ui_rotn_combo_lbl", null, "COMBO: 0x", 356, 20, app.color(110, 225, 255), fontMed);
+		_uiMultLbl = addUILabel("ui_rotn_mult_lbl", null, "MULT: 1x (0/7)", 356, 32, app.color(185, 220, 255), fontSmall);
 
 		// 4. Abajo-Izquierda: Barra Vertical de Curación Dinámica
 		_uiHealRatioLbl = addUILabel("ui_rotn_heal_ratio_lbl", null, "0/2", 12, 162, app.color(230, 60, 60), fontBig);
@@ -744,8 +752,43 @@ public class ROTNScene extends Scene {
 		} else if (state == ROTNCore.BattleState.DEFEAT) {
 			restartBattleScene();
 		} else if (_rhythmCore.isPaused()) {
-			_rhythmCore.togglePause();
+			unpauseBattle();
 		}
+	}
+
+	private void unpauseBattle() {
+		if (_rhythmCore == null || !_rhythmCore.isPaused()) return;
+		_rhythmCore.togglePause();
+		_modalWasOpen = false;
+		_inGameSettingsOpen = false;
+		_rebindLane = -1;
+		beginResumeCountdown();
+	}
+
+	private void beginResumeCountdown() {
+		if (_introCountdown > 0.0f) {
+			_introCountdown = INTRO_COUNTDOWN_DURATION;
+			return;
+		}
+		_resumeTargetMs = Math.max(0, _pauseSongTimeMs - PAUSE_REWIND_MS);
+		_resumeCountdown = RESUME_COUNTDOWN_DURATION;
+		_rhythmCore.cancelInterruptedHoldsOnRewind(_resumeTargetMs);
+		_songFallbackTimerMs = _resumeTargetMs;
+		if (_bgm != null && _bgm.isLoaded()) {
+			if (_bgm.isPlaying()) {
+				Audio.pauseBGM();
+			}
+			_bgmPausedByScene = true;
+			_bgm.setPausedPositionMs(_resumeTargetMs);
+		}
+	}
+
+	private boolean isGameplayInputActive() {
+		return _rhythmCore != null
+			&& _rhythmCore.getBattleState() == ROTNCore.BattleState.PLAYING
+			&& !_rhythmCore.isPaused()
+			&& !_inGameSettingsOpen
+			&& _resumeCountdown <= 0.0f;
 	}
 
 	private void onModalSecondaryClick() {
@@ -837,22 +880,38 @@ public class ROTNScene extends Scene {
 			? 1.0f
 			: (float) _rhythmCore.getBossHp() / Math.max(1, _rhythmCore.getBossMaxHp());
 		bHpRatio = PApplet.constrain(bHpRatio, 0.0f, 1.0f);
-		if (_uiBossHpFill != null) {
-			int bw = Math.max(1, Math.round(scaleW(130) * bHpRatio));
-			_uiBossHpFill.setSize(bw, Math.max(1, (int) scaleH(6)));
-			_uiBossHpFill.setColorBackground(
-				bossInvincible
-					? app.color(175, 110, 255, 245)
-					: app.color(235, 65, 85, 245)
-			);
-		}
+		// if (_uiBossHpFill != null) {
+		// 	int bw = Math.max(1, Math.round(scaleW(130) * bHpRatio));
+		// 	_uiBossHpFill.setSize(bw, Math.max(1, (int) scaleH(6)));
+		// 	_uiBossHpFill.setColorBackground(
+		// 		bossInvincible
+		// 			? app.color(175, 110, 255, 245)
+		// 			: app.color(235, 65, 85, 245)
+		// 	);
+		// }
 
-		// 3. Score y Combo
+		// 3. Score, Combo y Multiplicador
 		if (_uiScoreLbl != null) {
 			_uiScoreLbl.setText("SCORE: " + _rhythmCore.getScore());
 		}
 		if (_uiComboLbl != null) {
 			_uiComboLbl.setText("COMBO: " + _rhythmCore.getCombo() + "x");
+		}
+		if (_uiMultLbl != null) {
+			int mult = _rhythmCore.getScoreMultiplier();
+			int maxMult = _rhythmCore.getMaxScoreMultiplier();
+			int prog = _rhythmCore.getMultiplierProgress();
+			int step = _rhythmCore.getMultiplierStepHits();
+			if (mult >= maxMult) {
+				_uiMultLbl.setText("MULT: " + mult + "x [MAX]");
+				_uiMultLbl.setColorValue(app.color(255, 210, 75));
+			} else if (mult > 1) {
+				_uiMultLbl.setText("MULT: " + mult + "x (" + prog + "/" + step + ")");
+				_uiMultLbl.setColorValue(app.color(255, 232, 125));
+			} else {
+				_uiMultLbl.setText("MULT: 1x (" + prog + "/" + step + ")");
+				_uiMultLbl.setColorValue(app.color(185, 220, 255));
+			}
 		}
 
 		// 4. Barra vertical de Curación Dinámica (abajo-izquierda)
@@ -1072,7 +1131,14 @@ public class ROTNScene extends Scene {
 			return;
 		}
 
-		// 3b. Si está abierto el submenú de Configuración en Partida, retener ESC dentro del submenú
+		// 3b. Cuenta regresiva tras salir de pausa (retroceso 2s + espera 3s antes de reanudar)
+		if (_resumeCountdown > 0.0f) {
+			updateResumeCountdown(dt);
+			syncCombatUI();
+			return;
+		}
+
+		// 3c. Si está abierto el submenú de Configuración en Partida, retener ESC dentro del submenú
 		if (_rhythmCore.isPaused() && _inGameSettingsOpen) {
 			resolveCurrentSongTimeMs(dt);
 			handleInGameSettingsInput();
@@ -1081,11 +1147,27 @@ public class ROTNScene extends Scene {
 		}
 
 		// 4. Sincronización del reloj de canción y actualización del núcleo rítmico
+		boolean wasPausedBefore = _rhythmCore.isPaused();
 		int currentSongTimeMs = resolveCurrentSongTimeMs(dt);
+		if (!wasPausedBefore) {
+			_lastSongTimeMs = currentSongTimeMs;
+		}
 		_rhythmCore.update(currentSongTimeMs, dt);
+		boolean nowPaused = _rhythmCore.isPaused();
+
+		if (!wasPausedBefore && nowPaused) {
+			_pauseSongTimeMs = _lastSongTimeMs;
+		} else if (wasPausedBefore && !nowPaused) {
+			_modalWasOpen = false;
+			_inGameSettingsOpen = false;
+			_rebindLane = -1;
+			beginResumeCountdown();
+			syncCombatUI();
+			return;
+		}
 
 		// 5. Navegación en modal de pausa o efectos activos de combate (partículas y SFX)
-		if (_rhythmCore.isPaused()) {
+		if (nowPaused) {
 			if (!_modalWasOpen) {
 				_modalFocusIdx = 0;
 				_modalWasOpen = true;
@@ -1101,6 +1183,36 @@ public class ROTNScene extends Scene {
 		}
 
 		syncCombatUI();
+	}
+
+	/**
+	 * Gestiona los 3 segundos de espera tras cerrar el menú de pausa con la pista retrocedida.
+	 */
+	private void updateResumeCountdown(float dt) {
+		if (
+			KBInput.wasKeyJustPressed(Config.UIButtons[Config.CANCEL]) ||
+			KBInput.wasKeyJustPressed(Config.UIAltButtons[Config.CANCEL])
+		) {
+			_resumeCountdown = 0.0f;
+			_pauseSongTimeMs = _resumeTargetMs;
+			_rhythmCore.togglePause();
+			_modalFocusIdx = 0;
+			_modalWasOpen = true;
+			return;
+		}
+
+		_resumeCountdown -= dt;
+		_particles.update(dt);
+		if (_resumeCountdown <= 0.0f) {
+			_resumeCountdown = 0.0f;
+			_songFallbackTimerMs = _resumeTargetMs;
+			if (_bgm != null && _bgm.isLoaded()) {
+				_bgm.setPausedPositionMs(_resumeTargetMs);
+				_bgmPausedByScene = false;
+				Audio.resumeBGM();
+				Audio.syncTrackVolume(_bgm);
+			}
+		}
 	}
 
 	/**
@@ -1291,7 +1403,7 @@ public class ROTNScene extends Scene {
 			_modalFocusIdx = (_modalFocusIdx == 2) ? 0 : 2;
 		} else if (Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT)) {
 			switch (_modalFocusIdx) {
-				case 0 -> _rhythmCore.togglePause();
+				case 0 -> unpauseBattle();
 				case 1 -> openInGameSettings();
 				case 2 -> returnToWorld();
 			}
@@ -1559,6 +1671,8 @@ public class ROTNScene extends Scene {
 		int songTimeMs;
 		if (_introCountdown > 0.0f) {
 			songTimeMs = -Math.round(_introCountdown * 1000.0f);
+		} else if (_resumeCountdown > 0.0f) {
+			songTimeMs = _resumeTargetMs;
 		} else {
 			songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
 		}
@@ -1760,7 +1874,7 @@ public class ROTNScene extends Scene {
 			float xiL = -1.0f + lane * (2.0f / 6.0f);
 			float xiR = xiL + (2.0f / 6.0f);
 
-			boolean keyDown = !_rhythmCore.isPaused() && (
+			boolean keyDown = isGameplayInputActive() && (
 				KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
 				KBInput.isKeyDown(Config.RhythmAltButtons[lane])
 			);
@@ -1962,7 +2076,7 @@ public class ROTNScene extends Scene {
 			float cy = projectY(xi, 1.0f, 1.0f);
 			float ang = arcTangentAngle(xi, 1.0f);
 
-			boolean keyDown = !_rhythmCore.isPaused() && (
+			boolean keyDown = isGameplayInputActive() && (
 				KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
 				KBInput.isKeyDown(Config.RhythmAltButtons[lane])
 			);
@@ -2044,7 +2158,7 @@ public class ROTNScene extends Scene {
 
 			if (tTail > 1.13f || tHead < 0.0f) continue;
 
-			boolean keyDown = !_rhythmCore.isPaused() && (
+			boolean keyDown = isGameplayInputActive() && (
 				KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
 				KBInput.isKeyDown(Config.RhythmAltButtons[lane])
 			);
@@ -2232,12 +2346,14 @@ public class ROTNScene extends Scene {
 	}
 
 	/**
-	 * Renderiza el contador numérico grande (3, 2, 1) en el centro de la arena durante el pre-inicio.
+	 * Renderiza el contador numérico grande (3, 2, 1) en el centro de la arena durante el pre-inicio
+	 * o durante la espera de 3 segundos al reanudar tras pausa.
 	 */
 	private void drawIntroCountdownOverlay(PGraphics g) {
-		if (_introCountdown <= 0.0f) return;
+		float activeCountdown = Math.max(_introCountdown, _resumeCountdown);
+		if (activeCountdown <= 0.0f) return;
 
-		int sec = PApplet.constrain((int) Math.ceil(_introCountdown), 1, 3);
+		int sec = PApplet.constrain((int) Math.ceil(activeCountdown), 1, 3);
 		g.pushStyle();
 		g.textAlign(PConstants.CENTER, PConstants.CENTER);
 		if (Engine.titleFont != null) {

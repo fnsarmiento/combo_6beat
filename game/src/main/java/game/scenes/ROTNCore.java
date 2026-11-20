@@ -40,6 +40,8 @@ public class ROTNCore {
 
 	// Curación progresiva por racha corta y barra de autocuración
 	private static final int CONSECUTIVE_HITS_FOR_HEAL = 2;
+	private static final int MULTIPLIER_STEP_HITS = 7;
+	private static final int MAX_SCORE_MULTIPLIER = 16;
 	private static final float BASE_DAMAGE_RECOVERY_RATIO = 0.50f;
 	private static final float AMULET_DAMAGE_RECOVERY_RATIO = 0.75f;
 	private static final float AUTO_HEAL_PULSE_INTERVAL_SEC = 0.9f;
@@ -109,6 +111,8 @@ public class ROTNCore {
 	private boolean isPaused;
 	private BattleState battleState = BattleState.PLAYING;
 	private int combo, maxCombo, score;
+	private int multiplierStreak = 0;
+	private int scoreMultiplier = 1;
 	private int perfectCount, greatCount, goodCount, missCount;
 	private OnHitListener hitListener;
 
@@ -233,6 +237,8 @@ public class ROTNCore {
 	 */
 	public void resetStats() {
 		combo = maxCombo = score = 0;
+		multiplierStreak = 0;
+		scoreMultiplier = 1;
 		perfectCount = greatCount = goodCount = missCount = 0;
 		isPaused = false;
 		battleState = BattleState.PLAYING;
@@ -391,9 +397,9 @@ public class ROTNCore {
 				KBInput.isKeyDown(Config.RhythmButtons[laneIdx]) ||
 				KBInput.isKeyDown(Config.RhythmAltButtons[laneIdx]);
 
-			// Si el carril está bloqueado, pulsar su tecla inflige una penalización directa de 2 HP
+			// Si el carril está bloqueado, pulsar su tecla inflige una penalización directa de 2 HP (si la pista no terminó)
 			if (laneIdx == lockedLane) {
-				if (justPressed) {
+				if (justPressed && !isTrackFinishedForInput(songTimeMs)) {
 					applyPlayerDamage(LOCKED_LANE_PRESS_DAMAGE);
 					if (hitListener != null) {
 						hitListener.onHit(laneIdx, HitRating.MISS, combo, "CARRIL BLOQUEADO!");
@@ -523,8 +529,46 @@ public class ROTNCore {
 				holdingNoteIndex[laneIdx] = bestIdx;
 			}
 			registerHit(laneIdx, rating);
-		} else if (notes != null && notes.length > 0 && songTimeMs >= (firstNoteStartTimeMs - captureWin)) {
+		} else if (!isTrackFinishedForInput(songTimeMs) && songTimeMs >= (firstNoteStartTimeMs - captureWin)) {
 			registerHit(laneIdx, HitRating.MISS);
+		}
+	}
+
+	/**
+	 * Devuelve {@code true} cuando la pista ya terminó (no quedan notas pendientes ni holds activos
+	 * o se superó el último tiempo de nota + ventana de captura), evitando misses al finalizar la canción.
+	 */
+	private boolean isTrackFinishedForInput(int songTimeMs) {
+		if (notes == null || notes.length == 0) return true;
+		if (songTimeMs > lastNoteEndTimeMs + getCaptureWindowMs()) return true;
+		for (int i = 0; i < notes.length; i++) {
+			if (!processedNotes[i]) return false;
+		}
+		for (int l = 0; l < LANE_COUNT; l++) {
+			if (isHoldingLane[l]) return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Al retroceder la pista tras quitar la pausa, libera holds interrumpidos cuyo fin aún no ocurrió
+	 * para que puedan volver a jugarse limpiamente sin disparar MISS prematuros.
+	 */
+	public void cancelInterruptedHoldsOnRewind(int rewindToMs) {
+		for (int l = 0; l < LANE_COUNT; l++) {
+			if (!isHoldingLane[l]) continue;
+			int noteIdx = holdingNoteIndex[l];
+			if (noteIdx >= 0 && notes != null && noteIdx < notes.length) {
+				long startTime = NotePacker.getStartTime(notes[noteIdx]);
+				if (startTime >= rewindToMs) {
+					processedNotes[noteIdx] = false;
+					if (missedNotes != null && noteIdx < missedNotes.length) {
+						missedNotes[noteIdx] = false;
+					}
+				}
+			}
+			isHoldingLane[l] = false;
+			holdingNoteIndex[l] = -1;
 		}
 	}
 
@@ -632,25 +676,33 @@ public class ROTNCore {
 			case PERFECT -> {
 				perfectCount++;
 				combo++;
-				score += SCORE_PERFECT_BASE + combo * SCORE_PERFECT_COMBO_MULT;
+				advanceScoreMultiplier();
+				score += (SCORE_PERFECT_BASE + combo * SCORE_PERFECT_COMBO_MULT) * scoreMultiplier;
 				damageBoss(Math.round(bossHitDamage * BOSS_DMG_PERFECT_MULT));
 			}
 			case GOOD -> {
 				greatCount++;
 				combo++;
-				score += SCORE_GOOD_BASE + combo * SCORE_GOOD_COMBO_MULT;
+				advanceScoreMultiplier();
+				score += (SCORE_GOOD_BASE + combo * SCORE_GOOD_COMBO_MULT) * scoreMultiplier;
 				damageBoss(bossHitDamage);
 			}
 			case SAFE -> {
 				goodCount++;
 				combo++;
-				score += SCORE_SAFE_BASE;
+				score += SCORE_SAFE_BASE * scoreMultiplier;
 				damageBoss(Math.max(1, Math.round(bossHitDamage * BOSS_DMG_SAFE_MULT)));
 			}
 			case MISS -> {
+				boolean hadCombo = (combo > 0);
 				missCount++;
 				combo = 0;
-				applyPlayerDamage(bossAttackDamage);
+				multiplierStreak = 0;
+				scoreMultiplier = 1;
+				// El primer MISS que rompe un combo activo no quita HP; el siguiente sin combo sí
+				if (!hadCombo) {
+					applyPlayerDamage(bossAttackDamage);
+				}
 			}
 		}
 
@@ -688,6 +740,13 @@ public class ROTNCore {
 		if (hitListener != null) {
 			hitListener.onHit(laneIdx, rating, combo, rating.displayLabel);
 		}
+	}
+
+	/** Incrementa el multiplicador de puntaje (1 -> 2 -> 4 -> 8 -> 16) cada 7 aciertos GOOD o PERFECT sin misses. */
+	private void advanceScoreMultiplier() {
+		multiplierStreak++;
+		int tiers = multiplierStreak / MULTIPLIER_STEP_HITS;
+		scoreMultiplier = (tiers >= 4) ? MAX_SCORE_MULTIPLIER : Math.min(MAX_SCORE_MULTIPLIER, 1 << tiers);
 	}
 
 	private void damageBoss(int dmg) {
@@ -730,6 +789,14 @@ public class ROTNCore {
 	public int getCombo() { return combo; }
 	public int getMaxCombo() { return maxCombo; }
 	public int getScore() { return score; }
+	public int getScoreMultiplier() { return scoreMultiplier; }
+	public int getMultiplierProgress() {
+		return (scoreMultiplier >= MAX_SCORE_MULTIPLIER)
+			? MULTIPLIER_STEP_HITS
+			: (multiplierStreak % MULTIPLIER_STEP_HITS);
+	}
+	public int getMultiplierStepHits() { return MULTIPLIER_STEP_HITS; }
+	public int getMaxScoreMultiplier() { return MAX_SCORE_MULTIPLIER; }
 	public int getPerfectCount() { return perfectCount; }
 	public int getGoodCount() { return greatCount; }
 	public int getSafeCount() { return goodCount; }
