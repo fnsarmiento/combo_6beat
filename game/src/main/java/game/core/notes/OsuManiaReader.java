@@ -209,26 +209,6 @@ public class OsuManiaReader {
 		}
 
 		byte noteType = NotePacker.NOTE_NORMAL;
-		/* Sistema de notas especiales comentado para mantener todas las notas estándar y claras
-		int idx = list.size();
-		if ((hitSound & 2) != 0) {
-			noteType = NotePacker.NOTE_RANGED_ORIGIN;
-		} else if ((hitSound & 4) != 0) {
-			noteType = (lane > 0) ? NotePacker.NOTE_SHIFT_UP : NotePacker.NOTE_SHIFT_DOWN;
-		} else if ((hitSound & 8) != 0) {
-			noteType = (lane < 5) ? NotePacker.NOTE_SHIFT_DOWN : NotePacker.NOTE_SHIFT_UP;
-		} else if (duration == 0) {
-			// Variedad determinística de ataques especiales según la propuesta
-			if (idx % 12 == 5) {
-				noteType = NotePacker.NOTE_RANGED_ORIGIN;
-			} else if (idx % 17 == 8) {
-				noteType = (lane > 0) ? NotePacker.NOTE_SHIFT_UP : NotePacker.NOTE_SHIFT_DOWN;
-			} else if (idx % 23 == 14) {
-				noteType = (lane < 5) ? NotePacker.NOTE_SHIFT_DOWN : NotePacker.NOTE_SHIFT_UP;
-			}
-		}
-		*/
-
 		list.add(NotePacker.pack(lane, noteType, time, duration));
 	}
 

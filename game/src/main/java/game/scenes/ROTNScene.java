@@ -20,6 +20,7 @@ import engine.draw.ParticleSystem;
 import engine.draw.Sprite2D;
 import kuusisto.tinysound.Sound;
 import game.Config;
+import game.Global;
 import game.core.GameState;
 import game.core.db.CustomSongRepository;
 import game.core.notes.NotePacker;
@@ -37,6 +38,9 @@ public class ROTNScene extends Scene {
 
 	private final String _sceneFilePath;
 	private final CustomSongRepository.CustomSongSummary _customSong;
+	private final String _manifestChartId;
+	private final XML _manifestPackNode;
+	private final XML _manifestChartNode;
 	private MusicTrack _bgm;
 	private ROTNCore _rhythmCore;
 	private long[] _timingPoints = new long[0];
@@ -122,15 +126,49 @@ public class ROTNScene extends Scene {
 	public ROTNScene(String path) {
 		super(path);
 		this._customSong = null;
+		this._manifestChartId = "";
+		this._manifestPackNode = null;
+		this._manifestChartNode = null;
 		this._sceneFilePath = path != null ? path : "";
 	}
 
 	public ROTNScene(CustomSongRepository.CustomSongSummary customSong) {
 		super((String) null);
 		this._customSong = customSong;
+		this._manifestChartId = "";
+		this._manifestPackNode = null;
+		this._manifestChartNode = null;
 		this._sceneFilePath = (customSong != null && !customSong.rutaChart.isEmpty())
 			? ResourcesManager.getAbsPathFromProject(customSong.rutaChart)
 			: "";
+	}
+
+	private ROTNScene(XML packNode, XML chartNode, String chartId) {
+		super((String) null);
+		this._customSong = null;
+		this._manifestChartId = chartId != null ? chartId : "";
+		this._manifestPackNode = packNode;
+		this._manifestChartNode = chartNode;
+		this._sceneFilePath = ResourcesManager.getAbsPathFromProject(Global.SONGS_MANIFEST);
+	}
+
+	public static ROTNScene fromManifest(String chartId) {
+		try {
+			String manifestAbs = ResourcesManager.getAbsPathFromProject(Global.SONGS_MANIFEST);
+			XML root = Engine.getApp().loadXML(manifestAbs);
+			if (root != null) {
+				for (XML pack : root.getChildren("Pack")) {
+					for (XML chart : pack.getChildren("Chart")) {
+						if (chartId != null && chartId.equals(chart.getString("id", ""))) {
+							return new ROTNScene(pack, chart, chartId);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Error cargando chart '" + chartId + "' desde songs.xml: " + e.getMessage());
+		}
+		return new ROTNScene((String) null);
 	}
 
 	@Override
@@ -138,9 +176,10 @@ public class ROTNScene extends Scene {
 		Engine.ensureVirtualScreenSize((int) BASE_W, (int) BASE_H);
 		GameState.init();
 		GameState.bindDialogHooks();
+		Audio.pausePersistentBGM();
 		super.setup();
 
-		if (_customSong == null && _xmlScene == null) return;
+		if (_customSong == null && _manifestChartNode == null && _xmlScene == null) return;
 
 		int playerMaxHp = 200;
 		int bossMaxHp = 1500;
@@ -186,6 +225,34 @@ public class ROTNScene extends Scene {
 					_customCoverImg = Engine.getApp().loadImage(coverAbs);
 				}
 			}
+		} else if (_manifestChartNode != null) {
+			_returnScene = GameState.returnScenePath;
+			_scrollSpeed = _manifestChartNode.getFloat("scroll-speed", 0.22f) * Math.max(0.5f, GameState.songSpeedMultiplier);
+
+			String osuRel = _manifestChartNode.getString("file", "");
+			if (!osuRel.isEmpty()) {
+				String osuAbs = resolveSceneRelativeOrResource(osuRel);
+				reader = new OsuManiaReader(osuAbs);
+				_bgm = reader.getSong();
+			}
+
+			String coverRel = (_manifestPackNode != null) ? _manifestPackNode.getString("cover", "") : "";
+			if (!coverRel.isEmpty() && Engine.getApp() != null) {
+				String coverAbs = resolveSceneRelativeOrResource(coverRel);
+				if (new File(coverAbs).exists()) {
+					_customCoverImg = Engine.getApp().loadImage(coverAbs);
+				}
+			}
+
+			_bossId = _manifestChartNode.getString("boss-id", _manifestChartId);
+			_bossName = _manifestChartNode.getString("boss-name", _bossName);
+			_bossSpecies = _manifestChartNode.getString("boss-species", "");
+			bossMaxHp = _manifestChartNode.getInt("boss-hp", bossMaxHp);
+			bossAttackDamage = _manifestChartNode.getInt("attack-damage", bossAttackDamage);
+			bossHitDamage = _manifestChartNode.getInt("hit-damage", bossHitDamage);
+			bossSpritePath = _manifestChartNode.getString("boss-sprite", bossSpritePath);
+			_defeatFlag = _manifestChartNode.getString("defeat-flag", _defeatFlag);
+			_rewardItem = _manifestChartNode.getString("reward-item", _rewardItem);
 		} else {
 			_returnScene = _xmlScene.getString("return-scene", GameState.returnScenePath);
 
@@ -462,6 +529,8 @@ public class ROTNScene extends Scene {
 		if (_customSong != null) {
 			CustomSongRepository.CustomSongSummary latest = CustomSongRepository.getById(_customSong.idCancion);
 			Engine.changeScene(new ROTNScene(latest != null ? latest : _customSong));
+		} else if (_manifestChartId != null && !_manifestChartId.isEmpty()) {
+			Engine.changeScene(ROTNScene.fromManifest(_manifestChartId));
 		} else {
 			Engine.changeScene(new ROTNScene(_sceneFilePath));
 		}
@@ -1556,6 +1625,6 @@ public class ROTNScene extends Scene {
 	@Override
 	public void close() {
 		super.close();
-		Audio.clear();
+		Audio.stopTransientBGM();
 	}
 }

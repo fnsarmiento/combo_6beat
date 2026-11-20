@@ -6,9 +6,11 @@ import static game.Global.BASE_W;
 import engine.Engine;
 import engine.ResourcesManager;
 import engine.Scene;
+import engine.audio.Audio;
 import engine.dialogs.DialogManager;
 import engine.draw.Sprite2D;
 import game.Config;
+import game.Global;
 import game.core.GameState;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,6 +137,7 @@ public class HubScene extends Scene {
 		GameState.launchedFromMenu = false;
 
 		super.setup();
+		Audio.ensurePersistentBGM(ResourcesManager.getAbsPathFromProject(Global.MENU_HUB_BGM));
 		DialogManager.setOnLoadRequest(this::onHubDialogLoadRequest);
 
 		// Cargar diálogo base del Hub
@@ -198,29 +201,29 @@ public class HubScene extends Scene {
 	private void initStations() {
 		_stations.clear();
 
-		// Fila superior: 4 portales de combate rítmico (Historia / Jefes)
+		// Fila superior: portales de combate rítmico (apuntan a charts en resources/songs/songs.xml)
 		_stations.add(new HubStation(
 			3, 1, StationType.SONG_PORTAL,
-			"Z1", "ZONA 1: KAEL (PANTANO)", "Combate Ritmico 6K — Nivel 1",
-			"resources/songs/swamp_1_kael.scene", "BOSS_SWAMP_1_DEFEATED",
+			"Z1", "ZONA 1: BLOODY DARKNESS [BEGINNER]", "Combate Ritmico 6K — Kael",
+			"bloody_darkness_beginner", "BOSS_SWAMP_1_DEFEATED",
 			80, 220, 145
 		));
 		_stations.add(new HubStation(
 			6, 1, StationType.SONG_PORTAL,
-			"Z2", "ZONA 2: KAEL & VESPER (RUINAS)", "Combate Ritmico 6K — Nivel 2",
-			"resources/songs/beach_1_twins.scene", "BOSS_BEACH_1_DEFEATED",
+			"Z2", "ZONA 2: BLOODY DARKNESS [EASY]", "Combate Ritmico 6K — Kael & Vesper",
+			"bloody_darkness_easy", "BOSS_BEACH_1_DEFEATED",
 			95, 195, 255
 		));
 		_stations.add(new HubStation(
 			8, 1, StationType.SONG_PORTAL,
-			"Z3", "ZONA 3: NASH (TORMENTA)", "Combate Ritmico 6K — Nivel 3",
-			"resources/songs/nash_storm.scene", "BOSS_NASH_DEFEATED",
+			"Z3", "ZONA 3: SWIFT SWING [BASIC]", "Combate Ritmico 6K — Nash",
+			"swift_swing_basic", "BOSS_NASH_DEFEATED",
 			255, 185, 70
 		));
 		_stations.add(new HubStation(
 			11, 1, StationType.SONG_PORTAL,
-			"Z4", "ZONA 4: GRAIL (SANTUARIO)", "Combate Ritmico 6K — Jefe Final",
-			"resources/songs/grail_sanctum.scene", "BOSS_BEACH_3_DEFEATED",
+			"Z4", "ZONA 4: TAKEMIKADUCHI [NORMAL]", "Combate Ritmico 6K — Grail",
+			"takemikaduchi_normal", "BOSS_BEACH_3_DEFEATED",
 			240, 85, 125
 		));
 
@@ -272,14 +275,18 @@ public class HubScene extends Scene {
 		}
 	}
 
-	private void launchSongFromHub(String relScenePath) {
+	private void launchSongFromHub(String target) {
 		GameState.returnScenePath = "resources/scenes/hub.xml";
 		GameState.returnPlayerX = _playerCol;
 		GameState.returnPlayerY = _playerRow;
 		GameState.launchedFromMenu = false;
 		GameState.autoSaveIfStory();
-		String abs = ResourcesManager.getAbsPathFromProject(relScenePath);
-		Engine.changeScene(new ROTNScene(abs));
+		if (target != null && !target.endsWith(".scene")) {
+			Engine.changeScene(ROTNScene.fromManifest(target));
+		} else {
+			String abs = ResourcesManager.getAbsPathFromProject(target);
+			Engine.changeScene(new ROTNScene(abs));
+		}
 	}
 
 	private float tileCenterX(int col) {

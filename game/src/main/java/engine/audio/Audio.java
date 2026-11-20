@@ -12,6 +12,9 @@ public class Audio {
 	//private static ArrayList<Sound> _SFX;
 	private static final HashMap<String, Sound> _sfxCache = new HashMap<>();
 	private static MusicTrack _actualBGM;
+	private static MusicTrack _persistentBGM;
+	private static String _persistentBGMPath = "";
+	private static int _persistentBGMPosMs = 0;
 
 	private static float _BGMVolume = 1.0f;
 	private static float _SFXVolume = 1.0f;
@@ -92,7 +95,11 @@ public class Audio {
 
 	public static void playBGM(MusicTrack bgm, int startMs, boolean loop) {
 		if (_actualBGM != null && _actualBGM != bgm) {
-			_actualBGM.stop();
+			if (_actualBGM == _persistentBGM) {
+				pausePersistentBGM();
+			} else {
+				_actualBGM.stop();
+			}
 		}
 
 		_actualBGM = bgm;
@@ -101,6 +108,54 @@ public class Audio {
 		_actualBGM.setVolume(_BGMVolume);
 		_actualBGM.setMute(_isMuted);
 		_actualBGM.play(startMs, loop);
+	}
+
+	/**
+	 * Reproduce o reanuda una pista de fondo persistente (ej. Menú + Hub) sin reiniciarla
+	 * al cambiar de escena, retomando exactamente donde quedó si fue pausada por un combate.
+	 */
+	public static void ensurePersistentBGM(String absWavPath) {
+		if (absWavPath == null || absWavPath.isEmpty()) return;
+		File f = new File(absWavPath);
+		if (!f.exists()) return;
+
+		if (_persistentBGM != null && absWavPath.equals(_persistentBGMPath)) {
+			if (_actualBGM == _persistentBGM && _persistentBGM.isPlaying()) {
+				return;
+			}
+			_actualBGM = _persistentBGM;
+			_persistentBGM.setVolume(_BGMVolume);
+			_persistentBGM.setMute(_isMuted);
+			_persistentBGM.play(_persistentBGMPosMs, true);
+			return;
+		}
+
+		if (_persistentBGM != null) {
+			_persistentBGM.close();
+		}
+		_persistentBGM = loadBGM(absWavPath);
+		_persistentBGMPath = absWavPath;
+		_persistentBGMPosMs = 0;
+		_actualBGM = _persistentBGM;
+		if (_persistentBGM != null) {
+			_persistentBGM.setVolume(_BGMVolume);
+			_persistentBGM.setMute(_isMuted);
+			_persistentBGM.play(0, true);
+		}
+	}
+
+	public static void pausePersistentBGM() {
+		if (_persistentBGM != null && _persistentBGM.isPlaying()) {
+			_persistentBGMPosMs = _persistentBGM.getPositionMs();
+			_persistentBGM.pause();
+		}
+	}
+
+	public static void stopTransientBGM() {
+		if (_actualBGM != null && _actualBGM != _persistentBGM) {
+			_actualBGM.close();
+			_actualBGM = null;
+		}
 	}
 
 	public static void pauseBGM() {

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Songs resources="../">
+  <Pack
+      id="bloody_darkness"
+      title="Bloody Darkness"
+      artist="cygnus"
+      cover="songs/base/Bloody Darkness/130701200_p0-Seiga &amp; Yoshika.jpg">
+    <Chart
+        id="bloody_darkness_beginner"
+        difficulty="Beginner"
+        file="songs/base/Bloody Darkness/cygnus - Bloody Darkness (Mis Fortune) [Beginner].osu"
+        scroll-speed="0.21"
+        boss-id="boss_swamp_1"
+        boss-name="Kael"
+        boss-species="Gemelo 1"
+        boss-hp="450"
+        attack-damage="12"
+        hit-damage="6"
+        boss-sprite="sprites/bosses/bear.png"
+        defeat-flag="BOSS_SWAMP_1_DEFEATED"
+    />
+    <Chart
+        id="bloody_darkness_easy"
+        difficulty="Easy"
+        file="songs/base/Bloody Darkness/cygnus - Bloody Darkness (Mis Fortune) [Easy].osu"
+        scroll-speed="0.23"
+        boss-id="boss_beach_1"
+        boss-name="Kael &amp; Vesper"
+        boss-species="Gemelos"
+        boss-hp="550"
+        attack-damage="14"
+        hit-damage="7"
+        boss-sprite="sprites/bosses/bear.png"
+        defeat-flag="BOSS_BEACH_1_DEFEATED"
+    />
+  </Pack>
+
+  <Pack
+      id="swift_swing"
+      title="Swift Swing"
+      artist="Laur"
+      cover="">
+    <Chart
+        id="swift_swing_basic"
+        difficulty="BASIC"
+        file="songs/base/Swift Swing/Laur - Swift Swing (U1d) [BASIC].osu"
+        scroll-speed="0.23"
+        boss-id="boss_nash"
+        boss-name="Nash"
+        boss-species="Perico + Hiena"
+        boss-hp="600"
+        attack-damage="14"
+        hit-damage="7"
+        boss-sprite="sprites/bosses/bear.png"
+        defeat-flag="BOSS_NASH_DEFEATED"
+    />
+  </Pack>
+
+  <Pack
+      id="takemikaduchi"
+      title="TAKEMIKADUCHI"
+      artist="polysha"
+      cover="">
+    <Chart
+        id="takemikaduchi_normal"
+        difficulty="Normal"
+        file="songs/base/TAKEMIKADUCHI/polysha - TAKEMIKADUCHI (DaddyPeeka) [Normal].osu"
+        scroll-speed="0.24"
+        boss-id="boss_grail"
+        boss-name="Grail"
+        boss-species="Oso + Buho"
+        boss-hp="700"
+        attack-damage="16"
+        hit-damage="8"
+        boss-sprite="sprites/bosses/bear.png"
+        defeat-flag="BOSS_BEACH_3_DEFEATED"
+    />
+  </Pack>
+</Songs>

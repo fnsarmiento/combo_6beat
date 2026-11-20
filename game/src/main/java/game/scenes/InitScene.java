@@ -12,7 +12,9 @@ import engine.Engine;
 import engine.KBInput;
 import engine.ResourcesManager;
 import engine.Scene;
+import engine.audio.Audio;
 import game.Config;
+import game.Global;
 import game.core.GameState;
 import game.core.db.CustomSongRepository;
 import game.core.db.SaveRepository;
@@ -39,6 +41,7 @@ public class InitScene extends Scene {
 	public enum ViewMode { MAIN, SAVE_SELECT, CAMPAIGN_SELECT, SONG_SELECT, SETTINGS }
 
 	private static class SongEntry {
+		String chartId = "";
 		String sceneAbsPath = "";
 		String title = "Cancion";
 		String artist = "";
@@ -173,6 +176,7 @@ public class InitScene extends Scene {
 		Engine.ensureVirtualScreenSize((int) BASE_W, (int) BASE_H);
 		GameState.init();
 		super.setup();
+		Audio.ensurePersistentBGM(ResourcesManager.getAbsPathFromProject(Global.MENU_HUB_BGM));
 
 		var app = Engine.getApp();
 		_builtAppWidth = app.width;
@@ -217,19 +221,60 @@ public class InitScene extends Scene {
 
 	private void scanSongsDirectory() {
 		_songs.clear();
-		File songsDir = new File(ResourcesManager.getAbsPathFromProject("resources/songs"));
-		if (!songsDir.exists() || !songsDir.isDirectory()) return;
 
-		File[] files = songsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".scene"));
-		if (files == null) return;
-		Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+		// 1. Leer archivo padre resources/songs/songs.xml (packs + dificultades .osu)
+		File manifestFile = new File(ResourcesManager.getAbsPathFromProject(Global.SONGS_MANIFEST));
+		if (manifestFile.exists()) {
+			try {
+				XML root = Engine.getApp().loadXML(manifestFile.getAbsolutePath());
+				if (root != null) {
+					for (XML pack : root.getChildren("Pack")) {
+						String packTitle = pack.getString("title", "Cancion");
+						String packArtist = pack.getString("artist", "");
+						for (XML chart : pack.getChildren("Chart")) {
+							SongEntry entry = new SongEntry();
+							entry.chartId = chart.getString("id", "");
+							entry.title = packTitle;
+							entry.artist = packArtist;
+							entry.difficulty = chart.getString("difficulty", "6K");
+							entry.scrollSpeed = chart.getFloat("scroll-speed", 0.22f);
+							entry.bossName = chart.getString("boss-name", entry.bossName);
+							entry.bossSpecies = chart.getString("boss-species", "");
+							entry.bossHp = chart.getInt("boss-hp", entry.bossHp);
+							entry.attackDamage = chart.getInt("attack-damage", entry.attackDamage);
+							entry.hitDamage = chart.getInt("hit-damage", entry.hitDamage);
 
-		for (File sceneFile : files) {
-			SongEntry entry = parseSongEntry(sceneFile);
-			if (entry != null) {
-				_songs.add(entry);
+							String osuRel = chart.getString("file", "");
+							if (!osuRel.isEmpty()) {
+								File osuFile = resolveOsuFile(manifestFile, osuRel);
+								if (osuFile != null && osuFile.exists()) {
+									readOsuSummary(osuFile, entry);
+								}
+							}
+							_songs.add(entry);
+						}
+					}
+				}
+			} catch (Exception e) {
+				System.err.println("Error leyendo songs.xml: " + e.getMessage());
 			}
 		}
+
+		// 2. Fallback para archivos .scene sueltos en resources/songs/
+		File songsDir = new File(ResourcesManager.getAbsPathFromProject("resources/songs"));
+		if (songsDir.exists() && songsDir.isDirectory()) {
+			File[] files = songsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".scene"));
+			if (files != null) {
+				Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+				for (File sceneFile : files) {
+					SongEntry entry = parseSongEntry(sceneFile);
+					if (entry != null) {
+						_songs.add(entry);
+					}
+				}
+			}
+		}
+
 		if (_selectedSongIdx >= _songs.size()) {
 			_selectedSongIdx = Math.max(0, _songs.size() - 1);
 		}
@@ -748,7 +793,11 @@ public class InitScene extends Scene {
 		} else {
 			if (_songs.isEmpty() || _selectedSongIdx < 0 || _selectedSongIdx >= _songs.size()) return;
 			SongEntry entry = _songs.get(_selectedSongIdx);
-			Engine.changeScene(new ROTNScene(entry.sceneAbsPath));
+			if (entry.chartId != null && !entry.chartId.isEmpty()) {
+				Engine.changeScene(ROTNScene.fromManifest(entry.chartId));
+			} else {
+				Engine.changeScene(new ROTNScene(entry.sceneAbsPath));
+			}
 		}
 	}
 
