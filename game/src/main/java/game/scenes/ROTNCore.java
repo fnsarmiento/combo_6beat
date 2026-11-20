@@ -66,7 +66,7 @@ public class ROTNCore {
 	 * Cada categoría define su ventana base en milisegundos alrededor del tiempo exacto.
 	 */
 	public enum HitRating {
-		PERFECT(45.0f, 5, "PERFECT +5"),
+		PERFECT(40.0f, 5, "PERFECT +5"),
 		GOOD(85.0f, 3, "GOOD +3"),
 		SAFE(125.0f, 1, "SAFE +1"),
 		MISS(170.0f, -2, "MISS -2");
@@ -114,6 +114,7 @@ public class ROTNCore {
 	private int multiplierStreak = 0;
 	private int scoreMultiplier = 1;
 	private int multiplierStepHits = MULTIPLIER_STEP_HITS;
+	private int maxScoreMultiplier = MAX_SCORE_MULTIPLIER;
 	private float scoreBonusMultiplier = 1.0f;
 	private int perfectCount, greatCount, goodCount, missCount;
 	private OnHitListener hitListener;
@@ -198,6 +199,7 @@ public class ROTNCore {
 		invincibilityTimer = 0.0f;
 		scoreBonusMultiplier = 1.0f;
 		multiplierStepHits = MULTIPLIER_STEP_HITS;
+		maxScoreMultiplier = MAX_SCORE_MULTIPLIER;
 
 		if (GameState.isPowerUpEquipped("powerup_reaction_plus")) {
 			windowOffsetMs += POWERUP_REACTION_PLUS_MS;
@@ -211,6 +213,10 @@ public class ROTNCore {
 		}
 		if (GameState.isPowerUpEquipped("amulet_medallion_ruins")) {
 			multiplierStepHits = 5;
+		}
+		if (GameState.isPowerUpEquipped("amulet_overdrive_32x")) {
+			maxScoreMultiplier = 32;
+			multiplierStepHits = 21;
 		}
 		if (GameState.isPowerUpEquipped("amulet_medallion_swamp")) {
 			playerMaxHp = basePlayerMaxHp + 60;
@@ -762,12 +768,12 @@ public class ROTNCore {
 		}
 	}
 
-	/** Incrementa el multiplicador de puntaje (1 -> 2 -> 4 -> 8 -> 16) cada N aciertos GOOD o PERFECT sin misses. */
+	/** Incrementa el multiplicador de puntaje (potencias de 2 hasta maxScoreMultiplier) cada N aciertos GOOD o PERFECT sin misses. */
 	private void advanceScoreMultiplier() {
 		multiplierStreak++;
 		int step = Math.max(1, multiplierStepHits);
 		int tiers = multiplierStreak / step;
-		scoreMultiplier = (tiers >= 4) ? MAX_SCORE_MULTIPLIER : Math.min(MAX_SCORE_MULTIPLIER, 1 << tiers);
+		scoreMultiplier = (tiers >= 30) ? maxScoreMultiplier : Math.min(maxScoreMultiplier, 1 << tiers);
 	}
 
 	private void damageBoss(int dmg) {
@@ -813,12 +819,12 @@ public class ROTNCore {
 	public int getScoreMultiplier() { return scoreMultiplier; }
 	public int getMultiplierProgress() {
 		int step = Math.max(1, multiplierStepHits);
-		return (scoreMultiplier >= MAX_SCORE_MULTIPLIER)
+		return (scoreMultiplier >= maxScoreMultiplier)
 			? step
 			: (multiplierStreak % step);
 	}
 	public int getMultiplierStepHits() { return multiplierStepHits; }
-	public int getMaxScoreMultiplier() { return MAX_SCORE_MULTIPLIER; }
+	public int getMaxScoreMultiplier() { return maxScoreMultiplier; }
 	public int getPerfectCount() { return perfectCount; }
 	public int getGoodCount() { return greatCount; }
 	public int getSafeCount() { return goodCount; }

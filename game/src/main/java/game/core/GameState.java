@@ -341,6 +341,14 @@ public class GameState {
 			"El multiplicador sube cada 5 notas GOOD/PERFECT en vez de cada 7."
 		));
 		registerItem(new ItemDef(
+			"amulet_overdrive_32x",
+			"Amuleto Overdrive (x32)",
+			ItemCategory.AMULET,
+			0,
+			3800,
+			"Eleva el multiplicador maximo a x32, pero requiere 21 notas GOOD/PERFECT para subir cada nivel."
+		));
+		registerItem(new ItemDef(
 			"key_copper",
 			"Llave de Cobre",
 			ItemCategory.KEY,
