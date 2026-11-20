@@ -518,9 +518,8 @@ public class InitScene extends Scene {
 			Button slotBtn = _saveSlotBtns[i];
 			if (slotBtn != null) {
 				String text = sum.exists
-					? ("PARTIDA " + (i + 1) + " — Puntos: " + GameState.getSaveSlotPoints(i) +
-					   " | Amuletos: " + sum.amuletCount +
-					   " | Canciones: " + sum.battlesWonCount)
+					? ("PARTIDA " + (i + 1) + "  -  " + sum.shopPoints + " pts  |  Amuletos: " + sum.amuletCount +
+					   "  |  Canciones: " + sum.songsClearedCount + "/" + sum.songsPlayedCount)
 					: ("PARTIDA " + (i + 1) + " - [Vacio - Nueva Partida]");
 				slotBtn.setLabel((mainFocused ? "> " : "  ") + text);
 				if (mainFocused) {
@@ -582,8 +581,6 @@ public class InitScene extends Scene {
 	/** Carga o inicializa la ranura indicada y abre el Selector de Canciones y Tienda de la partida. */
 	private void launchSaveSlot(int slot) {
 		_confirmDeleteSlot = -1;
-		GameState.launchedFromMenu = false;
-		GameState.isDebugSession = false;
 		GameState.songSpeedMultiplier = 1.0f;
 		if (!GameState.hasSaveFile(slot) || !GameState.loadGame(slot)) {
 			GameState.startNewGame(slot);
@@ -1428,7 +1425,6 @@ public class InitScene extends Scene {
 		if (variant == null) return;
 
 		GameState.songSpeedMultiplier = SPEED_OPTIONS[_songSpeedIdx];
-		GameState.launchedFromMenu = true;
 		_savedSongTab = _songTab;
 		GameState.saveGame();
 
@@ -1670,7 +1666,7 @@ public class InitScene extends Scene {
 		boolean down = _downRepeat.poll(Config.wasUIKeyJustPressed(Config.DOWN), Config.isUIKeyDown(Config.DOWN), dt);
 		boolean left = Config.wasUIKeyJustPressed(Config.LEFT);
 		boolean right = Config.wasUIKeyJustPressed(Config.RIGHT);
-		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT);
+		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT);
 		boolean back = Config.wasUIKeyJustPressed(Config.CANCEL);
 
 		switch (_viewMode) {

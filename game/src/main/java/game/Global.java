@@ -1,7 +1,5 @@
 package game;
 
-import engine.Engine;
-
 /**
  * Constantes globales de resolucion virtual, recursos compartidos y banderas de ejecucion
  * de Combo 6Beat.
@@ -24,16 +22,6 @@ public class Global {
 
 	/** Alto del lienzo virtual interno en pixeles (relacion de aspecto 16:9). */
 	public static final float BASE_H = 270.0f;
-
-	/** Escala una medida horizontal del lienzo virtual `480x270` al ancho real de ventana. */
-	public static float resizeWidth(float val) {
-		return (val / BASE_W) * Engine.getApp().width;
-	}
-
-	/** Escala una medida vertical del lienzo virtual `480x270` al alto real de ventana. */
-	public static float resizeHeight(float val) {
-		return (val / BASE_H) * Engine.getApp().height;
-	}
 
 	// =========================================================================
 	// AUDIO Y MANIFIESTOS DE CANCIONES

@@ -11,41 +11,43 @@ PRAGMA foreign_keys = ON;
 PRAGMA integrity_check;
 PRAGMA foreign_key_check;
 
--- 2. Vista de resumen de partidas (PARTIDAS INNER JOIN ZONAS)
+-- 2. Vista de resumen de partidas (puntos de tienda, amuletos y canciones completadas)
 SELECT
     slot,
-    zona_actual,
-    estado_general,
-    progreso_porcentaje,
-    total_batallas_vencidas,
+    puntos_tienda,
+    heal_strategy,
+    canciones_jugadas,
+    canciones_completadas,
     total_items,
     total_amuletos
 FROM v_resumen_partidas
 ORDER BY slot;
 
--- 3. Vista de mejores puntajes en batallas de historia (4 tablas con INNER JOIN)
+-- 3. Vista de récords de canciones por partida (RECORDS_CANCIONES INNER JOIN PARTIDAS)
 SELECT
     slot_partida,
-    boss_nombre,
-    especie,
-    zona_batalla,
+    titulo,
+    artista,
+    dificultad,
     puntaje_maximo,
     max_combo,
     perfects,
     misses,
-    intentos_totales
-FROM v_mejores_puntajes_batallas
+    intentos_totales,
+    victorias_totales
+FROM v_records_canciones
 ORDER BY slot_partida, puntaje_maximo DESC;
 
--- 4. Vista de inventario actual detallado por partida
+-- 4. Vista de inventario actual detallado por partida (incluye precio_tienda de cada amuleto)
 SELECT
     slot_partida,
     item_nombre,
     categoria,
+    precio_tienda,
     cantidad,
     equipado
 FROM v_inventario_detallado
-ORDER BY slot_partida, categoria, item_nombre;
+ORDER BY slot_partida, categoria, precio_tienda, item_nombre;
 
 -- 5. Vista de auditoría de movimientos de objetos (alimentada por triggers)
 SELECT
@@ -58,7 +60,7 @@ SELECT
 FROM v_historial_objetos
 LIMIT 15;
 
--- 6. Vista independiente de Canciones Personalizadas (récord vs último intento y objetos resguardados)
+-- 6. Vista independiente de Canciones Personalizadas (récord vs último intento y amuletos resguardados)
 SELECT
     id_cancion,
     titulo,
@@ -80,14 +82,13 @@ SELECT
 FROM v_canciones_custom_objetos
 ORDER BY id_cancion, tipo_registro, item_nombre;
 
--- 8. Vista de enemigos ubicados en las salas del Hub (posición X/Y, canción y amuleto por score)
+-- 8. Catálogo de amuletos disponibles en la tienda ordenados por precio en puntos
 SELECT
-    enemigo_nombre,
-    especie,
-    sala_hub,
-    hub_x,
-    hub_y,
-    cancion_referencia,
-    puntaje_minimo_amuleto,
-    amuleto_por_score
-FROM v_enemigos_hub;
+    id_item,
+    nombre,
+    categoria,
+    precio_tienda,
+    descripcion
+FROM CATALOGO_ITEMS
+WHERE precio_tienda > 0
+ORDER BY precio_tienda ASC;

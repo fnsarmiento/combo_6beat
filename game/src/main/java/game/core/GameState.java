@@ -14,9 +14,9 @@ import java.util.Set;
 /**
  * Administrador central del estado persistente del juego (State Manager).
  * <p>
- * Centraliza el catalogo e inventario de items, chips Power-Up, amuletos desbloqueables,
- * estrategias de curacion automatica, banderas de progreso narrativo/combate, coordenadas
- * de retorno al Hub y sincronizacion con la base de datos SQLite (3FN).
+ * Centraliza el catalogo e inventario de items, amuletos de la tienda,
+ * estrategias de curacion automatica, banderas de progreso, records de canciones
+ * y sincronizacion con la base de datos SQLite (3FN).
  */
 public class GameState {
 
@@ -24,16 +24,9 @@ public class GameState {
 	// IDENTIFICADORES Y DEFINICIONES DE ITEMS, AMULETOS Y ESTRATEGIAS
 	// =========================================================================
 
-	/** Modos de campana soportados al iniciar una nueva partida. */
-	public enum CampaignMode {
-		CLASSIC,
-		EXPLORATION
-	}
-
 	/** Categorias funcionales de objetos dentro del catalogo maestro. */
 	public enum ItemCategory {
 		HEAL,
-		KEY,
 		POWERUP,
 		AMULET,
 		MISC
@@ -51,7 +44,7 @@ public class GameState {
 		}
 	}
 
-	/** Definicion inmutable de un objeto, chip Power-Up, llave o amuleto del catalogo. */
+	/** Definicion inmutable de un objeto, chip Power-Up o amuleto del catalogo. */
 	public static class ItemDef {
 		public final String id;
 		public final String name;
@@ -90,17 +83,16 @@ public class GameState {
 	/** Resumen de estado de una ranura de guardado SQLite para su visualizacion en menus y HUD. */
 	public static class SaveSlotSummary {
 		public boolean exists = false;
-		public String sceneLabel = "Vacio";
+		public int shopPoints = 0;
 		public int itemCount = 0;
 		public int amuletCount = 0;
-		public int battlesWonCount = 0;
-		public float progressPercent = 0.0f;
-		public String generalStatus = "EN_PROGRESO";
+		public int songsPlayedCount = 0;
+		public int songsClearedCount = 0;
 		public String lastUpdated = "";
 	}
 
 	// =========================================================================
-	// ESTADO DE CAMPANA, ESCENA ACTIVA Y RANURA ACTIVA SQLITE
+	// ESTADO DE PARTIDA Y RANURA ACTIVA SQLITE
 	// =========================================================================
 
 	/** Cantidad total de ranuras de guardado disponibles en SQLite. */
@@ -112,29 +104,16 @@ public class GameState {
 	/** Puntos acumulados en la partida activa para comprar amuletos en la tienda. */
 	public static int shopPoints = 0;
 
-	/** Identificador del chip Power-Up primario equipado ("none" si no hay ninguno). */
+	/** Identificador del chip Power-Up o amuleto primario equipado ("none" si no hay ninguno). */
 	public static String equippedPowerUp = "none";
 
 	/** Estrategia activa de curacion automatica durante los combates ritmicos. */
 	public static HealStrategy healStrategy = HealStrategy.OPTIMAL;
 
-	/** Ruta relativa de la escena activa y coordenadas de retorno al Hub. */
-	public static String currentScenePath = "resources/scenes/hub.xml";
-	public static String returnScenePath = "resources/scenes/hub.xml";
-	public static float returnPlayerX = 7.0f;
-	public static float returnPlayerY = 4.0f;
-
-	/** Coordenadas de aparicion diferida tras cargar partida o cambiar de sala. */
-	public static boolean hasPendingSpawn = false;
-	public static float pendingSpawnX = 0.0f;
-	public static float pendingSpawnY = 0.0f;
-
-	/** Banderas de sesion para distinguir modo historia, selector libre (arcade) y depuracion. */
-	public static boolean launchedFromMenu = false;
-	public static boolean isDebugSession = false;
+	/** Multiplicador de velocidad de scroll de notas en las pistas ritmicas. */
 	public static float songSpeedMultiplier = 1.0f;
 
-	/** Colecciones internas de banderas narrativas, catalogo maestro, inventario y equipamiento. */
+	/** Colecciones internas de banderas, catalogo maestro, inventario y equipamiento. */
 	private static final Set<String> _flags = new HashSet<>();
 	private static final Map<String, ItemDef> _catalog = new LinkedHashMap<>();
 	private static final Map<String, Integer> _inventory = new LinkedHashMap<>();
@@ -146,7 +125,7 @@ public class GameState {
 	private static boolean _initialized = false;
 
 	/**
-	 * Inicializa el catalogo maestro, la conexion SQLite, el inventario base y los hooks de dialogo.
+	 * Inicializa el catalogo maestro, la conexion SQLite y el inventario base.
 	 */
 	public static void init() {
 		if (_initialized) return;
@@ -189,7 +168,7 @@ public class GameState {
 
 	/**
 	 * Obtiene la definicion de un objeto del catalogo o infiere y registra una por defecto
-	 * a partir de su prefijo (`heal_`, `potion_`, `key_`, `powerup_`, `amulet_`).
+	 * a partir de su prefijo (`heal_`, `potion_`, `powerup_`, `amulet_`).
 	 */
 	public static ItemDef getOrRegisterItemDef(String itemId) {
 		if (itemId == null || itemId.isEmpty()) return null;
@@ -204,9 +183,6 @@ public class GameState {
 			cat = ItemCategory.HEAL;
 			healAmt = 30;
 			desc = "Restaura 30 HP";
-		} else if (itemId.startsWith("key_")) {
-			cat = ItemCategory.KEY;
-			desc = "Llave especial";
 		} else if (itemId.startsWith("powerup_")) {
 			cat = ItemCategory.POWERUP;
 			desc = "Mejora para combate";
@@ -234,20 +210,13 @@ public class GameState {
 		shopPoints = 0;
 		equippedPowerUp = "none";
 		healStrategy = HealStrategy.OPTIMAL;
-		currentScenePath = "resources/scenes/beach_ruins.xml";
-		returnScenePath = "resources/scenes/beach_ruins.xml";
-		returnPlayerX = 1344.0f;
-		returnPlayerY = 2464.0f;
-		hasPendingSpawn = false;
-		launchedFromMenu = false;
-		isDebugSession = false;
 		_notificationText = "";
 		_notificationTimer = 0.0f;
 		_initialized = false;
 		init();
 	}
 
-	/** Pobla el catalogo con los consumibles, chips, amuletos y llaves estandar del juego. */
+	/** Pobla el catalogo con los consumibles y amuletos estandar del juego. */
 	private static void registerDefaults() {
 		_catalog.clear();
 		registerItem(new ItemDef(
@@ -273,14 +242,6 @@ public class GameState {
 			90,
 			0,
 			"Restaura 90 HP"
-		));
-		registerItem(new ItemDef(
-			"key_exit",
-			"Llave Virtual",
-			ItemCategory.KEY,
-			0,
-			0,
-			"Abre la puerta de salida de la realidad virtual"
 		));
 		registerItem(new ItemDef(
 			"amulet_dual_slot",
@@ -345,46 +306,6 @@ public class GameState {
 			0,
 			3800,
 			"Eleva el multiplicador maximo a x32, pero requiere 21 notas GOOD/PERFECT para subir cada nivel."
-		));
-		registerItem(new ItemDef(
-			"key_copper",
-			"Llave de Cobre",
-			ItemCategory.KEY,
-			0,
-			0,
-			"Abre la puerta de la Sala de Control (Ala Este)"
-		));
-		registerItem(new ItemDef(
-			"key_studio",
-			"Llave del Estudio",
-			ItemCategory.KEY,
-			0,
-			0,
-			"Abre el acceso al Archivo Sur"
-		));
-		registerItem(new ItemDef(
-			"key_crest_a",
-			"Sello de Bruma",
-			ItemCategory.KEY,
-			0,
-			0,
-			"Primer sello de la Puerta del Nucleo"
-		));
-		registerItem(new ItemDef(
-			"key_crest_b",
-			"Sello de Marea",
-			ItemCategory.KEY,
-			0,
-			0,
-			"Segundo sello de la Puerta del Nucleo"
-		));
-		registerItem(new ItemDef(
-			"key_crest_c",
-			"Sello de Eco",
-			ItemCategory.KEY,
-			0,
-			0,
-			"Tercer sello de la Puerta del Nucleo"
 		));
 	}
 
@@ -657,18 +578,6 @@ public class GameState {
 	}
 
 	/**
-	 * Asegura la disponibilidad de los chips Power-Up al entrar desde el Selector de Canciones.
-	 */
-	public static void ensureFreeplayPowerUps() {
-		String[] chips = { "powerup_reaction_plus", "powerup_reaction_minus", "powerup_invincibility" };
-		for (String id : chips) {
-			if (!hasItem(id)) {
-				_inventory.put(id, 1);
-			}
-		}
-	}
-
-	/**
 	 * Selecciona y consume automaticamente un item de curacion del inventario segun la estrategia:
 	 * - MINIMAL: el item curativo de menor potencia disponible.
 	 * - OPTIMAL: el mayor item que no exceda missingHp (o el menor disponible si todos exceden).
@@ -717,10 +626,10 @@ public class GameState {
 	}
 
 	// =========================================================================
-	// PROGRESO DE BATALLAS, HISTORIA, FLAGS Y TRANSICIONES
+	// BANDERAS Y REGISTRO DE INTENTOS DE CANCIONES
 	// =========================================================================
 
-	/** Activa una bandera de evento narrativo o de jefe derrotado. */
+	/** Activa una bandera de estado. */
 	public static void defineFlag(String flag) {
 		if (flag != null && !flag.isEmpty()) {
 			_flags.add(flag);
@@ -736,7 +645,7 @@ public class GameState {
 
 	/**
 	 * Evalua si una bandera esta activa. Soporta el prefijo especial `HAS_ITEM:<id>`
-	 * para condicionales de dialogo basados en inventario.
+	 * para condicionales basados en inventario.
 	 */
 	public static boolean hasFlag(String flag) {
 		if (flag == null || flag.isEmpty()) return false;
@@ -746,77 +655,42 @@ public class GameState {
 		return _flags.contains(flag);
 	}
 
-	/** Registra la escena y coordenadas de retorno antes de iniciar un combate ritmico. */
-	public static void saveReturnLocation(String scenePath, float x, float y) {
-		if (scenePath != null && !scenePath.isEmpty()) {
-			returnScenePath = scenePath;
-		}
-		returnPlayerX = x;
-		returnPlayerY = y;
-	}
-
-	/** Define una posicion de aparicion pendiente para la siguiente carga de escena. */
-	public static void setPendingSpawn(float x, float y) {
-		hasPendingSpawn = true;
-		pendingSpawnX = x;
-		pendingSpawnY = y;
-	}
-
-	/** Consume y limpia la marca de aparicion pendiente si estaba activa. */
-	public static boolean consumePendingSpawn() {
-		if (!hasPendingSpawn) return false;
-		hasPendingSpawn = false;
-		return true;
-	}
-
 	/**
-	 * Registra en SQLite (`BATALLAS_VENCIDAS`) la victoria sobre un jefe o pista de historia,
-	 * disparando los triggers de recompensas y amuletos desbloqueables por puntaje.
+	 * Registra en SQLite (`RECORDS_CANCIONES`) el intento o victoria en una cancion dentro de la ranura activa.
 	 */
-	public static void recordBattleVictory(
-		String bossId,
-		String bossName,
-		String species,
-		String defeatFlag,
-		String battleScenePath,
-		String zoneScenePath,
-		String rewardItemId,
+	public static void recordSongAttempt(
+		String songKey,
+		String title,
+		String artist,
+		String difficulty,
 		int score,
 		int maxCombo,
 		int perfects,
 		int goods,
 		int safes,
-		int misses
+		int misses,
+		boolean won
 	) {
-		if (launchedFromMenu || isDebugSession) return;
 		init();
-		SaveRepository.recordBattleVictory(
+		SaveRepository.recordSongAttempt(
 			activeSaveSlot,
-			bossId,
-			bossName,
-			species,
-			defeatFlag,
-			battleScenePath,
-			zoneScenePath,
-			rewardItemId,
+			songKey,
+			title,
+			artist,
+			difficulty,
 			score,
 			maxCombo,
 			perfects,
 			goods,
 			safes,
-			misses
+			misses,
+			won
 		);
 	}
 
 	// =========================================================================
 	// PERSISTENCIA SQLITE (GUARDADO, CARGA Y REINICIO DE PROGRESO)
 	// =========================================================================
-
-	/** Normaliza una ruta de escena a formato relativo dentro del proyecto. */
-	public static String toRelativeProjectPath(String path) {
-		String rel = DatabaseManager.toRelativeProjectPath(path);
-		return rel.isEmpty() ? "resources/scenes/beach_ruins.xml" : rel;
-	}
 
 	/** Restringe un indice de ranura al rango valido `0 .. SAVE_SLOT_COUNT - 1`. */
 	public static int clampSaveSlot(int slot) {
@@ -864,53 +738,16 @@ public class GameState {
 
 	/** Obtiene los puntos de tienda almacenados en la ranura de guardado indicada en SQLite. */
 	public static int getSaveSlotPoints(int slot) {
-		init();
-		SaveRepository.LoadedSaveData d = SaveRepository.loadState(clampSaveSlot(slot));
-		if (d == null || d.flags == null) return 0;
-		for (String flag : d.flags) {
-			if (flag != null && flag.startsWith("SHOP_POINTS:")) {
-				try {
-					return Math.max(0, Integer.parseInt(flag.substring("SHOP_POINTS:".length()).trim()));
-				} catch (NumberFormatException ignored) {
-					return 0;
-				}
-			}
-		}
-		return 0;
-	}
-
-	/** Ejecuta un autoguardado en SQLite solo si la sesion actual pertenece al modo historia. */
-	public static void autoSaveIfStory() {
-		if (!isDebugSession && !launchedFromMenu) {
-			saveGame();
-		}
-	}
-
-	/** Guarda el estado actual en la ranura activa de SQLite usando la escena y posicion en curso. */
-	public static void saveGame() {
-		saveGame(currentScenePath, returnPlayerX, returnPlayerY);
+		return getSaveSlotSummary(slot).shopPoints;
 	}
 
 	/** Persiste el estado completo de la partida en la ranura activa de la base de datos SQLite. */
-	public static void saveGame(String scenePath, float playerX, float playerY) {
+	public static void saveGame() {
 		init();
-		String relScene = toRelativeProjectPath(
-			(scenePath != null && !scenePath.isEmpty()) ? scenePath : currentScenePath
-		);
-		currentScenePath = relScene;
-
-		_flags.removeIf(f -> f != null && f.startsWith("SHOP_POINTS:"));
-		_flags.add("SHOP_POINTS:" + shopPoints);
-
 		Set<String> equippedSet = new LinkedHashSet<>(getEquippedPowerUps());
 		SaveRepository.saveState(
 			activeSaveSlot,
-			relScene,
-			playerX,
-			playerY,
-			toRelativeProjectPath(returnScenePath),
-			returnPlayerX,
-			returnPlayerY,
+			shopPoints,
 			healStrategy,
 			_flags,
 			_inventory,
@@ -932,23 +769,12 @@ public class GameState {
 
 		reset();
 
-		currentScenePath = toRelativeProjectPath(data.scenePath);
-		returnScenePath = toRelativeProjectPath(data.returnScenePath);
-		returnPlayerX = data.returnX;
-		returnPlayerY = data.returnY;
+		shopPoints = Math.max(0, data.shopPoints);
 		healStrategy = (data.healStrategy != null) ? data.healStrategy : HealStrategy.OPTIMAL;
 
-		shopPoints = 0;
 		for (String flag : data.flags) {
-			if (flag != null && flag.startsWith("SHOP_POINTS:")) {
-				try {
-					shopPoints = Math.max(0, Integer.parseInt(flag.substring("SHOP_POINTS:".length()).trim()));
-				} catch (NumberFormatException ignored) {}
-			}
 			defineFlag(flag);
 		}
-		_flags.removeIf(f -> f != null && f.startsWith("SHOP_POINTS:"));
-		_flags.add("SHOP_POINTS:" + shopPoints);
 
 		_inventory.clear();
 		for (Map.Entry<String, Integer> entry : data.inventory.entrySet()) {
@@ -966,37 +792,19 @@ public class GameState {
 			}
 		}
 		syncPrimaryEquipped();
-		setPendingSpawn(data.playerX, data.playerY);
 		return true;
 	}
 
-	/** Inicia una nueva partida en la ranura activa con el modo de campana clasico (Hub). */
+	/** Inicia una nueva partida en la ranura activa. */
 	public static void startNewGame() {
-		startNewGame(activeSaveSlot, CampaignMode.CLASSIC);
-	}
-
-	/** Inicia una nueva partida en la ranura indicada con el modo de campana clasico (Hub). */
-	public static void startNewGame(int slot) {
-		startNewGame(slot, CampaignMode.CLASSIC);
+		startNewGame(activeSaveSlot);
 	}
 
 	/** Reinicia el progreso e inicializa un nuevo registro de partida en SQLite para la ranura dada. */
-	public static void startNewGame(int slot, CampaignMode mode) {
+	public static void startNewGame(int slot) {
 		setActiveSaveSlot(slot);
 		reset();
-		if (mode == CampaignMode.EXPLORATION) {
-			currentScenePath = "resources/scenes/re_mansion.xml";
-			returnScenePath = "resources/scenes/re_mansion.xml";
-			returnPlayerX = 1824.0f;
-			returnPlayerY = 1984.0f;
-		} else {
-			currentScenePath = "resources/scenes/hub.xml";
-			returnScenePath = "resources/scenes/hub.xml";
-			returnPlayerX = 256.0f;
-			returnPlayerY = 224.0f;
-		}
-		hasPendingSpawn = false;
-		SaveRepository.createNewGame(activeSaveSlot, currentScenePath, returnPlayerX, returnPlayerY, _inventory);
+		SaveRepository.createNewGame(activeSaveSlot, _inventory);
 	}
 
 	// =========================================================================

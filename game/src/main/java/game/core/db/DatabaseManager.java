@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,8 +28,9 @@ import processing.data.JSONObject;
  * <p>Responsabilidades sobre el esquema ({@code resources/db/schema.sql}):
  * <ul>
  *   <li>Configurar conexiones JDBC con {@code PRAGMA foreign_keys = ON}, {@code WAL} y {@code busy_timeout}.</li>
+ *   <li>Migrar automáticamente bases de datos locales existentes al esquema limpio de 9 tablas en 3FN.</li>
  *   <li>Ejecutar el script DDL/DML completo (tablas, índices, triggers con bloques {@code BEGIN...CASE...END} y vistas).</li>
- *   <li>Registrar dinámicamente salas en {@code ZONAS} e ítems en {@code CATALOGO_ITEMS}.</li>
+ *   <li>Registrar dinámicamente ítems y amuletos en {@code CATALOGO_ITEMS}.</li>
  *   <li>Ejecutar la migración única desde archivos JSON legacy ({@code .save}) controlada por {@code DB_META}.</li>
  * </ul>
  */
@@ -86,6 +86,8 @@ public class DatabaseManager {
 				st.execute("PRAGMA busy_timeout = 3000");
 			}
 
+			upgradeExistingSchemaIfNeeded(conn);
+
 			String sql = Files.readString(Path.of(schemaFilePath), StandardCharsets.UTF_8);
 			executeSqlScript(conn, sql);
 
@@ -123,6 +125,195 @@ public class DatabaseManager {
 
 	private static Connection openRawConnection() throws SQLException {
 		return DriverManager.getConnection(_jdbcUrl);
+	}
+
+	// =========================================================================
+	// Migración Automática de Esquema Legacy (Hub/Jefes -> Rítmico + Tienda 3FN)
+	// =========================================================================
+
+	/**
+	 * Actualiza una base de datos {@code combo6beat.db} previa al nuevo esquema limpio de 9 tablas en 3FN
+	 * conservando partidas, puntos de tienda, estrategias de curación, flags e inventario de objetos.
+	 */
+	private static void upgradeExistingSchemaIfNeeded(Connection conn) throws SQLException {
+		boolean hasPartidas = false;
+		boolean hasPuntosTienda = false;
+		boolean hasZonas = false;
+		boolean hasCatalogoItems = false;
+		boolean hasPrecioTienda = false;
+
+		try (Statement st = conn.createStatement()) {
+			try (ResultSet rs = st.executeQuery("PRAGMA table_info(PARTIDAS)")) {
+				while (rs.next()) {
+					hasPartidas = true;
+					if ("puntos_tienda".equalsIgnoreCase(rs.getString("name"))) {
+						hasPuntosTienda = true;
+					}
+				}
+			}
+			try (ResultSet rs = st.executeQuery(
+				"SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('ZONAS', 'CATALOGO_BATALLAS', 'BATALLAS_VENCIDAS', 'ENEMIGOS')")) {
+				if (rs.next()) {
+					hasZonas = true;
+				}
+			}
+			try (ResultSet rs = st.executeQuery("PRAGMA table_info(CATALOGO_ITEMS)")) {
+				while (rs.next()) {
+					hasCatalogoItems = true;
+					if ("precio_tienda".equalsIgnoreCase(rs.getString("name"))) {
+						hasPrecioTienda = true;
+					}
+				}
+			}
+		}
+
+		boolean needsMigration = (hasPartidas && !hasPuntosTienda) || hasZonas || (hasCatalogoItems && !hasPrecioTienda);
+		if (!needsMigration) {
+			return;
+		}
+
+		try (Statement st = conn.createStatement()) {
+			st.execute("PRAGMA foreign_keys = OFF");
+			boolean prevAutoCommit = conn.getAutoCommit();
+			conn.setAutoCommit(false);
+			try {
+				// 1. Eliminar todas las vistas y triggers existentes antes de recrear tablas
+				//    (SQLite valida todos los triggers del esquema durante ALTER TABLE ... RENAME TO;
+				//     schema.sql recreará inmediatamente las 6 vistas y los 12 triggers actualizados)
+				List<String> existingViews = new ArrayList<>();
+				try (ResultSet rs = st.executeQuery("SELECT name FROM sqlite_master WHERE type = 'view'")) {
+					while (rs.next()) {
+						existingViews.add(rs.getString(1));
+					}
+				}
+				for (String view : existingViews) {
+					st.execute("DROP VIEW IF EXISTS \"" + view.replace("\"", "\"\"") + "\"");
+				}
+
+				List<String> existingTriggers = new ArrayList<>();
+				try (ResultSet rs = st.executeQuery("SELECT name FROM sqlite_master WHERE type = 'trigger'")) {
+					while (rs.next()) {
+						existingTriggers.add(rs.getString(1));
+					}
+				}
+				for (String trg : existingTriggers) {
+					st.execute("DROP TRIGGER IF EXISTS \"" + trg.replace("\"", "\"\"") + "\"");
+				}
+
+				// 2. Migrar tabla PARTIDAS extrayendo puntos_tienda desde FLAGS_PARTIDA (SHOP_POINTS:*)
+				if (hasPartidas && !hasPuntosTienda) {
+					st.execute("DROP TABLE IF EXISTS PARTIDAS_NEW");
+					st.execute(
+						"CREATE TABLE PARTIDAS_NEW (" +
+						"id_partida INTEGER PRIMARY KEY AUTOINCREMENT, " +
+						"slot INTEGER NOT NULL UNIQUE CHECK (slot BETWEEN 1 AND 4), " +
+						"puntos_tienda INTEGER NOT NULL DEFAULT 0 CHECK (puntos_tienda >= 0), " +
+						"heal_strategy TEXT NOT NULL DEFAULT 'OPTIMAL' CHECK (heal_strategy IN ('OPTIMAL', 'MINIMAL')), " +
+						"fecha_creacion TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
+						"fecha_actualizacion TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+					);
+
+					boolean hasFlagsTable = false;
+					try (ResultSet rs = st.executeQuery(
+						"SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'FLAGS_PARTIDA'")) {
+						hasFlagsTable = rs.next();
+					}
+
+					if (hasFlagsTable) {
+						st.execute(
+							"INSERT INTO PARTIDAS_NEW (id_partida, slot, puntos_tienda, heal_strategy, fecha_creacion, fecha_actualizacion) " +
+							"SELECT p.id_partida, p.slot, " +
+							"MAX(0, COALESCE((SELECT MAX(CAST(SUBSTR(fp.flag_nombre, 13) AS INTEGER)) " +
+							"FROM FLAGS_PARTIDA fp WHERE fp.id_partida = p.id_partida AND fp.flag_nombre LIKE 'SHOP_POINTS:%'), 0)), " +
+							"CASE WHEN p.heal_strategy IN ('OPTIMAL', 'MINIMAL') THEN p.heal_strategy ELSE 'OPTIMAL' END, " +
+							"COALESCE(p.fecha_creacion, CURRENT_TIMESTAMP), " +
+							"COALESCE(p.fecha_actualizacion, CURRENT_TIMESTAMP) " +
+							"FROM PARTIDAS p"
+						);
+						st.execute("DELETE FROM FLAGS_PARTIDA WHERE flag_nombre LIKE 'SHOP_POINTS:%'");
+					} else {
+						st.execute(
+							"INSERT INTO PARTIDAS_NEW (id_partida, slot, puntos_tienda, heal_strategy, fecha_creacion, fecha_actualizacion) " +
+							"SELECT p.id_partida, p.slot, 0, " +
+							"CASE WHEN p.heal_strategy IN ('OPTIMAL', 'MINIMAL') THEN p.heal_strategy ELSE 'OPTIMAL' END, " +
+							"COALESCE(p.fecha_creacion, CURRENT_TIMESTAMP), " +
+							"COALESCE(p.fecha_actualizacion, CURRENT_TIMESTAMP) " +
+							"FROM PARTIDAS p"
+						);
+					}
+
+					st.execute("DROP TABLE PARTIDAS");
+					st.execute("ALTER TABLE PARTIDAS_NEW RENAME TO PARTIDAS");
+				}
+
+				// 3. Limpiar categoría legacy 'KEY' y actualizar CATALOGO_ITEMS con precio_tienda
+				if (hasCatalogoItems) {
+					st.execute(
+						"DELETE FROM OBJETOS_OBTENIDOS WHERE id_item IN (" +
+						"SELECT id_item FROM CATALOGO_ITEMS WHERE categoria = 'KEY') OR id_item LIKE 'key_%'"
+					);
+					st.execute(
+						"DELETE FROM HISTORIAL_OBJETOS WHERE id_item IN (" +
+						"SELECT id_item FROM CATALOGO_ITEMS WHERE categoria = 'KEY') OR id_item LIKE 'key_%'"
+					);
+					st.execute(
+						"DELETE FROM CANCION_OBJETOS_INTENTO WHERE id_item IN (" +
+						"SELECT id_item FROM CATALOGO_ITEMS WHERE categoria = 'KEY') OR id_item LIKE 'key_%'"
+					);
+					st.execute("DELETE FROM CATALOGO_ITEMS WHERE categoria = 'KEY' OR id_item LIKE 'key_%'");
+
+					st.execute("DROP TABLE IF EXISTS CATALOGO_ITEMS_NEW");
+					st.execute(
+						"CREATE TABLE CATALOGO_ITEMS_NEW (" +
+						"id_item TEXT PRIMARY KEY, " +
+						"nombre TEXT NOT NULL, " +
+						"categoria TEXT NOT NULL CHECK (categoria IN ('HEAL', 'POWERUP', 'AMULET', 'MISC')), " +
+						"curacion_hp INTEGER NOT NULL DEFAULT 0 CHECK (curacion_hp >= 0), " +
+						"precio_tienda INTEGER NOT NULL DEFAULT 0 CHECK (precio_tienda >= 0), " +
+						"descripcion TEXT NOT NULL DEFAULT '')"
+					);
+
+					if (hasPrecioTienda) {
+						st.execute(
+							"INSERT INTO CATALOGO_ITEMS_NEW (id_item, nombre, categoria, curacion_hp, precio_tienda, descripcion) " +
+							"SELECT id_item, nombre, " +
+							"CASE WHEN categoria IN ('HEAL', 'POWERUP', 'AMULET', 'MISC') THEN categoria ELSE 'MISC' END, " +
+							"MAX(0, COALESCE(curacion_hp, 0)), MAX(0, COALESCE(precio_tienda, 0)), COALESCE(descripcion, '') " +
+							"FROM CATALOGO_ITEMS"
+						);
+					} else {
+						st.execute(
+							"INSERT INTO CATALOGO_ITEMS_NEW (id_item, nombre, categoria, curacion_hp, precio_tienda, descripcion) " +
+							"SELECT id_item, nombre, " +
+							"CASE WHEN categoria IN ('HEAL', 'POWERUP', 'AMULET', 'MISC') THEN categoria ELSE 'MISC' END, " +
+							"MAX(0, COALESCE(curacion_hp, 0)), 0, COALESCE(descripcion, '') " +
+							"FROM CATALOGO_ITEMS"
+						);
+					}
+
+					st.execute("DROP TABLE CATALOGO_ITEMS");
+					st.execute("ALTER TABLE CATALOGO_ITEMS_NEW RENAME TO CATALOGO_ITEMS");
+				}
+
+				// 4. Eliminar tablas e índices legacy del Hub y batallas RPG
+				st.execute("DROP INDEX IF EXISTS idx_batallas_vencidas_partida");
+				st.execute("DROP INDEX IF EXISTS idx_enemigos_zona_pos");
+				st.execute("DROP TABLE IF EXISTS ENEMIGOS");
+				st.execute("DROP TABLE IF EXISTS BATALLAS_VENCIDAS");
+				st.execute("DROP TABLE IF EXISTS CATALOGO_BATALLAS");
+				st.execute("DROP TABLE IF EXISTS ZONAS");
+
+				conn.commit();
+			} catch (SQLException e) {
+				try {
+					conn.rollback();
+				} catch (SQLException ignored) {}
+				throw e;
+			} finally {
+				conn.setAutoCommit(prevAutoCommit);
+				st.execute("PRAGMA foreign_keys = ON");
+			}
+		}
 	}
 
 	// =========================================================================
@@ -255,12 +446,12 @@ public class DatabaseManager {
 	}
 
 	// =========================================================================
-	// Normalización de Rutas y Registro en Catálogos 3FN (ZONAS, CATALOGO_ITEMS)
+	// Normalización de Rutas y Registro en Catálogo 3FN (CATALOGO_ITEMS)
 	// =========================================================================
 
 	/**
 	 * Normaliza cualquier ruta a formato relativo respecto al directorio del proyecto,
-	 * cumpliendo los triggers de validación de rutas relativas ({@code trg_canciones_validar_*}, {@code trg_enemigos_validar_*}).
+	 * cumpliendo los triggers de validación de rutas relativas ({@code trg_canciones_validar_*}, {@code trg_records_validar_*}).
 	 */
 	public static String toRelativeProjectPath(String path) {
 		if (path == null) return "";
@@ -285,68 +476,6 @@ public class DatabaseManager {
 	}
 
 	/**
-	 * Garantiza que la escena XML exista en la tabla catálogo {@code ZONAS} y devuelve su {@code id_zona}.
-	 *
-	 * <p>Tablas tocadas: {@code ZONAS} ({@code SELECT} por {@code escena_xml_relativa} e {@code INSERT} si es una sala nueva).
-	 */
-	public static String ensureZoneRegistered(Connection conn, String sceneRelPath) throws SQLException {
-		String rel = toRelativeProjectPath(sceneRelPath);
-		if (rel.isEmpty()) rel = "resources/scenes/hub.xml";
-
-		try (PreparedStatement ps = conn.prepareStatement(
-			"SELECT id_zona FROM ZONAS WHERE escena_xml_relativa = ?")) {
-			ps.setString(1, rel);
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					return rs.getString(1);
-				}
-			}
-		}
-
-		String baseName = new File(rel).getName();
-		int dot = baseName.lastIndexOf('.');
-		String slug = (dot > 0 ? baseName.substring(0, dot) : baseName)
-			.toLowerCase(Locale.ROOT)
-			.replaceAll("[^a-z0-9_]+", "_");
-		if (slug.isEmpty()) slug = "zona_custom";
-
-		String zoneId = slug;
-		int suffix = 1;
-		while (zoneIdExists(conn, zoneId)) {
-			zoneId = slug + "_" + (++suffix);
-		}
-
-		String label = inferZoneLabel(rel);
-		try (PreparedStatement ins = conn.prepareStatement(
-			"INSERT INTO ZONAS (id_zona, nombre, escena_xml_relativa, orden_progresion) VALUES (?, ?, ?, 50)")) {
-			ins.setString(1, zoneId);
-			ins.setString(2, label);
-			ins.setString(3, rel);
-			ins.executeUpdate();
-		}
-		return zoneId;
-	}
-
-	private static boolean zoneIdExists(Connection conn, String zoneId) throws SQLException {
-		try (PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM ZONAS WHERE id_zona = ?")) {
-			ps.setString(1, zoneId);
-			try (ResultSet rs = ps.executeQuery()) {
-				return rs.next();
-			}
-		}
-	}
-
-	private static String inferZoneLabel(String relScene) {
-		if (relScene.endsWith("hub.xml")) return "El Hub";
-		if (relScene.endsWith("beach_ruins.xml")) return "Beach";
-		if (relScene.endsWith("swamp.xml")) return "Swamp (Pantano)";
-		if (relScene.endsWith("a.xml")) return "Sala de Pruebas";
-		String fileName = new File(relScene).getName();
-		int dot = fileName.lastIndexOf('.');
-		return (dot > 0) ? fileName.substring(0, dot) : fileName;
-	}
-
-	/**
 	 * Registra un objeto o amuleto en la tabla {@code CATALOGO_ITEMS} si aún no existe ({@code INSERT OR IGNORE}).
 	 *
 	 * <p>Tablas tocadas: {@code CATALOGO_ITEMS}.
@@ -354,18 +483,19 @@ public class DatabaseManager {
 	public static void ensureItemRegistered(Connection conn, GameState.ItemDef def) throws SQLException {
 		if (def == null || def.id == null || def.id.isEmpty()) return;
 		try (PreparedStatement ps = conn.prepareStatement(
-			"INSERT OR IGNORE INTO CATALOGO_ITEMS (id_item, nombre, categoria, curacion_hp, descripcion) VALUES (?, ?, ?, ?, ?)")) {
+			"INSERT OR IGNORE INTO CATALOGO_ITEMS (id_item, nombre, categoria, curacion_hp, precio_tienda, descripcion) VALUES (?, ?, ?, ?, ?, ?)")) {
 			ps.setString(1, def.id);
 			ps.setString(2, def.name != null ? def.name : def.id);
 			ps.setString(3, def.category != null ? def.category.name() : "MISC");
 			ps.setInt(4, Math.max(0, def.healAmount));
-			ps.setString(5, def.description != null ? def.description : "");
+			ps.setInt(5, Math.max(0, def.shopPrice));
+			ps.setString(6, def.description != null ? def.description : "");
 			ps.executeUpdate();
 		}
 	}
 
 	// =========================================================================
-	// Migración Única de Archivos Legacy (.save) y Deducción de Estado General
+	// Migración Única de Archivos Legacy (.save)
 	// =========================================================================
 
 	/**
@@ -374,8 +504,8 @@ public class DatabaseManager {
 	 * <p>Tablas y triggers involucrados:
 	 * <ul>
 	 *   <li>{@code DB_META}: consulta y marca {@code legacy_saves_migrated = '1'}.</li>
-	 *   <li>{@code CATALOGO_ITEMS} y {@code CATALOGO_BATALLAS}: sincroniza ítems y mapea {@code defeat_flag -> id_batalla}.</li>
-	 *   <li>{@code PARTIDAS}, {@code FLAGS_PARTIDA}, {@code BATALLAS_VENCIDAS} (activa {@code trg_batallas_progreso_insert})
+	 *   <li>{@code CATALOGO_ITEMS}: sincroniza definiciones de ítems y amuletos.</li>
+	 *   <li>{@code PARTIDAS}, {@code FLAGS_PARTIDA}, {@code RECORDS_CANCIONES}
 	 *       y {@code OBJETOS_OBTENIDOS} (activa {@code trg_objetos_audit_insert} hacia {@code HISTORIAL_OBJETOS}).</li>
 	 * </ul>
 	 */
@@ -389,18 +519,9 @@ public class DatabaseManager {
 			}
 		}
 
-		// Asegura catálogo base de ítems antes de migrar
 		GameState.ensureCatalogLoaded();
 		for (GameState.ItemDef def : GameState.getCatalogSnapshot()) {
 			ensureItemRegistered(conn, def);
-		}
-
-		Map<String, String> battleByFlag = new HashMap<>();
-		try (PreparedStatement ps = conn.prepareStatement("SELECT defeat_flag, id_batalla FROM CATALOGO_BATALLAS");
-			 ResultSet rs = ps.executeQuery()) {
-			while (rs.next()) {
-				battleByFlag.put(rs.getString(1), rs.getString(2));
-			}
 		}
 
 		boolean prevAutoCommit = conn.getAutoCommit();
@@ -425,41 +546,33 @@ public class DatabaseManager {
 				JSONObject json = JSONObject.parse(raw);
 				if (json == null) continue;
 
-				String sceneRel = toRelativeProjectPath(json.getString("Scene", "resources/scenes/hub.xml"));
-				String returnRel = toRelativeProjectPath(json.getString("ReturnScene", sceneRel));
-				String zoneId = ensureZoneRegistered(conn, sceneRel);
-				String retZoneId = ensureZoneRegistered(conn, returnRel);
-				float px = json.getFloat("PlayerX", 256.0f);
-				float py = json.getFloat("PlayerY", 224.0f);
-				float rx = json.getFloat("ReturnX", px);
-				float ry = json.getFloat("ReturnY", py);
-
 				String healStrat = json.getString("HealStrategy", "OPTIMAL");
 				if (!"MINIMAL".equals(healStrat)) healStrat = "OPTIMAL";
 
+				int shopPoints = Math.max(0, json.getInt("ShopPoints", 0));
 				Set<String> flags = new LinkedHashSet<>();
 				JSONArray flagsArr = json.getJSONArray("Flags");
 				if (flagsArr != null) {
 					for (int i = 0; i < flagsArr.size(); i++) {
 						String f = flagsArr.getString(i, "");
-						if (!f.isEmpty()) flags.add(f);
+						if (f == null || f.isEmpty()) continue;
+						if (f.startsWith("SHOP_POINTS:")) {
+							try {
+								shopPoints = Math.max(shopPoints, Integer.parseInt(f.substring("SHOP_POINTS:".length()).trim()));
+							} catch (NumberFormatException ignored) {}
+						} else {
+							flags.add(f);
+						}
 					}
 				}
 
-				String status = inferGeneralState(flags);
 				long partidaId;
 				try (PreparedStatement ins = conn.prepareStatement(
-					"INSERT INTO PARTIDAS (slot, id_zona_actual, player_x, player_y, id_zona_retorno, return_x, return_y, heal_strategy, estado_general) " +
-					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+					"INSERT INTO PARTIDAS (slot, puntos_tienda, heal_strategy) VALUES (?, ?, ?)",
+					Statement.RETURN_GENERATED_KEYS)) {
 					ins.setInt(1, dbSlot);
-					ins.setString(2, zoneId);
-					ins.setFloat(3, px);
-					ins.setFloat(4, py);
-					ins.setString(5, retZoneId);
-					ins.setFloat(6, rx);
-					ins.setFloat(7, ry);
-					ins.setString(8, healStrat);
-					ins.setString(9, status);
+					ins.setInt(2, Math.max(0, shopPoints));
+					ins.setString(3, healStrat);
 					ins.executeUpdate();
 					try (ResultSet keys = ins.getGeneratedKeys()) {
 						if (!keys.next()) continue;
@@ -477,18 +590,20 @@ public class DatabaseManager {
 					insFlag.executeBatch();
 				}
 
-				// Registrar batallas vencidas según defeat_flag migrados
-				try (PreparedStatement insBat = conn.prepareStatement(
-					"INSERT OR IGNORE INTO BATALLAS_VENCIDAS (id_partida, id_batalla) VALUES (?, ?)")) {
+				// Si el archivo legacy tenía flags de pistas/jefes vencidos, migrarlos como registros en RECORDS_CANCIONES
+				try (PreparedStatement insRec = conn.prepareStatement(
+					"INSERT OR IGNORE INTO RECORDS_CANCIONES (id_partida, clave_cancion, titulo, intentos_totales, victorias_totales) " +
+					"VALUES (?, ?, ?, 1, 1)")) {
 					for (String flag : flags) {
-						String idBat = battleByFlag.get(flag);
-						if (idBat != null) {
-							insBat.setLong(1, partidaId);
-							insBat.setString(2, idBat);
-							insBat.addBatch();
+						if (flag.startsWith("BOSS_") && flag.endsWith("_DEFEATED")) {
+							String songKey = "legacy/" + flag.toLowerCase(Locale.ROOT);
+							insRec.setLong(1, partidaId);
+							insRec.setString(2, songKey);
+							insRec.setString(3, flag);
+							insRec.addBatch();
 						}
 					}
-					insBat.executeBatch();
+					insRec.executeBatch();
 				}
 
 				Set<String> equipped = new LinkedHashSet<>();
@@ -512,6 +627,7 @@ public class DatabaseManager {
 						Map<String, Integer> invMap = new LinkedHashMap<>();
 						for (Object keyObj : invObj.keys()) {
 							String itemId = String.valueOf(keyObj);
+							if (itemId.startsWith("key_")) continue;
 							int count = invObj.getInt(itemId, 0);
 							if (count > 0) {
 								invMap.put(itemId, count);
@@ -544,17 +660,5 @@ public class DatabaseManager {
 		} finally {
 			conn.setAutoCommit(prevAutoCommit);
 		}
-	}
-
-	/**
-	 * Deduce el valor de {@code PARTIDAS.estado_general} a partir de los flags narrativos de la partida.
-	 */
-	public static String inferGeneralState(Set<String> flags) {
-		if (flags != null) {
-			if (flags.contains("GAME_ENDING_TRUE")) return "FINAL_VERDADERO";
-			if (flags.contains("GAME_ENDING_NORMAL")) return "FINAL_NORMAL";
-			if (flags.contains("LOOP_EXHAUSTED_MODE")) return "BUCLE_AGOTADO";
-		}
-		return "EN_PROGRESO";
 	}
 }

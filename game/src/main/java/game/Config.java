@@ -106,46 +106,24 @@ public class Config {
 	}
 
 	// =========================================================================
-	// KEYBINDINGS DE MOVIMIENTO EN HUB Y NAVEGACION DE MENUS / DIALOGOS
+	// KEYBINDINGS DE NAVEGACION DE MENUS
 	// =========================================================================
 
-	/** Indices de accion compartidos para movimiento por casillas en el Hub y navegacion de UI. */
+	/** Indices de accion para navegacion de UI. */
 	public static final int UP = 0;
 	public static final int DOWN = 1;
 	public static final int LEFT = 2;
 	public static final int RIGHT = 3;
 	public static final int INTERACT = 4;
 	public static final int CANCEL = 5;
-	public static final int SPRINT = 5;
-	public static final int PULSE = 6;
 
-	/** Asignaciones por defecto para movimiento en el Hub (7 acciones: Arriba, Abajo, Izq, Der, Interactuar, Sprint, Pulso). */
-	private static final int[] DEFAULT_RPG = { 'W', 'S', 'A', 'D', 'E', 16, 32 };
-	private static final int[] DEFAULT_RPG_ALT = { 38, 40, 37, 39, 10, 16, 'J' };
-
-	/** Asignaciones por defecto para navegacion de menus y dialogos (6 acciones: Arriba, Abajo, Izq, Der, Aceptar, Cancelar). */
+	/** Asignaciones por defecto para navegacion de menus (6 acciones: Arriba, Abajo, Izq, Der, Aceptar, Cancelar). */
 	private static final int[] DEFAULT_UI = { 'W', 'S', 'A', 'D', 32, 27 };
 	private static final int[] DEFAULT_UI_ALT = { 38, 40, 37, 39, 10, 8 };
 
-	/** Teclas primarias y alternativas para movimiento e interaccion en el Hub (`HubScene`). */
-	public static final int[] RPGButtons = DEFAULT_RPG.clone();
-	public static final int[] RPGAltButtons = DEFAULT_RPG_ALT.clone();
-
-	/** Teclas primarias y alternativas para navegacion en menus (`InitScene`) y dialogos. */
+	/** Teclas primarias y alternativas para navegacion en menus (`InitScene`). */
 	public static final int[] UIButtons = DEFAULT_UI.clone();
 	public static final int[] UIAltButtons = DEFAULT_UI_ALT.clone();
-
-	/** Comprueba si una accion de movimiento/Hub se mantiene presionada. */
-	public static boolean isRPGKeyDown(int actionIndex) {
-		return KBInput.isKeyDown(RPGButtons[actionIndex])
-			|| KBInput.isKeyDown(RPGAltButtons[actionIndex]);
-	}
-
-	/** Comprueba si una accion de movimiento/Hub fue pulsada en el frame actual. */
-	public static boolean wasRPGKeyJustPressed(int actionIndex) {
-		return KBInput.wasKeyJustPressed(RPGButtons[actionIndex])
-			|| KBInput.wasKeyJustPressed(RPGAltButtons[actionIndex]);
-	}
 
 	/** Intervalo general para repeticion de teclas mantenidas en UI (segundos). */
 	public static final float UI_REPEAT_INITIAL_DELAY = 0.32f;
@@ -198,12 +176,10 @@ public class Config {
 		}
 	}
 
-	/** Restaura todas las asignaciones de teclas (ROTN, Hub y UI) a sus valores de fabrica. */
+	/** Restaura todas las asignaciones de teclas (ROTN y UI) a sus valores de fabrica. */
 	public static void resetDefaultControls() {
 		System.arraycopy(DEFAULT_RHYTHM, 0, RhythmButtons, 0, DEFAULT_RHYTHM.length);
 		System.arraycopy(DEFAULT_RHYTHM_ALT, 0, RhythmAltButtons, 0, DEFAULT_RHYTHM_ALT.length);
-		System.arraycopy(DEFAULT_RPG, 0, RPGButtons, 0, DEFAULT_RPG.length);
-		System.arraycopy(DEFAULT_RPG_ALT, 0, RPGAltButtons, 0, DEFAULT_RPG_ALT.length);
 		System.arraycopy(DEFAULT_UI, 0, UIButtons, 0, DEFAULT_UI.length);
 		System.arraycopy(DEFAULT_UI_ALT, 0, UIAltButtons, 0, DEFAULT_UI_ALT.length);
 	}
@@ -279,13 +255,6 @@ public class Config {
 			if (uiCtrl.hasKey("Acept")) UIButtons[INTERACT] = uiCtrl.getInt("Acept", UIButtons[INTERACT]);
 			if (uiCtrl.hasKey("AltAcept")) UIAltButtons[INTERACT] = uiCtrl.getInt("AltAcept", UIAltButtons[INTERACT]);
 		}
-
-		String[] rpgNames = { "Up", "Down", "Left", "Right", "Interact", "Sprint", "Pulse" };
-		JSONObject rpgCtrl = json.getJSONObject("ControlRPG");
-		if (rpgCtrl == null) {
-			rpgCtrl = json.getJSONObject("ControlWorld");
-		}
-		loadKeyArray(rpgCtrl, RPGButtons, RPGAltButtons, rpgNames);
 	}
 
 	/** Guarda la configuracion actual de audio, video y controles en el archivo JSON indicado. */
@@ -309,10 +278,6 @@ public class Config {
 		json.setJSONObject(
 			"ControlUI",
 			saveKeyArray(UIButtons, UIAltButtons, new String[] { "Up", "Down", "Left", "Right", "Accept", "Cancel" })
-		);
-		json.setJSONObject(
-			"ControlRPG",
-			saveKeyArray(RPGButtons, RPGAltButtons, new String[] { "Up", "Down", "Left", "Right", "Interact", "Sprint", "Pulse" })
 		);
 
 		Engine.getApp().saveJSONObject(json, path);

@@ -14,80 +14,44 @@ CREATE TABLE IF NOT EXISTS DB_META (
     valor TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS ZONAS (
-    id_zona             TEXT PRIMARY KEY,
-    nombre              TEXT NOT NULL,
-    escena_xml_relativa TEXT NOT NULL UNIQUE,
-    orden_progresion    INTEGER NOT NULL DEFAULT 0
-);
-
 CREATE TABLE IF NOT EXISTS CATALOGO_ITEMS (
-    id_item     TEXT PRIMARY KEY,
-    nombre      TEXT NOT NULL,
-    categoria   TEXT NOT NULL CHECK (categoria IN ('HEAL', 'KEY', 'POWERUP', 'AMULET', 'MISC')),
-    curacion_hp INTEGER NOT NULL DEFAULT 0 CHECK (curacion_hp >= 0),
-    descripcion TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS CATALOGO_BATALLAS (
-    id_batalla              TEXT PRIMARY KEY,
-    boss_id                 TEXT NOT NULL UNIQUE,
-    boss_nombre             TEXT NOT NULL,
-    especie                 TEXT NOT NULL DEFAULT '',
-    defeat_flag             TEXT NOT NULL UNIQUE,
-    escena_combate_relativa TEXT NOT NULL,
-    id_zona                 TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
-    id_item_recompensa      TEXT NULL REFERENCES CATALOGO_ITEMS(id_item) ON UPDATE CASCADE ON DELETE SET NULL,
-    id_amuleto_score        TEXT NULL REFERENCES CATALOGO_ITEMS(id_item) ON UPDATE CASCADE ON DELETE SET NULL,
-    puntaje_minimo_amuleto  INTEGER NOT NULL DEFAULT 0 CHECK (puntaje_minimo_amuleto >= 0),
-    es_historia_principal   INTEGER NOT NULL DEFAULT 1 CHECK (es_historia_principal IN (0, 1))
-);
-
-CREATE TABLE IF NOT EXISTS ENEMIGOS (
-    id_enemigo          TEXT PRIMARY KEY,
-    nombre              TEXT NOT NULL,
-    especie             TEXT NOT NULL DEFAULT '',
-    id_zona             TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
-    hub_x               INTEGER NOT NULL DEFAULT 0 CHECK (hub_x >= 0),
-    hub_y               INTEGER NOT NULL DEFAULT 0 CHECK (hub_y >= 0),
-    cancion_referencia  TEXT NOT NULL,
-    sprite_relativo     TEXT NOT NULL DEFAULT '',
-    id_batalla          TEXT NULL UNIQUE REFERENCES CATALOGO_BATALLAS(id_batalla) ON UPDATE CASCADE ON DELETE SET NULL
+    id_item       TEXT PRIMARY KEY,
+    nombre        TEXT NOT NULL,
+    categoria     TEXT NOT NULL CHECK (categoria IN ('HEAL', 'POWERUP', 'AMULET', 'MISC')),
+    curacion_hp   INTEGER NOT NULL DEFAULT 0 CHECK (curacion_hp >= 0),
+    precio_tienda INTEGER NOT NULL DEFAULT 0 CHECK (precio_tienda >= 0),
+    descripcion   TEXT NOT NULL DEFAULT ''
 );
 
 -- -----------------------------------------------------------------------------
--- 2. Módulo de Partidas (Historia RPG + Progreso)
+-- 2. Módulo de Partidas, Récords de Canciones e Inventario
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS PARTIDAS (
     id_partida          INTEGER PRIMARY KEY AUTOINCREMENT,
     slot                INTEGER NOT NULL UNIQUE CHECK (slot BETWEEN 1 AND 4),
-    id_zona_actual      TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
-    player_x            REAL NOT NULL DEFAULT 256.0,
-    player_y            REAL NOT NULL DEFAULT 224.0,
-    id_zona_retorno     TEXT NOT NULL REFERENCES ZONAS(id_zona) ON UPDATE CASCADE ON DELETE RESTRICT,
-    return_x            REAL NOT NULL DEFAULT 256.0,
-    return_y            REAL NOT NULL DEFAULT 224.0,
+    puntos_tienda       INTEGER NOT NULL DEFAULT 0 CHECK (puntos_tienda >= 0),
     heal_strategy       TEXT NOT NULL DEFAULT 'OPTIMAL' CHECK (heal_strategy IN ('OPTIMAL', 'MINIMAL')),
-    estado_general      TEXT NOT NULL DEFAULT 'EN_PROGRESO' CHECK (estado_general IN ('EN_PROGRESO', 'FINAL_NORMAL', 'FINAL_VERDADERO', 'BUCLE_AGOTADO')),
-    progreso_porcentaje REAL NOT NULL DEFAULT 0.0 CHECK (progreso_porcentaje >= 0.0 AND progreso_porcentaje <= 100.0),
     fecha_creacion      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS BATALLAS_VENCIDAS (
-    id_partida              INTEGER NOT NULL REFERENCES PARTIDAS(id_partida) ON DELETE CASCADE,
-    id_batalla              TEXT NOT NULL REFERENCES CATALOGO_BATALLAS(id_batalla) ON UPDATE CASCADE ON DELETE RESTRICT,
-    puntaje_maximo          INTEGER NOT NULL DEFAULT 0 CHECK (puntaje_maximo >= 0),
-    max_combo               INTEGER NOT NULL DEFAULT 0 CHECK (max_combo >= 0),
-    perfects                INTEGER NOT NULL DEFAULT 0 CHECK (perfects >= 0),
-    goods                   INTEGER NOT NULL DEFAULT 0 CHECK (goods >= 0),
-    safes                   INTEGER NOT NULL DEFAULT 0 CHECK (safes >= 0),
-    misses                  INTEGER NOT NULL DEFAULT 0 CHECK (misses >= 0),
-    intentos_totales        INTEGER NOT NULL DEFAULT 1 CHECK (intentos_totales >= 1),
-    fecha_primera_victoria  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_ultima_victoria   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_partida, id_batalla)
+CREATE TABLE IF NOT EXISTS RECORDS_CANCIONES (
+    id_partida           INTEGER NOT NULL REFERENCES PARTIDAS(id_partida) ON DELETE CASCADE,
+    clave_cancion        TEXT NOT NULL,
+    titulo               TEXT NOT NULL,
+    artista              TEXT NOT NULL DEFAULT '',
+    dificultad           TEXT NOT NULL DEFAULT '6K',
+    puntaje_maximo       INTEGER NOT NULL DEFAULT 0 CHECK (puntaje_maximo >= 0),
+    max_combo            INTEGER NOT NULL DEFAULT 0 CHECK (max_combo >= 0),
+    perfects             INTEGER NOT NULL DEFAULT 0 CHECK (perfects >= 0),
+    goods                INTEGER NOT NULL DEFAULT 0 CHECK (goods >= 0),
+    safes                INTEGER NOT NULL DEFAULT 0 CHECK (safes >= 0),
+    misses               INTEGER NOT NULL DEFAULT 0 CHECK (misses >= 0),
+    intentos_totales     INTEGER NOT NULL DEFAULT 1 CHECK (intentos_totales >= 1),
+    victorias_totales    INTEGER NOT NULL DEFAULT 0 CHECK (victorias_totales >= 0),
+    fecha_ultimo_intento TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_partida, clave_cancion)
 );
 
 CREATE TABLE IF NOT EXISTS OBJETOS_OBTENIDOS (
@@ -142,7 +106,7 @@ CREATE TABLE IF NOT EXISTS CANCIONES_PERSONALIZADAS (
     fecha_record             TEXT NULL
 );
 
--- 3FN: los ítems/chips empleados en el último intento y los resguardados en el récord
+-- 3FN: los ítems/amuletos empleados en el último intento y los resguardados en el récord
 -- se almacenan de forma atómica (sin listas concatenadas).
 CREATE TABLE IF NOT EXISTS CANCION_OBJETOS_INTENTO (
     id_cancion    INTEGER NOT NULL REFERENCES CANCIONES_PERSONALIZADAS(id_cancion) ON DELETE CASCADE,
@@ -158,14 +122,11 @@ CREATE TABLE IF NOT EXISTS CANCION_OBJETOS_INTENTO (
 CREATE INDEX IF NOT EXISTS idx_historial_partida_fecha
     ON HISTORIAL_OBJETOS(id_partida, fecha_evento DESC);
 
-CREATE INDEX IF NOT EXISTS idx_batallas_vencidas_partida
-    ON BATALLAS_VENCIDAS(id_partida);
+CREATE INDEX IF NOT EXISTS idx_records_canciones_partida
+    ON RECORDS_CANCIONES(id_partida);
 
 CREATE INDEX IF NOT EXISTS idx_canciones_custom_titulo
     ON CANCIONES_PERSONALIZADAS(titulo);
-
-CREATE INDEX IF NOT EXISTS idx_enemigos_zona_pos
-    ON ENEMIGOS(id_zona, hub_x, hub_y);
 
 -- -----------------------------------------------------------------------------
 -- 5. Triggers SQLite (Validación BEFORE + Récord y Auditoría Automática AFTER)
@@ -311,85 +272,49 @@ BEGIN
     WHERE id_partida = NEW.id_partida;
 END;
 
--- 5.4 Actualización automática de progreso global en PARTIDAS al vencer batallas
-CREATE TRIGGER IF NOT EXISTS trg_batallas_progreso_insert
-AFTER INSERT ON BATALLAS_VENCIDAS
-FOR EACH ROW
-BEGIN
-    UPDATE PARTIDAS
-    SET progreso_porcentaje = MIN(100.0, ROUND(
-            COALESCE((
-                SELECT COUNT(*) * 100.0 / MAX(1, (SELECT COUNT(*) FROM CATALOGO_BATALLAS WHERE es_historia_principal = 1))
-                FROM BATALLAS_VENCIDAS bv
-                INNER JOIN CATALOGO_BATALLAS cb ON cb.id_batalla = bv.id_batalla
-                WHERE bv.id_partida = NEW.id_partida AND cb.es_historia_principal = 1
-            ), 0.0), 1
-        )),
-        fecha_actualizacion = CURRENT_TIMESTAMP
-    WHERE id_partida = NEW.id_partida;
-END;
-
-CREATE TRIGGER IF NOT EXISTS trg_batallas_progreso_update
-AFTER UPDATE ON BATALLAS_VENCIDAS
-FOR EACH ROW
-BEGIN
-    UPDATE PARTIDAS
-    SET progreso_porcentaje = MIN(100.0, ROUND(
-            COALESCE((
-                SELECT COUNT(*) * 100.0 / MAX(1, (SELECT COUNT(*) FROM CATALOGO_BATALLAS WHERE es_historia_principal = 1))
-                FROM BATALLAS_VENCIDAS bv
-                INNER JOIN CATALOGO_BATALLAS cb ON cb.id_batalla = bv.id_batalla
-                WHERE bv.id_partida = NEW.id_partida AND cb.es_historia_principal = 1
-            ), 0.0), 1
-        )),
-        fecha_actualizacion = CURRENT_TIMESTAMP
-    WHERE id_partida = NEW.id_partida;
-END;
-
--- 5.5 Otorgamiento automático de amuleto por puntaje al vencer una batalla
-CREATE TRIGGER IF NOT EXISTS trg_batallas_amuleto_score_insert
-AFTER INSERT ON BATALLAS_VENCIDAS
-FOR EACH ROW
-BEGIN
-    INSERT OR IGNORE INTO OBJETOS_OBTENIDOS (id_partida, id_item, cantidad, equipado)
-    SELECT NEW.id_partida, cb.id_amuleto_score, 1, 0
-    FROM CATALOGO_BATALLAS cb
-    WHERE cb.id_batalla = NEW.id_batalla
-      AND cb.id_amuleto_score IS NOT NULL
-      AND NEW.puntaje_maximo >= cb.puntaje_minimo_amuleto;
-END;
-
-CREATE TRIGGER IF NOT EXISTS trg_batallas_amuleto_score_update
-AFTER UPDATE OF puntaje_maximo ON BATALLAS_VENCIDAS
-FOR EACH ROW
-BEGIN
-    INSERT OR IGNORE INTO OBJETOS_OBTENIDOS (id_partida, id_item, cantidad, equipado)
-    SELECT NEW.id_partida, cb.id_amuleto_score, 1, 0
-    FROM CATALOGO_BATALLAS cb
-    WHERE cb.id_batalla = NEW.id_batalla
-      AND cb.id_amuleto_score IS NOT NULL
-      AND NEW.puntaje_maximo >= cb.puntaje_minimo_amuleto;
-END;
-
--- 5.6 Validación de rutas relativas en ENEMIGOS
-CREATE TRIGGER IF NOT EXISTS trg_enemigos_validar_insert
-BEFORE INSERT ON ENEMIGOS
+-- 5.4 Validación y actualización de fecha en RECORDS_CANCIONES
+CREATE TRIGGER IF NOT EXISTS trg_records_validar_insert
+BEFORE INSERT ON RECORDS_CANCIONES
 FOR EACH ROW
 BEGIN
     SELECT CASE
-        WHEN NEW.cancion_referencia LIKE '/%' OR NEW.cancion_referencia GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'cancion_referencia debe usar ruta relativa')
-        WHEN NEW.sprite_relativo LIKE '/%' OR NEW.sprite_relativo GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'sprite_relativo debe usar ruta relativa')
+        WHEN NEW.puntaje_maximo < 0 THEN RAISE(ABORT, 'puntaje_maximo no puede ser negativo')
+        WHEN NEW.max_combo < 0 THEN RAISE(ABORT, 'max_combo no puede ser negativo')
+        WHEN NEW.intentos_totales < 1 THEN RAISE(ABORT, 'intentos_totales debe ser al menos 1')
+        WHEN NEW.victorias_totales < 0 THEN RAISE(ABORT, 'victorias_totales no puede ser negativo')
+        WHEN NEW.clave_cancion LIKE '/%' OR NEW.clave_cancion GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'clave_cancion debe usar ruta relativa')
     END;
 END;
 
-CREATE TRIGGER IF NOT EXISTS trg_enemigos_validar_update
-BEFORE UPDATE ON ENEMIGOS
+CREATE TRIGGER IF NOT EXISTS trg_records_validar_update
+BEFORE UPDATE ON RECORDS_CANCIONES
 FOR EACH ROW
 BEGIN
     SELECT CASE
-        WHEN NEW.cancion_referencia LIKE '/%' OR NEW.cancion_referencia GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'cancion_referencia debe usar ruta relativa')
-        WHEN NEW.sprite_relativo LIKE '/%' OR NEW.sprite_relativo GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'sprite_relativo debe usar ruta relativa')
+        WHEN NEW.puntaje_maximo < 0 THEN RAISE(ABORT, 'puntaje_maximo no puede ser negativo')
+        WHEN NEW.max_combo < 0 THEN RAISE(ABORT, 'max_combo no puede ser negativo')
+        WHEN NEW.intentos_totales < 1 THEN RAISE(ABORT, 'intentos_totales debe ser al menos 1')
+        WHEN NEW.victorias_totales < 0 THEN RAISE(ABORT, 'victorias_totales no puede ser negativo')
+        WHEN NEW.clave_cancion LIKE '/%' OR NEW.clave_cancion GLOB '[A-Za-z]:*' THEN RAISE(ABORT, 'clave_cancion debe usar ruta relativa')
     END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_records_touch_partida_insert
+AFTER INSERT ON RECORDS_CANCIONES
+FOR EACH ROW
+BEGIN
+    UPDATE PARTIDAS
+    SET fecha_actualizacion = CURRENT_TIMESTAMP
+    WHERE id_partida = NEW.id_partida;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_records_touch_partida_update
+AFTER UPDATE ON RECORDS_CANCIONES
+FOR EACH ROW
+BEGIN
+    UPDATE PARTIDAS
+    SET fecha_actualizacion = CURRENT_TIMESTAMP
+    WHERE id_partida = NEW.id_partida;
 END;
 
 -- -----------------------------------------------------------------------------
@@ -400,17 +325,8 @@ CREATE VIEW IF NOT EXISTS v_resumen_partidas AS
 SELECT
     p.id_partida,
     p.slot,
-    z.id_zona,
-    z.nombre AS zona_actual,
-    z.escena_xml_relativa AS escena_actual,
-    p.player_x,
-    p.player_y,
-    zr.escena_xml_relativa AS return_scene,
-    p.return_x,
-    p.return_y,
+    p.puntos_tienda,
     p.heal_strategy,
-    p.estado_general,
-    p.progreso_porcentaje,
     p.fecha_creacion,
     p.fecha_actualizacion,
     COALESCE((
@@ -427,35 +343,36 @@ SELECT
     ), 0) AS total_amuletos,
     COALESCE((
         SELECT COUNT(*)
-        FROM BATALLAS_VENCIDAS bv
-        WHERE bv.id_partida = p.id_partida
-    ), 0) AS total_batallas_vencidas
-FROM PARTIDAS p
-INNER JOIN ZONAS z ON z.id_zona = p.id_zona_actual
-INNER JOIN ZONAS zr ON zr.id_zona = p.id_zona_retorno;
+        FROM RECORDS_CANCIONES rc
+        WHERE rc.id_partida = p.id_partida
+    ), 0) AS canciones_jugadas,
+    COALESCE((
+        SELECT COUNT(*)
+        FROM RECORDS_CANCIONES rc
+        WHERE rc.id_partida = p.id_partida
+          AND rc.victorias_totales > 0
+    ), 0) AS canciones_completadas
+FROM PARTIDAS p;
 
-CREATE VIEW IF NOT EXISTS v_mejores_puntajes_batallas AS
+CREATE VIEW IF NOT EXISTS v_records_canciones AS
 SELECT
     p.slot AS slot_partida,
     p.id_partida,
-    cb.id_batalla,
-    cb.boss_id,
-    cb.boss_nombre,
-    cb.especie,
-    z.nombre AS zona_batalla,
-    bv.puntaje_maximo,
-    bv.max_combo,
-    bv.perfects,
-    bv.goods,
-    bv.safes,
-    bv.misses,
-    bv.intentos_totales,
-    bv.fecha_primera_victoria,
-    bv.fecha_ultima_victoria
-FROM BATALLAS_VENCIDAS bv
-INNER JOIN PARTIDAS p ON p.id_partida = bv.id_partida
-INNER JOIN CATALOGO_BATALLAS cb ON cb.id_batalla = bv.id_batalla
-INNER JOIN ZONAS z ON z.id_zona = cb.id_zona;
+    rc.clave_cancion,
+    rc.titulo,
+    rc.artista,
+    rc.dificultad,
+    rc.puntaje_maximo,
+    rc.max_combo,
+    rc.perfects,
+    rc.goods,
+    rc.safes,
+    rc.misses,
+    rc.intentos_totales,
+    rc.victorias_totales,
+    rc.fecha_ultimo_intento
+FROM RECORDS_CANCIONES rc
+INNER JOIN PARTIDAS p ON p.id_partida = rc.id_partida;
 
 CREATE VIEW IF NOT EXISTS v_inventario_detallado AS
 SELECT
@@ -465,6 +382,7 @@ SELECT
     ci.nombre AS item_nombre,
     ci.categoria,
     ci.curacion_hp,
+    ci.precio_tienda,
     ci.descripcion,
     oo.cantidad,
     oo.equipado,
@@ -545,23 +463,3 @@ SELECT
     ), 'Ninguno') AS objetos_ultimo_intento
 FROM CANCIONES_PERSONALIZADAS cp
 ORDER BY cp.id_cancion ASC;
-
-CREATE VIEW IF NOT EXISTS v_enemigos_hub AS
-SELECT
-    e.id_enemigo,
-    e.nombre AS enemigo_nombre,
-    e.especie,
-    z.id_zona,
-    z.nombre AS sala_hub,
-    e.hub_x,
-    e.hub_y,
-    e.cancion_referencia,
-    e.sprite_relativo,
-    cb.id_batalla,
-    cb.puntaje_minimo_amuleto,
-    ci.nombre AS amuleto_por_score
-FROM ENEMIGOS e
-INNER JOIN ZONAS z ON z.id_zona = e.id_zona
-LEFT JOIN CATALOGO_BATALLAS cb ON cb.id_batalla = e.id_batalla
-LEFT JOIN CATALOGO_ITEMS ci ON ci.id_item = cb.id_amuleto_score
-ORDER BY z.orden_progresion, e.hub_x, e.hub_y;

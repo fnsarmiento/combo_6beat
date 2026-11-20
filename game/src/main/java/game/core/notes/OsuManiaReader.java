@@ -10,7 +10,6 @@ import engine.ResourcesManager;
 import engine.audio.Audio;
 import engine.audio.AudioConverter;
 import engine.audio.MusicTrack;
-import engine.draw.Sprite2D;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,8 +29,7 @@ import java.util.Map;
  *   <li>{@code [TimingPoints]}: Empaqueta cambios de BPM y multiplicadores SV con {@link TimingPointPacker}.</li>
  *   <li>{@code [HitObjects]}: Mapea la coordenada horizontal {@code X (0..512)} a 6 carriles ({@code 0..5})
  *       y empaqueta notas tap y Hold Notes ({@code type & 128}) con {@link NotePacker}.</li>
- *   <li>{@code [Events]}: Identifica la imagen de portada/fondo y eventos de sprites sincronizados.</li>
- *   <li>{@code [Combo6Beat]}: Extensión opcional con metadatos de progresión (escena de retorno, flags y recompensas).</li>
+ *   <li>{@code [Events]}: Identifica la imagen de portada/fondo.</li>
  * </ul>
  */
 public class OsuManiaReader {
@@ -43,8 +41,6 @@ public class OsuManiaReader {
 	private final String filepath;
 	private final long[] notes;
 	private final long[] timingPoints;
-	private final Sprite2D[] sprites;
-	private final int[] spritesTimes;
 	private MusicTrack song;
 
 	// =========================================================================
@@ -59,14 +55,6 @@ public class OsuManiaReader {
 	private String audioAbsPath = "";
 	private String coverAbsPath = "";
 	private float primaryBpm = 120.0f;
-
-	// =========================================================================
-	// Metadatos Opcionales de Progresion ([Combo6Beat])
-	// =========================================================================
-
-	private String returnScene = "";
-	private String defeatFlag = "";
-	private String rewardItem = "";
 
 	// =========================================================================
 	// Constructores y Bucle Principal de Parseo por Secciones
@@ -87,8 +75,6 @@ public class OsuManiaReader {
 
 		ArrayList<Long> tempNotes = new ArrayList<>();
 		ArrayList<Long> tempTimingPoints = new ArrayList<>();
-		ArrayList<Sprite2D> tempSprites = new ArrayList<>();
-		ArrayList<Integer> tempSpritesTime = new ArrayList<>();
 
 		if (lines != null) {
 			for (String s : lines) {
@@ -105,16 +91,13 @@ public class OsuManiaReader {
 					case "[Metadata]"     -> processMetadata(line);
 					case "[TimingPoints]" -> processTimingPoints(line, tempTimingPoints);
 					case "[HitObjects]"   -> processHitObjects(line, tempNotes);
-					case "[Events]"       -> processEvents(line, tempSprites, tempSpritesTime, loadMedia);
-					case "[Combo6Beat]"   -> processCombo6Beat(line);
+					case "[Events]"       -> processEvents(line);
 				}
 			}
 		}
 
 		this.notes = tempNotes.stream().mapToLong(Long::longValue).toArray();
 		this.timingPoints = tempTimingPoints.stream().mapToLong(Long::longValue).toArray();
-		this.sprites = tempSprites.toArray(new Sprite2D[0]);
-		this.spritesTimes = tempSpritesTime.stream().mapToInt(Integer::intValue).toArray();
 		this.primaryBpm = computePrimaryBpm(this.timingPoints, this.notes);
 	}
 
@@ -212,20 +195,6 @@ public class OsuManiaReader {
 		}
 	}
 
-	private void processCombo6Beat(String line) {
-		int colonIdx = line.indexOf(':');
-		if (colonIdx == -1) return;
-
-		String key = line.substring(0, colonIdx).trim();
-		String val = line.substring(colonIdx + 1).trim();
-
-		switch (key) {
-			case "ReturnScene" -> returnScene = val;
-			case "DefeatFlag"  -> defeatFlag = val;
-			case "RewardItem"  -> rewardItem = val;
-		}
-	}
-
 	// =========================================================================
 	// Parsers de Secciones [TimingPoints], [HitObjects] y [Events]
 	// =========================================================================
@@ -266,12 +235,7 @@ public class OsuManiaReader {
 		list.add(NotePacker.pack(lane, noteType, time, duration));
 	}
 
-	private void processEvents(
-		String line,
-		ArrayList<Sprite2D> list,
-		ArrayList<Integer> tempSpritesTime,
-		boolean loadMedia
-	) {
+	private void processEvents(String line) {
 		// Evento estándar de fondo/portada en .osu: 0,0,"cover.jpg",0,0
 		if (line.startsWith("0,")) {
 			String[] parts = split(line, ",");
@@ -288,22 +252,6 @@ public class OsuManiaReader {
 					}
 				}
 			}
-			return;
-		}
-
-		String[] split = split(line, ":");
-		if (split.length >= 5 && split[0].equals("0")) {
-			int time = parseInt(split[1]);
-			String path = split[2].replace("\"", "");
-			if (!loadMedia) return;
-
-			Sprite2D spr = new Sprite2D(path, -100000);
-			spr.position.x = parseInt(split[3]);
-			spr.position.y = parseInt(split[4]);
-			spr.visible = false;
-
-			list.add(spr);
-			tempSpritesTime.add(time);
 		}
 	}
 
@@ -371,8 +319,6 @@ public class OsuManiaReader {
 
 	public long[] getNotes() { return notes; }
 	public long[] getTimingPoints() { return timingPoints; }
-	public Sprite2D[] getSprites() { return sprites; }
-	public int[] getSpritesTime() { return spritesTimes; }
 	public MusicTrack getSong() { return song; }
 	public int getNoteCount() { return notes != null ? notes.length : 0; }
 
@@ -384,8 +330,4 @@ public class OsuManiaReader {
 	public String getAudioAbsPath() { return audioAbsPath; }
 	public String getCoverAbsPath() { return coverAbsPath; }
 	public float getPrimaryBpm() { return primaryBpm; }
-
-	public String getReturnScene() { return returnScene; }
-	public String getDefeatFlag() { return defeatFlag; }
-	public String getRewardItem() { return rewardItem; }
 }

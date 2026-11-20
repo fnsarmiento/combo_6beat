@@ -56,10 +56,6 @@ public class SongPackLoader {
 		public String difficultyTier = "Facil";
 		public float scrollSpeed = 0.22f;
 
-		// Metadatos opcionales de progresion (sobrescribibles desde songs.xml)
-		public String defeatFlag = "";
-		public String rewardItem = "";
-
 		// Enlace opcional a SQLite si pertenece a CANCIONES_PERSONALIZADAS
 		public CustomSongRepository.CustomSongSummary customDbSummary = null;
 	}
@@ -254,8 +250,6 @@ public class SongPackLoader {
 			String diff = chartNode.getString("difficulty", "");
 			if (!diff.isEmpty()) v.difficulty = diff;
 			v.scrollSpeed = chartNode.getFloat("scroll-speed", v.scrollSpeed);
-			v.defeatFlag = chartNode.getString("defeat-flag", v.defeatFlag);
-			v.rewardItem = chartNode.getString("reward-item", v.rewardItem);
 		}
 	}
 

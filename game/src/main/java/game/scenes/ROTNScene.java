@@ -16,7 +16,6 @@ import engine.audio.Audio;
 import engine.audio.MusicTrack;
 import engine.draw.ParticleSystem;
 import game.Config;
-import game.Global;
 import game.core.GameState;
 import game.core.db.CustomSongRepository;
 import game.core.db.SaveRepository;
@@ -32,7 +31,6 @@ import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PImage;
-import processing.data.XML;
 import processing.event.KeyEvent;
 
 /**
@@ -102,22 +100,15 @@ public class ROTNScene extends Scene {
 	//    HUD ControlP5, partículas y luces de ciudad)
 	// =========================================================================
 
-	// Origen de datos del nivel (escena XML, canción personalizada, variante de pack o manifiesto)
-	private final String _sceneFilePath;
+	// Origen de datos del nivel (canción personalizada o variante de pack)
 	private final CustomSongRepository.CustomSongSummary _customSong;
 	private final SongPackLoader.ChartVariant _chartVariant;
-	private final String _manifestChartId;
-	private final XML _manifestPackNode;
-	private final XML _manifestChartNode;
 
-	// Metadatos del encuentro y progreso de campaña/modo libre
+	// Metadatos del encuentro y progreso de partida
 	private String _trackId = "track_generic";
 	private String _trackTitle = "Pista Ritmica";
 	private String _trackSubtitle = "";
-	private String _returnScene = "";
-	private String _defeatFlag = "";
-	private String _rewardItem = "";
-	private boolean _victoryRewardGranted = false;
+	private boolean _songAttemptRecorded = false;
 	private boolean _customAttemptRecorded = false;
 	private boolean _customIsNewRecord = false;
 	private int _earnedShopPoints = 0;
@@ -233,65 +224,16 @@ public class ROTNScene extends Scene {
 	// 3. Constructores y ciclo de vida (setup, inicialización de canción, close)
 	// =========================================================================
 
-	public ROTNScene(String path) {
-		super(path);
-		this._customSong = null;
-		this._chartVariant = null;
-		this._manifestChartId = "";
-		this._manifestPackNode = null;
-		this._manifestChartNode = null;
-		this._sceneFilePath = (path != null) ? path : "";
-	}
-
 	public ROTNScene(CustomSongRepository.CustomSongSummary customSong) {
 		super((String) null);
 		this._customSong = customSong;
 		this._chartVariant = null;
-		this._manifestChartId = "";
-		this._manifestPackNode = null;
-		this._manifestChartNode = null;
-		this._sceneFilePath = (customSong != null && !customSong.rutaChart.isEmpty())
-			? ResourcesManager.getAbsPathFromProject(customSong.rutaChart)
-			: "";
 	}
 
 	public ROTNScene(SongPackLoader.ChartVariant variant) {
 		super((String) null);
 		this._customSong = (variant != null) ? variant.customDbSummary : null;
 		this._chartVariant = variant;
-		this._manifestChartId = "";
-		this._manifestPackNode = null;
-		this._manifestChartNode = null;
-		this._sceneFilePath = (variant != null) ? variant.osuAbsPath : "";
-	}
-
-	private ROTNScene(XML packNode, XML chartNode, String chartId) {
-		super((String) null);
-		this._customSong = null;
-		this._chartVariant = null;
-		this._manifestChartId = (chartId != null) ? chartId : "";
-		this._manifestPackNode = packNode;
-		this._manifestChartNode = chartNode;
-		this._sceneFilePath = ResourcesManager.getAbsPathFromProject(Global.SONGS_MANIFEST);
-	}
-
-	public static ROTNScene fromManifest(String chartId) {
-		try {
-			String manifestAbs = ResourcesManager.getAbsPathFromProject(Global.SONGS_MANIFEST);
-			XML root = Engine.getApp().loadXML(manifestAbs);
-			if (root != null) {
-				for (XML pack : root.getChildren("Pack")) {
-					for (XML chart : pack.getChildren("Chart")) {
-						if (chartId != null && chartId.equals(chart.getString("id", ""))) {
-							return new ROTNScene(pack, chart, chartId);
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			System.err.println("Error cargando chart '" + chartId + "' desde songs.xml: " + e.getMessage());
-		}
-		return new ROTNScene((String) null);
 	}
 
 	/** Parámetros de combate recolectados durante la carga del beatmap/escena. */
@@ -311,12 +253,13 @@ public class ROTNScene extends Scene {
 		Audio.pausePersistentBGM();
 		super.setup();
 
+		_songAttemptRecorded = false;
 		_dbBestChecked = false;
 		_hasDbBest = false;
 		_dbMaxScore = 0;
 		_dbMaxCombo = 0;
 
-		if (_customSong == null && _chartVariant == null && _manifestChartNode == null && _xmlScene == null) {
+		if (_customSong == null && _chartVariant == null) {
 			return;
 		}
 
@@ -357,9 +300,9 @@ public class ROTNScene extends Scene {
 		OsuManiaReader reader = null;
 
 		if (_customSong != null) {
-			_trackId = "custom_" + _customSong.idCancion;
+			_trackId = !_customSong.rutaChart.isEmpty() ? _customSong.rutaChart : ("custom_" + _customSong.idCancion);
 			_trackTitle = _customSong.titulo;
-			_trackSubtitle = _customSong.dificultad + " | " + Math.round(_customSong.bpm) + " BPM";
+			_trackSubtitle = _customSong.artista;
 			_scrollSpeed = DEFAULT_SCROLL_SPEED * speedMult;
 
 			if (!_customSong.rutaChart.isEmpty()) {
@@ -374,7 +317,6 @@ public class ROTNScene extends Scene {
 				}
 			}
 		} else if (_chartVariant != null) {
-			_returnScene = GameState.returnScenePath;
 			_scrollSpeed = _chartVariant.scrollSpeed * speedMult;
 
 			if (!_chartVariant.osuAbsPath.isEmpty()) {
@@ -382,71 +324,9 @@ public class ROTNScene extends Scene {
 				_bgm = reader.getSong();
 			}
 
-			_trackId = !_chartVariant.id.isEmpty() ? _chartVariant.id : _chartVariant.osuRelPath;
+			_trackId = !_chartVariant.osuRelPath.isEmpty() ? _chartVariant.osuRelPath : _chartVariant.id;
 			_trackTitle = _chartVariant.title;
 			_trackSubtitle = _chartVariant.artist;
-			_defeatFlag = _chartVariant.defeatFlag;
-			_rewardItem = _chartVariant.rewardItem;
-		} else if (_manifestChartNode != null) {
-			_returnScene = GameState.returnScenePath;
-			_scrollSpeed = _manifestChartNode.getFloat("scroll-speed", DEFAULT_SCROLL_SPEED) * speedMult;
-
-			String osuRel = _manifestChartNode.getString("file", "");
-			if (!osuRel.isEmpty()) {
-				String osuAbs = resolveSceneRelativeOrResource(osuRel);
-				reader = new OsuManiaReader(osuAbs);
-				_bgm = reader.getSong();
-			}
-
-			_trackId = _manifestChartNode.getString("id", _manifestChartId);
-			String packTitle = (_manifestPackNode != null) ? _manifestPackNode.getString("title", "") : "";
-			String packArtist = (_manifestPackNode != null) ? _manifestPackNode.getString("artist", "") : "";
-			if (!packTitle.isEmpty()) {
-				_trackTitle = packTitle;
-			} else if (reader != null && !reader.getTitle().isEmpty()) {
-				_trackTitle = reader.getTitle();
-			}
-			if (!packArtist.isEmpty()) {
-				_trackSubtitle = packArtist;
-			} else if (reader != null && !reader.getArtist().isEmpty()) {
-				_trackSubtitle = reader.getArtist();
-			}
-			cfg.missDamage = _manifestChartNode.getInt("miss-damage", cfg.missDamage);
-			_defeatFlag = _manifestChartNode.getString("defeat-flag", _defeatFlag);
-			_rewardItem = _manifestChartNode.getString("reward-item", _rewardItem);
-		} else if (_xmlScene != null) {
-			_returnScene = _xmlScene.getString("return-scene", GameState.returnScenePath);
-
-			XML songNode = _xmlScene.getChild("Song");
-			String osuRel = (songNode != null) ? songNode.getString("file", "") : "";
-			if (songNode != null) {
-				_scrollSpeed = songNode.getFloat("scroll-speed", DEFAULT_SCROLL_SPEED);
-			}
-			_scrollSpeed *= speedMult;
-
-			if (!osuRel.isEmpty()) {
-				String osuAbs = resolveSceneRelativeOrResource(osuRel);
-				reader = new OsuManiaReader(osuAbs);
-				_bgm = reader.getSong();
-			}
-
-			if (reader != null) {
-				if (!reader.getTitle().isEmpty()) _trackTitle = reader.getTitle();
-				if (!reader.getArtist().isEmpty()) _trackSubtitle = reader.getArtist();
-				if (!reader.getReturnScene().isEmpty()) _returnScene = reader.getReturnScene();
-				if (!reader.getDefeatFlag().isEmpty()) _defeatFlag = reader.getDefeatFlag();
-				if (!reader.getRewardItem().isEmpty()) _rewardItem = reader.getRewardItem();
-			}
-
-			XML combatNode = _xmlScene.getChild("Combat");
-			if (combatNode != null) {
-				cfg.playerMaxHp = combatNode.getInt("player-max-hp", cfg.playerMaxHp);
-				cfg.missDamage = combatNode.getInt("miss-damage", cfg.missDamage);
-				cfg.healThreshold = combatNode.getInt("heal-threshold", cfg.healThreshold);
-				cfg.healActiveDuration = combatNode.getFloat("heal-active-duration", cfg.healActiveDuration);
-				cfg.laneLockInterval = combatNode.getInt("lane-lock-interval", cfg.laneLockInterval);
-				cfg.laneLockDuration = combatNode.getInt("lane-lock-duration", cfg.laneLockDuration);
-			}
 		}
 
 		return reader;
@@ -487,53 +367,19 @@ public class ROTNScene extends Scene {
 		}
 	}
 
-	private String resolveSceneRelativeOrResource(String relPath) {
-		String fromRes = ResourcesManager.getResourceAbsPath(relPath);
-		if (new File(fromRes).exists()) return fromRes;
-
-		if (!_sceneFilePath.isEmpty()) {
-			File parent = new File(_sceneFilePath).getParentFile();
-			if (parent != null) {
-				File f = new File(parent, relPath);
-				if (f.exists()) return f.getAbsolutePath();
-			}
-		}
-		return ResourcesManager.getAbsPathFromProject(relPath);
-	}
-
 	private void restartBattleScene() {
-		if (_customSong != null) {
-			CustomSongRepository.CustomSongSummary latest = CustomSongRepository.getById(_customSong.idCancion);
-			Engine.changeScene(new ROTNScene(latest != null ? latest : _customSong));
-		} else if (_chartVariant != null) {
+		if (_chartVariant != null) {
 			Engine.changeScene(new ROTNScene(_chartVariant));
-		} else if (_manifestChartId != null && !_manifestChartId.isEmpty()) {
-			Engine.changeScene(ROTNScene.fromManifest(_manifestChartId));
 		} else {
-			Engine.changeScene(new ROTNScene(_sceneFilePath));
+			CustomSongRepository.CustomSongSummary latest = (_customSong != null)
+				? CustomSongRepository.getById(_customSong.idCancion)
+				: null;
+			Engine.changeScene(new ROTNScene(latest != null ? latest : _customSong));
 		}
-	}
-
-	private String resolveReturnTargetScene() {
-		if (!GameState.launchedFromMenu && !GameState.isDebugSession && GameState.returnScenePath != null && !GameState.returnScenePath.isEmpty()) {
-			return GameState.returnScenePath;
-		}
-		return (_returnScene != null && !_returnScene.isEmpty())
-			? _returnScene
-			: GameState.returnScenePath;
 	}
 
 	private void returnToWorld() {
-		GameState.launchedFromMenu = false;
-		boolean won = (_rhythmCore != null && _rhythmCore.getBattleState() == ROTNCore.BattleState.VICTORY);
-		if (won) {
-			GameState.defineFlag("LAST_BATTLE_WON");
-			GameState.clearFlag("LAST_BATTLE_LOST");
-		} else {
-			GameState.defineFlag("LAST_BATTLE_LOST");
-			GameState.clearFlag("LAST_BATTLE_WON");
-		}
-		GameState.saveGame();
+		Audio.stopTransientBGM();
 		Engine.changeScene(new InitScene(InitScene.ViewMode.SONG_SELECT));
 	}
 
@@ -1646,7 +1492,7 @@ public class ROTNScene extends Scene {
 			_modalFocusIdx = (_modalFocusIdx - 1 + 4) % 4;
 		} else if (Config.wasUIKeyJustPressed(Config.DOWN)) {
 			_modalFocusIdx = (_modalFocusIdx + 1) % 4;
-		} else if (Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT)) {
+		} else if (Config.wasUIKeyJustPressed(Config.INTERACT)) {
 			switch (_modalFocusIdx) {
 				case 0 -> unpauseBattle();
 				case 1 -> restartBattleScene();
@@ -1667,7 +1513,7 @@ public class ROTNScene extends Scene {
 		boolean down = _settingsDownHold.poll(Config.wasUIKeyJustPressed(Config.DOWN), Config.isUIKeyDown(Config.DOWN), dt);
 		boolean left = Config.wasUIKeyJustPressed(Config.LEFT);
 		boolean right = Config.wasUIKeyJustPressed(Config.RIGHT);
-		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT);
+		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT);
 		boolean back = Config.wasUIKeyJustPressed(Config.CANCEL);
 
 		if (back) {
@@ -1761,73 +1607,52 @@ public class ROTNScene extends Scene {
 			GameState.saveGame();
 		}
 
-		if (
-			_customSong != null &&
-			!_customAttemptRecorded &&
-			(state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT)
-		) {
-			_customAttemptRecorded = true;
-			int prevBest = _customSong.puntajeMasAlto;
-			int newScore = _rhythmCore.getScore();
-			_customIsNewRecord = (newScore > prevBest) || (_customSong.vecesJugada == 0 && newScore >= 0);
-			CustomSongRepository.recordAttempt(
-				_customSong.idCancion,
-				newScore,
+		if ((state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT) && !_songAttemptRecorded) {
+			_songAttemptRecorded = true;
+			String diffName = (_chartVariant != null && !_chartVariant.difficulty.isEmpty())
+				? _chartVariant.difficulty
+				: (_customSong != null && !_customSong.dificultad.isEmpty() ? _customSong.dificultad : "6K");
+			GameState.recordSongAttempt(
+				_trackId,
+				_trackTitle,
+				_trackSubtitle,
+				diffName,
+				_rhythmCore.getScore(),
 				_rhythmCore.getMaxCombo(),
-				_rhythmCore.getAccuracyPercent(),
-				GameState.getEquippedPowerUps()
+				_rhythmCore.getPerfectCount(),
+				_rhythmCore.getGoodCount(),
+				_rhythmCore.getSafeCount(),
+				_rhythmCore.getMissCount(),
+				state == ROTNCore.BattleState.VICTORY
 			);
-		}
-
-		if (state == ROTNCore.BattleState.VICTORY && !_victoryRewardGranted) {
-			_victoryRewardGranted = true;
-			if (_customSong == null && !GameState.launchedFromMenu) {
-				if (_defeatFlag != null && !_defeatFlag.isEmpty()) {
-					GameState.defineFlag(_defeatFlag);
-				}
-				if (_rewardItem != null && !_rewardItem.isEmpty()) {
-					String itemFlag = "REWARD_" + _defeatFlag + "_" + _rewardItem;
-					if (!GameState.hasFlag(itemFlag)) {
-						GameState.defineFlag(itemFlag);
-						GameState.addItem(_rewardItem, 1);
-					}
-				}
-				if (!GameState.isDebugSession) {
-					GameState.recordBattleVictory(
-						_trackId,
-						_trackTitle,
-						_trackSubtitle,
-						_defeatFlag,
-						_sceneFilePath,
-						resolveReturnTargetScene(),
-						_rewardItem,
-						_rhythmCore.getScore(),
-						_rhythmCore.getMaxCombo(),
-						_rhythmCore.getPerfectCount(),
-						_rhythmCore.getGoodCount(),
-						_rhythmCore.getSafeCount(),
-						_rhythmCore.getMissCount()
-					);
-					GameState.saveGame(resolveReturnTargetScene(), GameState.returnPlayerX, GameState.returnPlayerY);
-				}
+			if (_customSong != null && !_customAttemptRecorded) {
+				_customAttemptRecorded = true;
+				int prevBest = _customSong.puntajeMasAlto;
+				int newScore = _rhythmCore.getScore();
+				_customIsNewRecord = (newScore > prevBest) || (_customSong.vecesJugada == 0 && newScore >= 0);
+				CustomSongRepository.recordAttempt(
+					_customSong.idCancion,
+					newScore,
+					_rhythmCore.getMaxCombo(),
+					_rhythmCore.getAccuracyPercent(),
+					GameState.getEquippedPowerUps()
+				);
 			}
 		}
 
 		if ((state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT) && !_dbBestChecked) {
 			_dbBestChecked = true;
-			if (_customSong != null) {
+			int[] rec = SaveRepository.getBestSongRecord(GameState.activeSaveSlot, _trackId, _trackTitle);
+			if (rec != null) {
+				_hasDbBest = true;
+				_dbMaxScore = rec[0];
+				_dbMaxCombo = rec[1];
+			} else if (_customSong != null) {
 				CustomSongRepository.CustomSongSummary fresh = CustomSongRepository.getById(_customSong.idCancion);
 				if (fresh != null && (fresh.vecesJugada > 0 || fresh.puntajeMasAlto > 0 || fresh.comboMasAlto > 0)) {
 					_hasDbBest = true;
 					_dbMaxScore = fresh.puntajeMasAlto;
 					_dbMaxCombo = fresh.comboMasAlto;
-				}
-			} else {
-				int[] rec = SaveRepository.getBestSongRecord(GameState.activeSaveSlot, _trackId, _trackTitle);
-				if (rec != null) {
-					_hasDbBest = true;
-					_dbMaxScore = rec[0];
-					_dbMaxCombo = rec[1];
 				}
 			}
 		}
@@ -1843,7 +1668,7 @@ public class ROTNScene extends Scene {
 			_modalFocusIdx = (_modalFocusIdx == 0) ? 1 : 0;
 		}
 
-		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT);
+		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT);
 		boolean retry = KBInput.wasKeyJustPressed('R');
 		boolean back = Config.wasUIKeyJustPressed(Config.CANCEL);
 
