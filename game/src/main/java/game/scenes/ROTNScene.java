@@ -1203,43 +1203,60 @@ public class ROTNScene extends Scene {
 		}
 		g.endShape();
 
-		// Conjuntos de luces amarillas (ciudades) rotando con el avance de la canción
+		// Conjuntos de luces amarillas (ciudades) rotando hacia la cámara en la dirección de las notas
 		g.noStroke();
-		float rotFrac = (songTimeMs * 0.000018f) % 1.0f;
+		float rotProgress = songTimeMs * 0.00016f;
 		float tSec = songTimeMs * 0.001f;
-		// 7 clusters alrededor del globo: { longitudBase (0..1), profundidadRel (0..1), cantidadLuces }
+		// Clusters alrededor del mundo: { xiCentro, tFase (0..1), cantidadLuces }
+		// Se distribuyen principalmente a ambos lados de la pista (|xi| > 1.15) y algunos en todo el ancho
 		final float[][] clusters = {
-			{ 0.06f, 0.14f, 9 },
-			{ 0.21f, 0.34f, 11 },
-			{ 0.36f, 0.18f, 8 },
-			{ 0.51f, 0.42f, 10 },
-			{ 0.67f, 0.22f, 9 },
-			{ 0.81f, 0.38f, 11 },
-			{ 0.93f, 0.16f, 8 }
+			{ -2.45f, 0.05f, 11 },
+			{  2.35f, 0.14f, 10 },
+			{ -1.55f, 0.27f, 12 },
+			{  1.65f, 0.36f, 11 },
+			{ -2.90f, 0.49f, 10 },
+			{  2.85f, 0.58f, 12 },
+			{ -1.85f, 0.71f, 10 },
+			{  1.95f, 0.80f, 11 },
+			{ -1.30f, 0.91f, 9  },
+			{  1.35f, 0.96f, 9  }
 		};
+
 		for (int c = 0; c < clusters.length; c++) {
-			float lon = (clusters[c][0] + rotFrac) % 1.0f;
-			float baseX = lon * BASE_W;
-			float depthBase = clusters[c][1];
+			float xiCenter = clusters[c][0];
+			float tCluster = (clusters[c][1] + rotProgress) % 1.0f;
+			// Mapear tCluster (0..1) desde justo detrás del horizonte hasta el borde inferior
+			float tWorld = tCluster * 1.18f;
+			float sCenter = scaleFromT(tWorld);
+			float uCenter = uFromScale(sCenter);
 			int count = (int) clusters[c][2];
 
+			// Aparece suavemente al cruzar el horizonte
+			float horizonFade = PApplet.constrain(tWorld / 0.14f, 0.0f, 1.0f);
+
 			for (int k = 0; k < count; k++) {
-				// Offsets compactos para formar un grupo denso de luces de ciudad
-				int hash = c * 31 + k * 17;
-				float offX = (((hash * 23) % 29) - 14) * 1.15f;
-				float offY = (((hash * 13) % 15) - 7) * 1.05f;
-				float lx = baseX + offX;
-				if (lx < 0.0f) lx += BASE_W;
-				else if (lx >= BASE_W) lx -= BASE_W;
+				int hash = c * 37 + k * 19;
+				float offXi = (((hash * 23) % 29) - 14) * 0.026f;
+				float offT  = (((hash * 13) % 17) - 8) * 0.0075f;
+
+				float lt = tWorld + offT;
+				if (lt < 0.0f || lt > 1.18f) continue;
+
+				float ls = scaleFromT(lt);
+				float lu = uFromScale(ls);
+				float lxi = xiCenter + offXi;
+
+				float lx = projectX(lxi, ls);
+				float ly = projectY(lxi, lu, ls);
+				if (lx < 1.0f || lx >= BASE_W - 1.0f || ly < 0.0f || ly >= BASE_H - 1.0f) continue;
 
 				float nx = -1.0f + 2.0f * (lx / BASE_W);
 				float horizonY = Y_FAR - 4.0f + 18.0f * (nx * nx);
-				float ly = horizonY + 6.0f + depthBase * (BASE_H - horizonY - 22.0f) + offY;
-				if (ly <= horizonY + 2.0f || ly >= BASE_H - 2.0f) continue;
+				if (ly < horizonY + 1.0f) continue;
 
 				float twinkle = 0.65f + 0.35f * (float) Math.sin(tSec * (2.2f + (k % 4) * 0.5f) + hash);
-				int alpha = Math.round((135 + 115 * twinkle) * (1.0f - depthBase * 0.30f));
-				int sz = (k == 0 || k == 3) ? 2 : 1;
+				int alpha = Math.round((130 + 120 * twinkle) * horizonFade);
+				int sz = (lt > 0.55f && (k % 3 == 0)) ? 2 : 1;
 				g.fill(255, 222 + (k % 3) * 10, 95, alpha);
 				g.rect(Math.round(lx), Math.round(ly), sz, sz);
 			}
@@ -1597,13 +1614,11 @@ public class ROTNScene extends Scene {
 		long[] notes = _rhythmCore.getNotes();
 		if (notes == null) return;
 
-		int lockedLane = _rhythmCore.getLockedLane();
 		float approachTimeMs = getApproachTimeMs();
 
 		for (int i = 0; i < notes.length; i++) {
 			long packed = notes[i];
 			int lane = NotePacker.getLane(packed);
-			if (lane == lockedLane) continue;
 
 			byte noteType = NotePacker.getNoteType(packed);
 			long startTime = NotePacker.getStartTime(packed);
