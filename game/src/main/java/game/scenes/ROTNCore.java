@@ -113,10 +113,13 @@ public class ROTNCore {
 	private int combo, maxCombo, score;
 	private int multiplierStreak = 0;
 	private int scoreMultiplier = 1;
+	private int multiplierStepHits = MULTIPLIER_STEP_HITS;
+	private float scoreBonusMultiplier = 1.0f;
 	private int perfectCount, greatCount, goodCount, missCount;
 	private OnHitListener hitListener;
 
 	// Salud del jugador y del jefe
+	private int basePlayerMaxHp = 200;
 	private int playerMaxHp = 200;
 	private int playerHp = 200;
 	private int lastDamageTaken = 0;
@@ -171,7 +174,8 @@ public class ROTNCore {
 		int laneLockIntervalMs,
 		int laneLockDurationMs
 	) {
-		this.playerMaxHp = Math.max(10, playerMaxHp);
+		this.basePlayerMaxHp = Math.max(10, playerMaxHp);
+		this.playerMaxHp = this.basePlayerMaxHp;
 		this.playerHp = this.playerMaxHp;
 		this.bossMaxHp = Math.max(10, bossMaxHp);
 		this.bossHp = this.bossMaxHp;
@@ -185,23 +189,35 @@ public class ROTNCore {
 	}
 
 	/**
-	 * Evalúa los amuletos equipados en {@link GameState} para ajustar las ventanas de juicio
-	 * y habilitar el escudo de invencibilidad si corresponde.
+	 * Evalúa los amuletos equipados en {@link GameState} para ajustar las ventanas de juicio,
+	 * multiplicadores, vida máxima y habilitar el escudo de invencibilidad si corresponde.
 	 */
 	public void applyPowerUpModifiers() {
 		windowOffsetMs = 0.0f;
 		hasInvincibilityShield = false;
 		invincibilityTimer = 0.0f;
+		scoreBonusMultiplier = 1.0f;
+		multiplierStepHits = MULTIPLIER_STEP_HITS;
 
 		if (GameState.isPowerUpEquipped("powerup_reaction_plus")) {
 			windowOffsetMs += POWERUP_REACTION_PLUS_MS;
 		}
 		if (GameState.isPowerUpEquipped("powerup_reaction_minus")) {
 			windowOffsetMs += POWERUP_REACTION_MINUS_MS;
+			scoreBonusMultiplier = 1.25f;
 		}
 		if (GameState.isPowerUpEquipped("powerup_invincibility")) {
 			hasInvincibilityShield = true;
 		}
+		if (GameState.isPowerUpEquipped("amulet_medallion_ruins")) {
+			multiplierStepHits = 5;
+		}
+		if (GameState.isPowerUpEquipped("amulet_medallion_swamp")) {
+			playerMaxHp = basePlayerMaxHp + 60;
+		} else {
+			playerMaxHp = basePlayerMaxHp;
+		}
+		playerHp = playerMaxHp;
 	}
 
 	/**
@@ -681,20 +697,20 @@ public class ROTNCore {
 				perfectCount++;
 				combo++;
 				advanceScoreMultiplier();
-				score += (SCORE_PERFECT_BASE + combo * SCORE_PERFECT_COMBO_MULT) * scoreMultiplier;
+				score += Math.round((SCORE_PERFECT_BASE + combo * SCORE_PERFECT_COMBO_MULT) * scoreMultiplier * scoreBonusMultiplier);
 				damageBoss(Math.round(bossHitDamage * BOSS_DMG_PERFECT_MULT));
 			}
 			case GOOD -> {
 				greatCount++;
 				combo++;
 				advanceScoreMultiplier();
-				score += (SCORE_GOOD_BASE + combo * SCORE_GOOD_COMBO_MULT) * scoreMultiplier;
+				score += Math.round((SCORE_GOOD_BASE + combo * SCORE_GOOD_COMBO_MULT) * scoreMultiplier * scoreBonusMultiplier);
 				damageBoss(bossHitDamage);
 			}
 			case SAFE -> {
 				goodCount++;
 				combo++;
-				score += SCORE_SAFE_BASE * scoreMultiplier;
+				score += Math.round(SCORE_SAFE_BASE * scoreMultiplier * scoreBonusMultiplier);
 				damageBoss(Math.max(1, Math.round(bossHitDamage * BOSS_DMG_SAFE_MULT)));
 			}
 			case MISS -> {
@@ -746,10 +762,11 @@ public class ROTNCore {
 		}
 	}
 
-	/** Incrementa el multiplicador de puntaje (1 -> 2 -> 4 -> 8 -> 16) cada 7 aciertos GOOD o PERFECT sin misses. */
+	/** Incrementa el multiplicador de puntaje (1 -> 2 -> 4 -> 8 -> 16) cada N aciertos GOOD o PERFECT sin misses. */
 	private void advanceScoreMultiplier() {
 		multiplierStreak++;
-		int tiers = multiplierStreak / MULTIPLIER_STEP_HITS;
+		int step = Math.max(1, multiplierStepHits);
+		int tiers = multiplierStreak / step;
 		scoreMultiplier = (tiers >= 4) ? MAX_SCORE_MULTIPLIER : Math.min(MAX_SCORE_MULTIPLIER, 1 << tiers);
 	}
 
@@ -795,11 +812,12 @@ public class ROTNCore {
 	public int getScore() { return score; }
 	public int getScoreMultiplier() { return scoreMultiplier; }
 	public int getMultiplierProgress() {
+		int step = Math.max(1, multiplierStepHits);
 		return (scoreMultiplier >= MAX_SCORE_MULTIPLIER)
-			? MULTIPLIER_STEP_HITS
-			: (multiplierStreak % MULTIPLIER_STEP_HITS);
+			? step
+			: (multiplierStreak % step);
 	}
-	public int getMultiplierStepHits() { return MULTIPLIER_STEP_HITS; }
+	public int getMultiplierStepHits() { return multiplierStepHits; }
 	public int getMaxScoreMultiplier() { return MAX_SCORE_MULTIPLIER; }
 	public int getPerfectCount() { return perfectCount; }
 	public int getGoodCount() { return greatCount; }
@@ -812,6 +830,24 @@ public class ROTNCore {
 		float weighted = (perfectCount * 100.0f) + (greatCount * 75.0f) + (goodCount * 40.0f);
 		float pct = Math.max(0.0f, Math.min(100.0f, weighted / total));
 		return Math.round(pct * 100.0f) / 100.0f;
+	}
+
+	public boolean isFullCombo() {
+		return missCount == 0 && (perfectCount + greatCount + goodCount) > 0;
+	}
+
+	public boolean isAllPerfect() {
+		return isFullCombo() && greatCount == 0 && goodCount == 0;
+	}
+
+	public String getDivaGrade() {
+		if (battleState == BattleState.DEFEAT) return "DROPxOUT";
+		if (isAllPerfect()) return "PERFECT ★";
+		if (isFullCombo()) return "PERFECT";
+		float acc = getAccuracyPercent();
+		if (acc >= 90.0f) return "EXCELLENT";
+		if (acc >= 78.0f) return "GREAT";
+		return "STANDARD";
 	}
 
 	public int getPlayerHp() { return playerHp; }

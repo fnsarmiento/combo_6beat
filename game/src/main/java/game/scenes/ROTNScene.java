@@ -120,6 +120,8 @@ public class ROTNScene extends Scene {
 	private boolean _victoryRewardGranted = false;
 	private boolean _customAttemptRecorded = false;
 	private boolean _customIsNewRecord = false;
+	private int _earnedShopPoints = 0;
+	private boolean _pointsGranted = false;
 
 	// Audio, núcleo rítmico y temporizadores de reproducción
 	private MusicTrack _bgm;
@@ -510,14 +512,7 @@ public class ROTNScene extends Scene {
 	}
 
 	private void returnToWorld() {
-		if (GameState.launchedFromMenu) {
-			GameState.launchedFromMenu = false;
-			if (!GameState.loadGame()) {
-				GameState.reset();
-			}
-			Engine.changeScene(new InitScene(InitScene.ViewMode.SONG_SELECT));
-			return;
-		}
+		GameState.launchedFromMenu = false;
 		boolean won = (_rhythmCore != null && _rhythmCore.getBattleState() == ROTNCore.BattleState.VICTORY);
 		if (won) {
 			GameState.defineFlag("LAST_BATTLE_WON");
@@ -526,8 +521,8 @@ public class ROTNScene extends Scene {
 			GameState.defineFlag("LAST_BATTLE_LOST");
 			GameState.clearFlag("LAST_BATTLE_WON");
 		}
-		GameState.autoSaveIfStory();
-		Engine.changeScene(new HubScene());
+		GameState.saveGame();
+		Engine.changeScene(new InitScene(InitScene.ViewMode.SONG_SELECT));
 	}
 
 	@Override
@@ -980,19 +975,13 @@ public class ROTNScene extends Scene {
 			_uiModalGroup.show();
 			_uiModalTitle.setText(_customSong != null ? "CANCION COMPLETADA!" : "VICTORIA!");
 			_uiModalTitle.setColorValue(app.color(110, 255, 155));
-			String extraLine = "";
-			if (_customSong != null) {
-				extraLine = "\nPrecision: " + String.format("%.1f%%", _rhythmCore.getAccuracyPercent()) +
-					(_customIsNewRecord ? "  [NUEVO RECORD!]" : "");
-			} else if (_rewardItem != null && !_rewardItem.isEmpty()) {
-				extraLine = "\nRecompensa: " + GameState.getItemName(_rewardItem);
-			}
 			_uiModalDesc.setText(
-				"Score: " + _rhythmCore.getScore() +
-				" | Max Combo: " + _rhythmCore.getMaxCombo() + "x" +
-				extraLine
+				"Rango: " + _rhythmCore.getDivaGrade() + (_rhythmCore.isFullCombo() ? " [FULL COMBO!]" : "") +
+				"\nScore: " + _rhythmCore.getScore() + " | Combo: " + _rhythmCore.getMaxCombo() + "x" +
+				"\nPERFECTs: " + _rhythmCore.getPerfectCount() + " (" + String.format("%.1f%%", _rhythmCore.getAccuracyPercent()) + ")" +
+				"\nPuntos: +" + _earnedShopPoints + " (Total: " + GameState.getShopPoints() + ")"
 			);
-			_uiModalBtn1.setLabel(GameState.launchedFromMenu ? "> Volver al Selector" : "> Volver al Mapa");
+			_uiModalBtn1.setLabel("> Volver a Canciones");
 			_uiModalBtn1.setColorBackground(app.color(55, 130, 215));
 			_uiModalBtn2.hide();
 			if (_uiModalBtn3 != null) _uiModalBtn3.hide();
@@ -1001,12 +990,14 @@ public class ROTNScene extends Scene {
 			_uiModalTitle.setText("DERROTA");
 			_uiModalTitle.setColorValue(app.color(255, 100, 110));
 			_uiModalDesc.setText(
-				"Score: " + _rhythmCore.getScore() +
-				"\nHP Jefe restante: " + _rhythmCore.getBossHp()
+				"Rango: " + _rhythmCore.getDivaGrade() + (_rhythmCore.isFullCombo() ? " [FULL COMBO!]" : "") +
+				"\nScore: " + _rhythmCore.getScore() + " | Combo: " + _rhythmCore.getMaxCombo() + "x" +
+				"\nPERFECTs: " + _rhythmCore.getPerfectCount() + " (" + String.format("%.1f%%", _rhythmCore.getAccuracyPercent()) + ")" +
+				"\nPuntos: +" + _earnedShopPoints + " (Total: " + GameState.getShopPoints() + ")"
 			);
 			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reintentar");
 			_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
-			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Volver");
+			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Volver a Canciones");
 			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
 			_uiModalBtn2.show();
 			if (_uiModalBtn3 != null) _uiModalBtn3.hide();
@@ -1025,7 +1016,7 @@ public class ROTNScene extends Scene {
 			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(75, 118, 195) : app.color(45, 72, 118));
 			_uiModalBtn2.show();
 			if (_uiModalBtn3 != null) {
-				_uiModalBtn3.setLabel((_modalFocusIdx == 2 ? "> " : "") + (GameState.launchedFromMenu ? "Salir al Selector" : "Salir al Mapa"));
+				_uiModalBtn3.setLabel((_modalFocusIdx == 2 ? "> " : "") + "Volver a Canciones");
 				_uiModalBtn3.setColorBackground(_modalFocusIdx == 2 ? app.color(150, 58, 80) : app.color(95, 38, 52));
 				_uiModalBtn3.show();
 			}
@@ -1503,6 +1494,27 @@ public class ROTNScene extends Scene {
 	}
 
 	private void handleEndBattleInput(ROTNCore.BattleState state) {
+		if ((state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT) && !_pointsGranted) {
+			_pointsGranted = true;
+			float diffRating = (_chartVariant != null)
+				? SongPackLoader.computeDifficultyRating(_chartVariant.noteCount, _chartVariant.bpm, _chartVariant.durationSec, GameState.songSpeedMultiplier)
+				: 4.5f;
+			int totalNotes = (_rhythmCore.getNotes() != null) ? _rhythmCore.getNotes().length : 0;
+			_earnedShopPoints = GameState.computeSongRewardPoints(
+				diffRating,
+				totalNotes,
+				_rhythmCore.getPerfectCount(),
+				_rhythmCore.getGoodCount(),
+				_rhythmCore.getSafeCount(),
+				_rhythmCore.getMissCount(),
+				_rhythmCore.getMaxCombo(),
+				_rhythmCore.getAccuracyPercent(),
+				state == ROTNCore.BattleState.VICTORY
+			);
+			GameState.addShopPoints(_earnedShopPoints);
+			GameState.saveGame();
+		}
+
 		if (
 			_customSong != null &&
 			!_customAttemptRecorded &&
@@ -2376,27 +2388,33 @@ public class ROTNScene extends Scene {
 			g.textSize(24);
 		}
 
-		// 1. Score arriba a la derecha (sin cartel, cada 3 cifras cambia color y tamaño)
-		String scoreText = String.valueOf(score);
-		int tier = Math.max(0, (scoreText.length() - 1) / 3);
-		int scoreColor = switch (tier) {
-			case 0 -> g.color(75, 190, 255);   // 1..3 cifras: Azul
-			case 1 -> g.color(195, 110, 255);  // 4..6 cifras: Morado
-			case 2 -> g.color(255, 78, 92);    // 7..9 cifras: Rojo
-			case 3 -> g.color(255, 155, 55);   // 10..12 cifras: Naranja
-			default -> g.color(255, 224, 58);  // 13+ cifras: Amarillo
-		};
-		float scoreScale = Math.min(1.50f, 0.75f + tier * 0.17f);
-
+		// 1. Score arriba a la derecha (sin cartel, cada bloque de 3 cifras cambia color y tamaño de derecha a izquierda)
+		String scoreText = String.valueOf(Math.max(0, _rhythmCore.getScore()));
 		g.textAlign(PConstants.RIGHT, PConstants.TOP);
-		g.pushMatrix();
-		g.translate(BASE_W - 10.0f, 8.0f);
-		g.scale(scoreScale);
-		g.fill(0, 0, 0, 225);
-		g.text(scoreText, 2.0f, 2.0f);
-		g.fill(scoreColor);
-		g.text(scoreText, 0.0f, 0.0f);
-		g.popMatrix();
+		float cursorX = BASE_W - 10.0f;
+		for (int endIdx = scoreText.length(), groupIdx = 0; endIdx > 0; endIdx -= 3, groupIdx++) {
+			int startIdx = Math.max(0, endIdx - 3);
+			String chunk = scoreText.substring(startIdx, endIdx);
+			int groupColor = switch (groupIdx) {
+				case 0 -> g.color(75, 190, 255);   // Unidades..Centenas: Azul
+				case 1 -> g.color(195, 110, 255);  // Miles: Morado
+				case 2 -> g.color(255, 78, 92);    // Millones: Rojo
+				case 3 -> g.color(255, 155, 55);   // Miles de millones: Naranja
+				default -> g.color(255, 224, 58);  // 13+ cifras: Amarillo
+			};
+			float groupScale = Math.min(1.45f, 0.75f + groupIdx * 0.16f);
+
+			g.pushMatrix();
+			g.translate(Math.round(cursorX), 8.0f);
+			g.scale(groupScale);
+			g.fill(0, 0, 0, 225);
+			g.text(chunk, 2.0f, 2.0f);
+			g.fill(groupColor);
+			g.text(chunk, 0.0f, 0.0f);
+			g.popMatrix();
+
+			cursorX -= (g.textWidth(chunk) * groupScale + 2.0f);
+		}
 
 		// 2. Multiplicador a la derecha en amarillo (más grande y con pop animado al subir)
 		float rightX = 424.0f;

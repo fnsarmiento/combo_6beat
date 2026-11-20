@@ -37,7 +37,8 @@ import processing.event.KeyEvent;
 /**
  * Escena de menú inicial de Combo 6Beat.
  * Gestiona las vistas de Menú Principal, Selección de Partida (4 ranuras SQLite),
- * Selector de Canciones (Custom BD y Base) y Configuración (Audio y Controles).
+ * Selector de Canciones por partida (Canciones unificadas Base + Custom y Tienda de Amuletos)
+ * y Configuración (Audio y Controles 6K).
  */
 public class InitScene extends Scene {
 
@@ -51,43 +52,36 @@ public class InitScene extends Scene {
 	// --- Menú Principal ---
 	private static final String[] MAIN_LABELS = {
 		"JUGAR",
-		"SELECTOR DE CANCIONES",
 		"CONFIGURACION",
 		"SALIR"
 	};
 	private static final int MAIN_OPT_PLAY = 0;
-	private static final int MAIN_OPT_SONGS = 1;
-	private static final int MAIN_OPT_SETTINGS = 2;
-	private static final int MAIN_OPT_EXIT = 3;
+	private static final int MAIN_OPT_SETTINGS = 1;
+	private static final int MAIN_OPT_EXIT = 2;
 
 	// --- Selección de Partida ---
 	private static final int SAVE_COL_SLOT = 0;
 	private static final int SAVE_COL_DELETE = 1;
 
-	// --- Selector de Canciones ---
-	private static final int SONG_TAB_CUSTOM = 0;
-	private static final int SONG_TAB_BASE = 1;
+	// --- Selector de Canciones y Tienda ---
+	private static final int SONG_TAB_SONGS = 0;
+	private static final int SONG_TAB_SHOP = 1;
 	private static final int SONG_VISIBLE_ROWS = 5;
+	private static final int AMULET_DROP_VISIBLE_ROWS = 4;
 	private static final int SONG_COL_LIST = 0;
 	private static final int SONG_COL_OPTIONS = 1;
 
 	// Índices de foco del panel derecho en el Selector de Canciones (_songRightIdx)
 	private static final int RIGHT_FOCUS_DIFF = 0; // Selector de dificultad
-	private static final int RIGHT_FOCUS_M1 = 1;   // Modificador 1: Chip / Power-Up
+	private static final int RIGHT_FOCUS_M1 = 1;   // Modificador 1: Lista desplegable de Amuletos
 	private static final int RIGHT_FOCUS_M2 = 2;   // Modificador 2: Modo Jefe (Invencible / Normal)
 	private static final int RIGHT_FOCUS_M3 = 3;   // Modificador 3: Estrategia de Cura
 	private static final int RIGHT_FOCUS_M4 = 4;   // Modificador 4: Multiplicador de Velocidad
 	private static final int RIGHT_FOCUS_PLAY = 5; // Botón PLAY
 
-	private static final String[] CHIP_IDS = {
-		"none",
-		"powerup_reaction_plus",
-		"powerup_reaction_minus",
-		"powerup_invincibility"
-	};
 	private static final float[] SPEED_OPTIONS = { 0.85f, 1.0f, 1.25f };
 
-	// --- Configuración (Audio y Controles) ---
+	// --- Configuración (Audio y Controles 6K) ---
 	private static final int SET_FOCUS_BGM = 0;
 	private static final int SET_FOCUS_SFX = 1;
 	private static final int SET_FOCUS_MUTE = 2;
@@ -97,24 +91,15 @@ public class InitScene extends Scene {
 	private static final int SET_LEFT_COL_COUNT = 6; // Índices 0..5 en la columna izquierda
 	private static final int SET_FOCUS_RHYTHM_START = 7;  // Carriles 6K: 7..12
 	private static final int SET_FOCUS_RHYTHM_END = 12;
-	private static final int SET_FOCUS_RPG_START = 13;    // Controles Hub/RPG: 13..18
 
 	private static final int REBIND_NONE = 0;
 	private static final int REBIND_RHYTHM = 1;
-	private static final int REBIND_RPG = 2;
 
-	private static final String[] RPG_CONTROL_LABELS = {
-		"ARRIBA", "ABAJO", "IZQ", "DER", "ACCION", "CORRER"
-	};
-
-	/** Grilla 6x2 de índices de foco en la columna derecha de Configuración. */
+	/** Grilla 3x2 de índices de foco en la columna derecha de Configuración (Carriles 6K). */
 	private static final int[][] SETTINGS_RIGHT_GRID = {
 		{ 7, 10 },
 		{ 8, 11 },
-		{ 9, 12 },
-		{ 13, 14 },
-		{ 15, 16 },
-		{ 17, 18 }
+		{ 9, 12 }
 	};
 
 	// =========================================================================
@@ -145,30 +130,36 @@ public class InitScene extends Scene {
 	private Button _saveBackBtn;
 	private Textlabel _saveInfoLbl;
 
-	// --- Vista: Selector de Canciones ---
-	private static int _savedSongTab = SONG_TAB_BASE;
+	// --- Vista: Selector de Canciones y Tienda de Amuletos ---
+	private static int _savedSongTab = SONG_TAB_SONGS;
 	private int _songTab = _savedSongTab;
-	private int _selectedCustomIdx = 0;
-	private int _selectedCustomDiffIdx = 0;
-	private int _customScrollOffset = 0;
 	private int _selectedSongIdx = 0;
-	private int _selectedBaseDiffIdx = 0;
-	private int _storyScrollOffset = 0;
+	private int _selectedDiffIdx = 0;
+	private int _songScrollOffset = 0;
+	private int _shopSelectedIdx = 0;
+	private int _shopScrollOffset = 0;
 	private int _songFocusCol = SONG_COL_LIST;
 	private boolean _songOptionsOpen = false;
 	private int _songRightIdx = RIGHT_FOCUS_DIFF;
-	private int _songChipIdx = 0;
 	private boolean _songInvincibleMode = true;
 	private int _songSpeedIdx = 1;
 
+	// Estado de la lista desplegable de amuletos en la pestaña CANCIONES
+	private boolean _amuletDropdownOpen = false;
+	private int _amuletDropIdx = 0;
+	private int _amuletDropScrollOffset = 0;
+	private int _amuletLastFocusedItemIdx = 0;
+
 	private final List<SongPackLoader.SongPack> _basePacks = new ArrayList<>();
 	private final List<SongPackLoader.SongPack> _customPacks = new ArrayList<>();
+	private final List<SongPackLoader.SongPack> _allPacks = new ArrayList<>();
 	private static final Map<String, PImage> _coverCache = new HashMap<>();
 	private volatile boolean _importDialogBusy = false;
 	private volatile boolean _pendingCustomRefresh = false;
 	private volatile String _songStatusMsg = "";
 
 	private Group _songsGroup;
+	private Textlabel _songsHeaderLbl;
 	private Button _songTabCustomBtn;
 	private Button _songTabStoryBtn;
 	private final Button[] _songListBtns = new Button[SONG_VISIBLE_ROWS];
@@ -184,6 +175,12 @@ public class InitScene extends Scene {
 	private Button _songHealBtn;
 	private Button _songSpeedBtn;
 	private Button _songPlayBtn;
+
+	// Controles de la lista desplegable de amuletos
+	private Textlabel _amuletDropHeaderLbl;
+	private final Button[] _amuletDropBtns = new Button[AMULET_DROP_VISIBLE_ROWS];
+	private Textarea _amuletDropDescArea;
+	private Button _amuletDropCloseBtn;
 
 	// --- Vista: Configuración ---
 	private int _settingsFocusIdx = 0;
@@ -203,7 +200,6 @@ public class InitScene extends Scene {
 	private Button _setResetBtn;
 	private Button _setBackBtn;
 	private final Button[] _setRhythmBtns = new Button[6];
-	private final Button[] _setRpgBtns = new Button[6];
 
 	// =========================================================================
 	// 3. Constructores, ciclo de vida y dibujo por vista
@@ -239,7 +235,7 @@ public class InitScene extends Scene {
 		initBackgroundStars();
 		scanSongsDirectory(false);
 		refreshCustomSongs(false);
-		syncChipSelectionFromState();
+		syncSpeedSelectionFromState();
 
 		buildMainView();
 		buildSaveSelectView();
@@ -377,6 +373,7 @@ public class InitScene extends Scene {
 		} else if (mode == ViewMode.SONG_SELECT) {
 			_songTab = _savedSongTab;
 			_songOptionsOpen = false;
+			_amuletDropdownOpen = false;
 			_songFocusCol = SONG_COL_LIST;
 			_songRightIdx = RIGHT_FOCUS_DIFF;
 			refreshCustomSongs(false);
@@ -422,7 +419,7 @@ public class InitScene extends Scene {
 		if (fontTitle != null) titleBanner.setFont(fontTitle);
 		titleBanner.getCaptionLabel().align(PConstants.CENTER, PConstants.CENTER);
 
-		float btnW = 186.0f, btnH = 26.0f, btnX = (BASE_W - btnW) * 0.5f, startY = 92.0f, gap = 10.0f;
+		float btnW = 186.0f, btnH = 26.0f, btnX = (BASE_W - btnW) * 0.5f, startY = 104.0f, gap = 12.0f;
 		for (int i = 0; i < _mainBtns.length; i++) {
 			final int idx = i;
 			_mainBtns[i] = addUIButton("ui_main_btn_" + i, _mainGroup, MAIN_LABELS[i],
@@ -496,10 +493,9 @@ public class InitScene extends Scene {
 			Button slotBtn = _saveSlotBtns[i];
 			if (slotBtn != null) {
 				String text = sum.exists
-					? ("PARTIDA " + (i + 1) + " - " + sum.sceneLabel +
-					   " | " + Math.round(sum.progressPercent) + "%" +
-					   " | Jefes: " + sum.battlesWonCount +
-					   " | Items: " + sum.itemCount)
+					? ("PARTIDA " + (i + 1) + " — Puntos: " + GameState.getSaveSlotPoints(i) +
+					   " | Amuletos: " + sum.amuletCount +
+					   " | Canciones: " + sum.battlesWonCount)
 					: ("PARTIDA " + (i + 1) + " - [Vacio - Nueva Partida]");
 				slotBtn.setLabel((mainFocused ? "> " : "  ") + text);
 				if (mainFocused) {
@@ -559,16 +555,18 @@ public class InitScene extends Scene {
 		}
 	}
 
-	/** Carga o inicializa la ranura indicada y entra directamente al Hub interactivo. */
+	/** Carga o inicializa la ranura indicada y abre el Selector de Canciones y Tienda de la partida. */
 	private void launchSaveSlot(int slot) {
 		_confirmDeleteSlot = -1;
 		GameState.launchedFromMenu = false;
 		GameState.isDebugSession = false;
 		GameState.songSpeedMultiplier = 1.0f;
 		if (!GameState.hasSaveFile(slot) || !GameState.loadGame(slot)) {
-			GameState.startNewGame(slot, GameState.CampaignMode.CLASSIC);
+			GameState.startNewGame(slot);
 		}
-		Engine.changeScene(new HubScene());
+		_savedSongTab = SONG_TAB_SONGS;
+		_songTab = SONG_TAB_SONGS;
+		switchView(ViewMode.SONG_SELECT);
 	}
 
 	/** Gestiona el borrado en dos pasos (Borrar -> Confirmar) de una ranura de partida. */
@@ -590,23 +588,23 @@ public class InitScene extends Scene {
 		syncMainUI();
 	}
 
-	// --- 4.3 Vista: Selector de Canciones ---
+	// --- 4.3 Vista: Selector de Canciones y Tienda de Amuletos ---
 
-	/** Construye el Selector de Canciones con pestañas Custom/Base, lista, portada y modificadores. */
+	/** Construye el Selector de Canciones unificado con la pestaña de Tienda y la lista desplegable de amuletos. */
 	private void buildSongSelectView() {
 		PApplet app = Engine.getApp();
-		ControlFont fontTitle = makeFont(10.5f, true);
+		ControlFont fontTitle = makeFont(9.5f, true);
 		ControlFont fontMed = makeFont(7.5f, false);
 		ControlFont fontSmall = makeFont(6.5f, false);
 
 		_songsGroup = addUIGroup("ui_songs_group", 0, 0, BASE_W, BASE_H);
 		addUIBox("ui_songs_panel_bg", _songsGroup, 12, 10, BASE_W - 24, BASE_H - 20, app.color(14, 16, 28, 225));
-		addUILabel("ui_songs_header", _songsGroup, "SELECTOR DE CANCIONES", 22, 15, app.color(255, 225, 130), fontTitle);
+		_songsHeaderLbl = addUILabel("ui_songs_header", _songsGroup, "PARTIDA 1  |  PUNTOS: 0", 22, 16, app.color(255, 225, 130), fontTitle);
 
-		_songTabCustomBtn = addUIButton("ui_song_tab_custom", _songsGroup, "CANCIONES CUSTOM", 220, 14, 116, 18,
-			app.color(45, 95, 165), app.color(65, 130, 215), fontSmall, () -> setSongTab(SONG_TAB_CUSTOM));
-		_songTabStoryBtn = addUIButton("ui_song_tab_story", _songsGroup, "CANCIONES BASE", 342, 14, 116, 18,
-			app.color(28, 34, 52), app.color(55, 95, 165), fontSmall, () -> setSongTab(SONG_TAB_BASE));
+		_songTabCustomBtn = addUIButton("ui_song_tab_custom", _songsGroup, "CANCIONES", 220, 14, 116, 18,
+			app.color(45, 95, 165), app.color(65, 130, 215), fontSmall, () -> setSongTab(SONG_TAB_SONGS));
+		_songTabStoryBtn = addUIButton("ui_song_tab_story", _songsGroup, "TIENDA", 342, 14, 116, 18,
+			app.color(28, 34, 52), app.color(55, 95, 165), fontSmall, () -> setSongTab(SONG_TAB_SHOP));
 
 		for (int i = 0; i < _songListBtns.length; i++) {
 			final int visibleRow = i;
@@ -620,7 +618,7 @@ public class InitScene extends Scene {
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				scanSongsDirectory(true);
 				refreshCustomSongs(true);
-				_songStatusMsg = "Actualizado: " + _basePacks.size() + " base, " + _customPacks.size() + " custom.";
+				_songStatusMsg = "Actualizado: " + _allPacks.size() + " canciones (" + _basePacks.size() + " base, " + _customPacks.size() + " custom).";
 				syncSongSelectUI();
 			});
 
@@ -640,12 +638,11 @@ public class InitScene extends Scene {
 				cycleSelectedDifficulty(1);
 			});
 
-		_songChipBtn = addUIButton("ui_song_chip_btn", _songsGroup, "Chip: Ninguno", 220, 160, 116, 20,
+		_songChipBtn = addUIButton("ui_song_chip_btn", _songsGroup, "Amuletos: 0/1 [Desplegar]", 220, 160, 116, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_M1;
-				_songChipIdx = (_songChipIdx + 1) % CHIP_IDS.length;
-				syncSongSelectUI();
+				openAmuletDropdown();
 			});
 
 		_songInvincibleBtn = addUIButton("ui_song_invincible_btn", _songsGroup, "Jefe: Invencible", 342, 160, 116, 20,
@@ -676,27 +673,90 @@ public class InitScene extends Scene {
 			app.color(35, 125, 85), app.color(55, 170, 115), fontMed, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_PLAY;
-				launchSelectedSong();
+				if (_songTab == SONG_TAB_SHOP) {
+					executeShopPrimaryAction();
+				} else {
+					launchSelectedSong();
+				}
+			});
+
+		// Controles de la lista desplegable de amuletos (ocultos por defecto)
+		_amuletDropHeaderLbl = addUILabel("ui_amulet_drop_hdr", _songsGroup, "AMULETOS EQUIPADOS", 220, 40,
+			app.color(255, 225, 130), fontSmall);
+		for (int i = 0; i < _amuletDropBtns.length; i++) {
+			final int row = i;
+			_amuletDropBtns[i] = addUIButton("ui_amulet_drop_btn_" + i, _songsGroup, "", 220, 54 + i * 23, 238, 20,
+				app.color(28, 36, 56), app.color(55, 105, 180), fontSmall, () -> clickAmuletDropdownRow(row));
+		}
+		_amuletDropDescArea = addUITextarea("ui_amulet_drop_desc", _songsGroup, "", 220, 148, 238, 70,
+			app.color(225, 238, 255), app.color(20, 24, 38), fontSmall);
+		_amuletDropCloseBtn = addUIButton("ui_amulet_drop_close", _songsGroup, "CERRAR LISTA", 220, 224, 238, 24,
+			app.color(85, 36, 48), app.color(140, 55, 74), fontSmall, () -> {
+				_amuletDropdownOpen = false;
+				syncSongSelectUI();
 			});
 	}
 
-	/** Selecciona una canción al hacer clic en una fila visible de la lista izquierda. */
+	/** Abre la lista desplegable de amuletos en el panel derecho de la canción. */
+	private void openAmuletDropdown() {
+		_amuletDropdownOpen = true;
+		_amuletDropIdx = 0;
+		_amuletDropScrollOffset = 0;
+		_amuletLastFocusedItemIdx = 0;
+		syncSongSelectUI();
+	}
+
+	/** Gestiona el clic sobre una fila visible de la lista desplegable de amuletos. */
+	private void clickAmuletDropdownRow(int visibleRow) {
+		List<GameState.ItemDef> owned = GameState.getOwnedPowerUps();
+		if (owned.isEmpty()) {
+			_amuletDropdownOpen = false;
+			setSongTab(SONG_TAB_SHOP);
+			return;
+		}
+		int idx = _amuletDropScrollOffset + visibleRow;
+		if (idx >= 0 && idx < owned.size()) {
+			_amuletDropIdx = idx;
+			_amuletLastFocusedItemIdx = idx;
+			GameState.ItemDef def = owned.get(idx);
+			toggleAmuletWithFeedback(def);
+			syncSongSelectUI();
+		}
+	}
+
+	/** Alterna el equipamiento de un amuleto mostrando aviso si se alcanzó el cupo máximo. */
+	private void toggleAmuletWithFeedback(GameState.ItemDef def) {
+		if (def == null) return;
+		boolean wasEquipped = GameState.isPowerUpEquipped(def.id);
+		GameState.toggleEquippedPowerUp(def.id);
+		boolean nowEquipped = GameState.isPowerUpEquipped(def.id);
+		if (!wasEquipped && !nowEquipped) {
+			_songStatusMsg = "Cupo lleno (" + GameState.getMaxEquippedAmulets() + "). Desequipa otro amuleto.";
+		} else if (nowEquipped) {
+			_songStatusMsg = "Equipado: " + def.name;
+		} else {
+			_songStatusMsg = "Desequipado: " + def.name;
+		}
+		GameState.saveGame();
+	}
+
+	/** Selecciona una canción o amuleto de tienda al hacer clic en una fila visible de la columna izquierda. */
 	private void selectSongFromVisibleRow(int visibleRow) {
-		boolean isCustomTab = (_songTab == SONG_TAB_CUSTOM);
-		int actualIdx = (isCustomTab ? _customScrollOffset : _storyScrollOffset) + visibleRow;
-		if (isCustomTab) {
-			if (actualIdx < _customPacks.size()) {
-				if (_selectedCustomIdx != actualIdx) _selectedCustomDiffIdx = 0;
-				_selectedCustomIdx = actualIdx;
-				_songOptionsOpen = true;
+		if (_songTab == SONG_TAB_SHOP) {
+			List<GameState.ItemDef> shopList = GameState.getShopAmulets();
+			int actualIdx = _shopScrollOffset + visibleRow;
+			if (actualIdx >= 0 && actualIdx < shopList.size()) {
+				_shopSelectedIdx = actualIdx;
 				_songFocusCol = SONG_COL_OPTIONS;
-				_songRightIdx = RIGHT_FOCUS_DIFF;
+				_songRightIdx = RIGHT_FOCUS_PLAY;
 				syncSongSelectUI();
 			}
 		} else {
-			if (actualIdx < _basePacks.size()) {
-				if (_selectedSongIdx != actualIdx) _selectedBaseDiffIdx = 0;
+			int actualIdx = _songScrollOffset + visibleRow;
+			if (actualIdx >= 0 && actualIdx < _allPacks.size()) {
+				if (_selectedSongIdx != actualIdx) _selectedDiffIdx = 0;
 				_selectedSongIdx = actualIdx;
+				_amuletDropdownOpen = false;
 				_songOptionsOpen = true;
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_DIFF;
@@ -705,48 +765,57 @@ public class InitScene extends Scene {
 		}
 	}
 
-	/** Cambia entre la pestaña de Canciones Custom (0) y Canciones Base (1). */
+	/** Cambia entre la pestaña de Canciones unificadas (0) y la Tienda de Amuletos (1). */
 	private void setSongTab(int tab) {
-		_songTab = (tab == SONG_TAB_BASE) ? SONG_TAB_BASE : SONG_TAB_CUSTOM;
+		_songTab = (tab == SONG_TAB_SHOP) ? SONG_TAB_SHOP : SONG_TAB_SONGS;
 		_savedSongTab = _songTab;
 		_songOptionsOpen = false;
+		_amuletDropdownOpen = false;
 		_songFocusCol = SONG_COL_LIST;
 		_songStatusMsg = "";
 		syncSongSelectUI();
 	}
 
-	/** Sincroniza todos los elementos visuales del Selector de Canciones. */
+	/** Sincroniza todos los elementos visuales del Selector de Canciones y la Tienda de Amuletos. */
 	private void syncSongSelectUI() {
 		PApplet app = Engine.getApp();
-		boolean isCustomTab = (_songTab == SONG_TAB_CUSTOM);
+		boolean isShopTab = (_songTab == SONG_TAB_SHOP);
 		ensureSelectionVisible();
 
+		if (_songsHeaderLbl != null) {
+			_songsHeaderLbl.setText(
+				"PARTIDA " + (GameState.activeSaveSlot + 1) + "  |  PUNTOS: " + GameState.getShopPoints()
+			);
+		}
+
 		if (_songTabCustomBtn != null) {
-			_songTabCustomBtn.setLabel((isCustomTab ? "* " : "") + "CANCIONES CUSTOM");
-			_songTabCustomBtn.setColorBackground(isCustomTab ? app.color(45, 95, 165) : app.color(26, 30, 46));
+			_songTabCustomBtn.setLabel((!isShopTab ? "* " : "") + "CANCIONES");
+			_songTabCustomBtn.setColorBackground(!isShopTab ? app.color(45, 95, 165) : app.color(26, 30, 46));
 		}
 		if (_songTabStoryBtn != null) {
-			_songTabStoryBtn.setLabel((!isCustomTab ? "* " : "") + "CANCIONES BASE");
-			_songTabStoryBtn.setColorBackground(!isCustomTab ? app.color(45, 95, 165) : app.color(26, 30, 46));
+			_songTabStoryBtn.setLabel((isShopTab ? "* " : "") + "TIENDA");
+			_songTabStoryBtn.setColorBackground(isShopTab ? app.color(45, 95, 165) : app.color(26, 30, 46));
 		}
 
-		if (_songImportBtn != null) {
-			if (isCustomTab) _songImportBtn.show();
-			else _songImportBtn.hide();
+		if (isShopTab) {
+			syncShopTabUI(app);
+		} else {
+			syncSongsTabUI(app);
 		}
+	}
+
+	/** Sincroniza la pestaña CANCIONES (lista unificada Base + Custom, metadatos, opciones y desplegable de amuletos). */
+	private void syncSongsTabUI(PApplet app) {
+		if (_songImportBtn != null) _songImportBtn.show();
 		if (_songRescanBtn != null) _songRescanBtn.show();
-
-		List<SongPackLoader.SongPack> activeList = isCustomTab ? _customPacks : _basePacks;
-		int scrollOff = isCustomTab ? _customScrollOffset : _storyScrollOffset;
-		int selIdx = isCustomTab ? _selectedCustomIdx : _selectedSongIdx;
 
 		for (int i = 0; i < _songListBtns.length; i++) {
 			Button btn = _songListBtns[i];
 			if (btn == null) continue;
-			int idx = scrollOff + i;
-			if (idx < activeList.size()) {
-				SongPackLoader.SongPack pack = activeList.get(idx);
-				boolean sel = (idx == selIdx);
+			int idx = _songScrollOffset + i;
+			if (idx < _allPacks.size()) {
+				SongPackLoader.SongPack pack = _allPacks.get(idx);
+				boolean sel = (idx == _selectedSongIdx);
 				boolean focused = sel && (_songFocusCol == SONG_COL_LIST);
 				String diffSuffix = (pack.difficulties.size() > 1) ? (" (" + pack.difficulties.size() + " dif.)") : "";
 				String label = pack.title + diffSuffix;
@@ -761,42 +830,275 @@ public class InitScene extends Scene {
 			}
 		}
 
-		SongPackLoader.SongPack activePack = getActivePack();
-		SongPackLoader.ChartVariant activeVar = getActiveChartVariant();
-
-		syncSongInfoAndCover(activeVar, isCustomTab);
-
 		if (_songListFooterLbl != null) {
 			if (!_songStatusMsg.isEmpty()) {
 				_songListFooterLbl.setText(_songStatusMsg);
-			} else if (activeList.isEmpty()) {
-				_songListFooterLbl.setText(isCustomTab ? "0 custom | TAB / ESC" : "0 base | TAB / ESC");
+			} else if (_allPacks.isEmpty()) {
+				_songListFooterLbl.setText("0 canciones | TAB: Tienda | ESC: Salir");
 			} else {
 				_songListFooterLbl.setText(
-					(isCustomTab ? "Custom " : "Base ") + (selIdx + 1) + "/" + activeList.size() + " | TAB/ESC"
+					"Cancion " + (_selectedSongIdx + 1) + "/" + _allPacks.size() + " | TAB: Tienda | ESC: Salir"
 				);
 			}
 		}
 
-		syncSongOptionsPanel(app, activePack, activeVar, isCustomTab);
+		SongPackLoader.SongPack activePack = getActivePack();
+		SongPackLoader.ChartVariant activeVar = getActiveChartVariant();
+
+		if (_amuletDropdownOpen) {
+			if (_songInfoArea != null) _songInfoArea.hide();
+			if (_songCoverBox != null) _songCoverBox.hide();
+			if (_songBadgeArea != null) _songBadgeArea.hide();
+			if (_songDiffBtn != null) _songDiffBtn.hide();
+			if (_songChipBtn != null) _songChipBtn.hide();
+			if (_songInvincibleBtn != null) _songInvincibleBtn.hide();
+			if (_songHealBtn != null) _songHealBtn.hide();
+			if (_songSpeedBtn != null) _songSpeedBtn.hide();
+			if (_songPlayBtn != null) _songPlayBtn.hide();
+			syncAmuletDropdownUI(app);
+		} else {
+			hideAmuletDropdownControls();
+			syncSongInfoAndCover(activeVar);
+			syncSongOptionsPanel(app, activePack, activeVar);
+		}
+	}
+
+	/** Sincroniza la lista desplegable de amuletos con nombre y descripción debajo. */
+	private void syncAmuletDropdownUI(PApplet app) {
+		List<GameState.ItemDef> owned = GameState.getOwnedPowerUps();
+		List<String> eq = GameState.getEquippedPowerUps();
+		int maxEq = GameState.getMaxEquippedAmulets();
+
+		if (_amuletDropHeaderLbl != null) {
+			_amuletDropHeaderLbl.setText("AMULETOS  |  Equipados: " + eq.size() + "/" + maxEq);
+			_amuletDropHeaderLbl.show();
+		}
+
+		if (owned.isEmpty()) {
+			_amuletDropIdx = 0;
+			_amuletDropScrollOffset = 0;
+			if (_amuletDropBtns[0] != null) {
+				_amuletDropBtns[0].setLabel("  Sin amuletos — Compra en TIENDA");
+				_amuletDropBtns[0].setColorBackground(app.color(36, 44, 68));
+				_amuletDropBtns[0].show();
+			}
+			for (int i = 1; i < _amuletDropBtns.length; i++) {
+				if (_amuletDropBtns[i] != null) _amuletDropBtns[i].hide();
+			}
+			if (_amuletDropDescArea != null) {
+				_amuletDropDescArea.setText(
+					"Sin amuletos en inventario.\n" +
+					"Pulsa TAB o abre la pestana TIENDA para comprar amuletos con tus puntos."
+				);
+				_amuletDropDescArea.show();
+			}
+			if (_amuletDropCloseBtn != null) {
+				_amuletDropCloseBtn.setLabel("> CERRAR LISTA");
+				_amuletDropCloseBtn.setColorBackground(app.color(145, 58, 78));
+				_amuletDropCloseBtn.show();
+			}
+			return;
+		}
+
+		int totalFocusable = owned.size() + 1; // 0..owned.size()-1 amuletos, owned.size() = CERRAR LISTA
+		if (_amuletDropIdx < 0 || _amuletDropIdx >= totalFocusable) {
+			_amuletDropIdx = 0;
+		}
+		if (_amuletDropIdx < owned.size()) {
+			_amuletLastFocusedItemIdx = _amuletDropIdx;
+			if (_amuletDropIdx < _amuletDropScrollOffset) {
+				_amuletDropScrollOffset = _amuletDropIdx;
+			} else if (_amuletDropIdx >= _amuletDropScrollOffset + AMULET_DROP_VISIBLE_ROWS) {
+				_amuletDropScrollOffset = _amuletDropIdx - AMULET_DROP_VISIBLE_ROWS + 1;
+			}
+		}
+		_amuletDropScrollOffset = Math.max(0, Math.min(_amuletDropScrollOffset, Math.max(0, owned.size() - AMULET_DROP_VISIBLE_ROWS)));
+
+		for (int i = 0; i < _amuletDropBtns.length; i++) {
+			Button btn = _amuletDropBtns[i];
+			if (btn == null) continue;
+			int idx = _amuletDropScrollOffset + i;
+			if (idx < owned.size()) {
+				GameState.ItemDef def = owned.get(idx);
+				boolean isEq = GameState.isPowerUpEquipped(def.id);
+				boolean focused = (_amuletDropIdx == idx);
+				String label = (focused ? "> " : "  ") + (isEq ? "[E] " : "[ ] ") + def.name;
+				btn.setLabel(label);
+				btn.setColorBackground(
+					focused ? app.color(55, 110, 195) : (isEq ? app.color(34, 72, 105) : app.color(26, 32, 48))
+				);
+				btn.show();
+			} else {
+				btn.hide();
+			}
+		}
+
+		int descIdx = (_amuletDropIdx < owned.size()) ? _amuletDropIdx : Math.min(_amuletLastFocusedItemIdx, owned.size() - 1);
+		GameState.ItemDef focusedDef = owned.get(Math.max(0, descIdx));
+		if (_amuletDropDescArea != null) {
+			_amuletDropDescArea.setText(focusedDef.name + "\n" + focusedDef.description);
+			_amuletDropDescArea.show();
+		}
+
+		if (_amuletDropCloseBtn != null) {
+			boolean closeFocused = (_amuletDropIdx == owned.size());
+			_amuletDropCloseBtn.setLabel((closeFocused ? "> " : "") + "CERRAR LISTA");
+			_amuletDropCloseBtn.setColorBackground(closeFocused ? app.color(145, 58, 78) : app.color(85, 36, 48));
+			_amuletDropCloseBtn.show();
+		}
+	}
+
+	private void hideAmuletDropdownControls() {
+		if (_amuletDropHeaderLbl != null) _amuletDropHeaderLbl.hide();
+		for (Button btn : _amuletDropBtns) {
+			if (btn != null) btn.hide();
+		}
+		if (_amuletDropDescArea != null) _amuletDropDescArea.hide();
+		if (_amuletDropCloseBtn != null) _amuletDropCloseBtn.hide();
+	}
+
+	/** Sincroniza la pestaña TIENDA (catálogo de amuletos, detalle del amuleto y botón de compra/equipar). */
+	private void syncShopTabUI(PApplet app) {
+		hideAmuletDropdownControls();
+		if (_songImportBtn != null) _songImportBtn.hide();
+		if (_songRescanBtn != null) _songRescanBtn.hide();
+		if (_songCoverBox != null) _songCoverBox.hide();
+		if (_songBadgeArea != null) _songBadgeArea.hide();
+		if (_songDiffBtn != null) _songDiffBtn.hide();
+		if (_songChipBtn != null) _songChipBtn.hide();
+		if (_songInvincibleBtn != null) _songInvincibleBtn.hide();
+		if (_songHealBtn != null) _songHealBtn.hide();
+		if (_songSpeedBtn != null) _songSpeedBtn.hide();
+
+		List<GameState.ItemDef> shopList = GameState.getShopAmulets();
+		if (_shopSelectedIdx >= shopList.size()) {
+			_shopSelectedIdx = Math.max(0, shopList.size() - 1);
+		}
+
+		for (int i = 0; i < _songListBtns.length; i++) {
+			Button btn = _songListBtns[i];
+			if (btn == null) continue;
+			int idx = _shopScrollOffset + i;
+			if (idx < shopList.size()) {
+				GameState.ItemDef def = shopList.get(idx);
+				boolean owned = GameState.hasItem(def.id);
+				boolean equipped = GameState.isPowerUpEquipped(def.id);
+				boolean sel = (idx == _shopSelectedIdx);
+				boolean focused = sel && (_songFocusCol == SONG_COL_LIST);
+
+				String itemLabel;
+				if (owned && equipped) {
+					itemLabel = "[EQUIP] " + def.name;
+				} else if (owned) {
+					itemLabel = "[COMPRADO] " + def.name;
+				} else {
+					itemLabel = def.name + " (" + def.shopPrice + " pts)";
+				}
+				if (itemLabel.length() > 27) itemLabel = itemLabel.substring(0, 24) + "...";
+
+				btn.setLabel((focused ? "> " : (sel ? "* " : "  ")) + itemLabel);
+				btn.setColorBackground(
+					focused ? app.color(55, 110, 195) : (sel ? app.color(36, 62, 108) : app.color(26, 30, 46))
+				);
+				btn.show();
+			} else {
+				btn.hide();
+			}
+		}
+
+		if (_songListFooterLbl != null) {
+			if (!_songStatusMsg.isEmpty()) {
+				_songListFooterLbl.setText(_songStatusMsg);
+			} else if (shopList.isEmpty()) {
+				_songListFooterLbl.setText("Tienda vacia | TAB: Canciones | ESC: Salir");
+			} else {
+				_songListFooterLbl.setText(
+					"Amuleto " + (_shopSelectedIdx + 1) + "/" + shopList.size() + " | TAB: Canciones | ESC: Salir"
+				);
+			}
+		}
+
+		GameState.ItemDef selectedDef = (!shopList.isEmpty() && _shopSelectedIdx >= 0 && _shopSelectedIdx < shopList.size())
+			? shopList.get(_shopSelectedIdx)
+			: null;
+
+		if (_songInfoArea != null) {
+			_songInfoArea.setSize(Math.max(1, (int) scaleW(238)), Math.max(1, (int) scaleH(130)));
+			if (selectedDef == null) {
+				_songInfoArea.setText("No hay amuletos disponibles en la tienda.");
+			} else {
+				boolean owned = GameState.hasItem(selectedDef.id);
+				boolean equipped = GameState.isPowerUpEquipped(selectedDef.id);
+				_songInfoArea.setText(
+					"Amuleto: " + selectedDef.name + "\n" +
+					"Precio: " + selectedDef.shopPrice + " puntos  |  Tus puntos: " + GameState.getShopPoints() + "\n" +
+					"Estado: " + (owned ? (equipped ? "COMPRADO Y EQUIPADO" : "COMPRADO (En inventario)") : "DISPONIBLE PARA COMPRAR") + "\n" +
+					"Equipados: " + GameState.getEquippedPowerUps().size() + "/" + GameState.getMaxEquippedAmulets() + "\n\n" +
+					selectedDef.description
+				);
+			}
+			_songInfoArea.show();
+		}
+
+		if (_songPlayBtn != null) {
+			if (selectedDef == null) {
+				_songPlayBtn.hide();
+			} else {
+				boolean owned = GameState.hasItem(selectedDef.id);
+				boolean equipped = GameState.isPowerUpEquipped(selectedDef.id);
+				boolean f = (_songFocusCol == SONG_COL_OPTIONS);
+				String actionLabel;
+				if (!owned) {
+					actionLabel = "COMPRAR (" + selectedDef.shopPrice + " PTS)";
+					_songPlayBtn.setColorBackground(f ? app.color(205, 145, 38) : app.color(148, 102, 26));
+				} else {
+					actionLabel = equipped ? "DESEQUIPAR AMULETO" : "EQUIPAR AMULETO";
+					_songPlayBtn.setColorBackground(f ? app.color(55, 185, 120) : app.color(35, 130, 85));
+				}
+				_songPlayBtn.setLabel((f ? "> " : "") + actionLabel);
+				_songPlayBtn.show();
+			}
+		}
+	}
+
+	/** Ejecuta la acción de comprar o equipar/desequipar el amuleto seleccionado en la pestaña TIENDA. */
+	private void executeShopPrimaryAction() {
+		List<GameState.ItemDef> shopList = GameState.getShopAmulets();
+		if (shopList.isEmpty() || _shopSelectedIdx < 0 || _shopSelectedIdx >= shopList.size()) return;
+
+		GameState.ItemDef def = shopList.get(_shopSelectedIdx);
+		if (!GameState.hasItem(def.id)) {
+			if (GameState.buyShopAmulet(def.id)) {
+				_songStatusMsg = "Comprado: " + def.name;
+				if (GameState.getEquippedPowerUps().isEmpty()) {
+					GameState.toggleEquippedPowerUp(def.id);
+					GameState.saveGame();
+				}
+			} else {
+				_songStatusMsg = "Puntos insuficientes (" + GameState.getShopPoints() + "/" + def.shopPrice + ")";
+			}
+		} else {
+			toggleAmuletWithFeedback(def);
+		}
+		syncSongSelectUI();
 	}
 
 	/** Actualiza el cuadro de metadatos, dificultad calculada, récord y miniatura de portada. */
-	private void syncSongInfoAndCover(SongPackLoader.ChartVariant activeVar, boolean isCustomTab) {
+	private void syncSongInfoAndCover(SongPackLoader.ChartVariant activeVar) {
 		float speedMult = SPEED_OPTIONS[_songSpeedIdx];
 		if (_songInfoArea != null) {
 			_songInfoArea.setSize(Math.max(1, (int) scaleW(164)), Math.max(1, (int) scaleH(88)));
 			if (activeVar == null) {
-				_songInfoArea.setText(isCustomTab
-					? "No hay canciones custom.\nUsa '+ IMPORTAR .OSU' o agrega carpetas en resources/songs/custom/"
-					: "No hay canciones base.\nAgrega carpetas .osu en resources/songs/base/");
+				_songInfoArea.setText(
+					"No hay canciones registradas.\nUsa '+ IMPORTAR .OSU' o agrega carpetas en resources/songs/"
+				);
 			} else {
 				float effStars = SongPackLoader.computeDifficultyRating(activeVar.noteCount, activeVar.bpm, activeVar.durationSec, speedMult);
 				float effNps = SongPackLoader.computeNotesPerSecond(activeVar.noteCount, activeVar.durationSec, speedMult);
 				String tier = SongPackLoader.getDifficultyTierLabel(effStars);
 				String diffLine = String.format("Nivel: %.1f* (%s) | %.1f n/s", effStars, tier, effNps);
 
-				if (isCustomTab && activeVar.customDbSummary != null) {
+				if (activeVar.customDbSummary != null) {
 					CustomSongRepository.CustomSongSummary c = activeVar.customDbSummary;
 					_songInfoArea.setText(
 						"Cancion: " + c.titulo + "\n" +
@@ -816,17 +1118,17 @@ public class InitScene extends Scene {
 					);
 				}
 			}
+			_songInfoArea.show();
 		}
 
 		refreshSelectedCover(activeVar, speedMult);
 	}
 
-	/** Sincroniza los botones de dificultad, modificadores y PLAY del panel derecho. */
+	/** Sincroniza los botones de dificultad, amuletos, modificadores y PLAY del panel derecho. */
 	private void syncSongOptionsPanel(
 		PApplet app,
 		SongPackLoader.SongPack activePack,
-		SongPackLoader.ChartVariant activeVar,
-		boolean isCustomTab
+		SongPackLoader.ChartVariant activeVar
 	) {
 		boolean showOpts = _songOptionsOpen && activeVar != null && activePack != null;
 		boolean rightActive = showOpts && (_songFocusCol == SONG_COL_OPTIONS);
@@ -839,8 +1141,7 @@ public class InitScene extends Scene {
 				String starTag = String.format(" [%.1f*]", effStars);
 				String diffLabel;
 				if (activePack.difficulties.size() > 1) {
-					int dIdx = isCustomTab ? _selectedCustomDiffIdx : _selectedBaseDiffIdx;
-					diffLabel = "Dificultad: < " + activeVar.difficulty + " >" + starTag + " (" + (dIdx + 1) + "/" + activePack.difficulties.size() + ")";
+					diffLabel = "Dificultad: < " + activeVar.difficulty + " >" + starTag + " (" + (_selectedDiffIdx + 1) + "/" + activePack.difficulties.size() + ")";
 				} else {
 					diffLabel = "Dificultad: " + activeVar.difficulty + starTag;
 				}
@@ -853,10 +1154,10 @@ public class InitScene extends Scene {
 		}
 		if (_songChipBtn != null) {
 			if (showOpts) {
-				String chipId = CHIP_IDS[_songChipIdx];
-				String chipLabel = "none".equals(chipId) ? "Ninguno" : GameState.getItemName(chipId);
+				List<String> eq = GameState.getEquippedPowerUps();
+				int maxEq = GameState.getMaxEquippedAmulets();
 				boolean f = rightActive && (_songRightIdx == RIGHT_FOCUS_M1);
-				_songChipBtn.setLabel((f ? "> " : "") + "Chip: " + chipLabel);
+				_songChipBtn.setLabel((f ? "> " : "") + "Amuletos: " + eq.size() + "/" + maxEq + " [Desplegar]");
 				_songChipBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
 				_songChipBtn.show();
 			} else {
@@ -905,17 +1206,16 @@ public class InitScene extends Scene {
 		}
 	}
 
-	/** Aplica los modificadores elegidos e inicia la batalla rítmica de la canción seleccionada. */
+	/** Aplica los modificadores elegidos, guarda la partida e inicia la batalla rítmica de la canción seleccionada. */
 	private void launchSelectedSong() {
 		SongPackLoader.ChartVariant variant = getActiveChartVariant();
 		if (variant == null) return;
 
-		GameState.ensureFreeplayPowerUps();
-		GameState.equipPowerUp(CHIP_IDS[_songChipIdx]);
 		GameState.songSpeedMultiplier = SPEED_OPTIONS[_songSpeedIdx];
 		GameState.bossInvincibleMode = _songInvincibleMode;
 		GameState.launchedFromMenu = true;
 		_savedSongTab = _songTab;
+		GameState.saveGame();
 
 		if (variant.customDbSummary != null) {
 			CustomSongRepository.CustomSongSummary fresh = CustomSongRepository.getById(variant.customDbSummary.idCancion);
@@ -925,9 +1225,9 @@ public class InitScene extends Scene {
 		}
 	}
 
-	// --- 4.4 Vista: Configuración (Audio y Controles) ---
+	// --- 4.4 Vista: Configuración (Audio y Controles 6K) ---
 
-	/** Construye el panel de Configuración con controles de volumen BGM/SFX y rebinding de teclas. */
+	/** Construye el panel de Configuración con controles de volumen BGM/SFX y rebinding de los 6 carriles. */
 	private void buildSettingsView() {
 		PApplet app = Engine.getApp();
 		ControlFont fontTitle = makeFont(11.0f, true);
@@ -969,7 +1269,7 @@ public class InitScene extends Scene {
 				switchView(ViewMode.MAIN);
 			});
 
-		// Columna Derecha: Rebinding de Teclas (Carriles 6K y Controles Hub/RPG)
+		// Columna Derecha: Rebinding de Teclas (únicamente Carriles Ritmo 6K: C1..C6)
 		addUILabel("ui_set_rhythm_hdr", _settingsGroup, "CARRILES RITMO 6K", 236, 38, app.color(140, 215, 255), fontSmall);
 		for (int i = 0; i < 6; i++) {
 			final int lane = i;
@@ -982,19 +1282,6 @@ public class InitScene extends Scene {
 					_settingsFocusIdx = SET_FOCUS_RHYTHM_START + lane;
 					_rebindCategory = REBIND_RHYTHM;
 					_rebindIndex = lane;
-					syncSettingsUI();
-				});
-		}
-
-		addUILabel("ui_set_rpg_hdr", _settingsGroup, "CONTROLES", 236, 136, app.color(140, 215, 255), fontSmall);
-		for (int i = 0; i < _setRpgBtns.length; i++) {
-			final int idx = i;
-			_setRpgBtns[i] = addUIButton("ui_set_rpg_" + i, _settingsGroup, "",
-				236 + (i % 2) * 114, 150 + (i / 2) * 24, 108, 20,
-				app.color(28, 34, 52), app.color(50, 95, 165), fontSmall, () -> {
-					_settingsFocusIdx = SET_FOCUS_RPG_START + idx;
-					_rebindCategory = REBIND_RPG;
-					_rebindIndex = idx;
 					syncSettingsUI();
 				});
 		}
@@ -1067,18 +1354,6 @@ public class InitScene extends Scene {
 				listening ? app.color(175, 115, 25) : (f ? app.color(55, 110, 195) : app.color(28, 34, 52))
 			);
 		}
-
-		int[] rpgArr = _editingAltControls ? Config.RPGAltButtons : Config.RPGButtons;
-		for (int i = 0; i < _setRpgBtns.length; i++) {
-			Button b = _setRpgBtns[i];
-			if (b == null) continue;
-			boolean listening = (_rebindCategory == REBIND_RPG && _rebindIndex == i);
-			boolean f = (_settingsFocusIdx == SET_FOCUS_RPG_START + i);
-			b.setLabel((f ? "> " : "") + RPG_CONTROL_LABELS[i] + ": " + (listening ? "[ ? ]" : Config.getKeyLabel(rpgArr[i])));
-			b.setColorBackground(
-				listening ? app.color(175, 115, 25) : (f ? app.color(55, 110, 195) : app.color(28, 34, 52))
-			);
-		}
 	}
 
 	private void adjustBgmVolume(float delta) {
@@ -1136,11 +1411,8 @@ public class InitScene extends Scene {
 			int normalized = KBInput.normalizeKey(code);
 			if (normalized > 0 && normalized < 256) {
 				int[] rhythmArr = _editingAltControls ? Config.RhythmAltButtons : Config.RhythmButtons;
-				int[] rpgArr = _editingAltControls ? Config.RPGAltButtons : Config.RPGButtons;
 				if (_rebindCategory == REBIND_RHYTHM && _rebindIndex >= 0 && _rebindIndex < rhythmArr.length) {
 					rhythmArr[_rebindIndex] = normalized;
-				} else if (_rebindCategory == REBIND_RPG && _rebindIndex >= 0 && _rebindIndex < rpgArr.length) {
-					rpgArr[_rebindIndex] = normalized;
 				}
 				Config.saveConfig(".config");
 				_rebindCategory = REBIND_NONE;
@@ -1183,7 +1455,6 @@ public class InitScene extends Scene {
 	private void activateMainButton(int idx) {
 		switch (idx) {
 			case MAIN_OPT_PLAY -> switchView(ViewMode.SAVE_SELECT);
-			case MAIN_OPT_SONGS -> switchView(ViewMode.SONG_SELECT);
 			case MAIN_OPT_SETTINGS -> switchView(ViewMode.SETTINGS);
 			case MAIN_OPT_EXIT -> Engine.getApp().exit();
 		}
@@ -1254,41 +1525,42 @@ public class InitScene extends Scene {
 			refreshCustomSongs(false);
 			syncSongSelectUI();
 		}
-		if (KBInput.wasKeyJustPressed(9)) { // TAB alterna entre Canciones Custom y Canciones Base
-			setSongTab(_songTab == SONG_TAB_CUSTOM ? SONG_TAB_BASE : SONG_TAB_CUSTOM);
+		if (KBInput.wasKeyJustPressed(9)) { // TAB alterna entre CANCIONES y TIENDA
+			setSongTab(_songTab == SONG_TAB_SONGS ? SONG_TAB_SHOP : SONG_TAB_SONGS);
 			return;
 		}
+
+		if (_songTab == SONG_TAB_SHOP) {
+			handleShopTabNavigation(up, down, left, right, accept, back);
+			return;
+		}
+
+		if (_amuletDropdownOpen) {
+			handleAmuletDropdownNavigation(up, down, left, accept, back);
+			return;
+		}
+
 		if (back) {
 			if (_songOptionsOpen) {
 				_songOptionsOpen = false;
 				_songFocusCol = SONG_COL_LIST;
 				syncSongSelectUI();
 			} else {
-				switchView(ViewMode.MAIN);
+				GameState.saveGame();
+				switchView(ViewMode.SAVE_SELECT);
 			}
 			return;
 		}
 
 		if (!_songOptionsOpen || _songFocusCol == SONG_COL_LIST) {
-			boolean isCustomTab = (_songTab == SONG_TAB_CUSTOM);
-			int listSize = isCustomTab ? _customPacks.size() : _basePacks.size();
+			int listSize = _allPacks.size();
 			if (up && listSize > 0) {
-				if (isCustomTab) {
-					_selectedCustomIdx = (_selectedCustomIdx - 1 + listSize) % listSize;
-					_selectedCustomDiffIdx = 0;
-				} else {
-					_selectedSongIdx = (_selectedSongIdx - 1 + listSize) % listSize;
-					_selectedBaseDiffIdx = 0;
-				}
+				_selectedSongIdx = (_selectedSongIdx - 1 + listSize) % listSize;
+				_selectedDiffIdx = 0;
 				syncSongSelectUI();
 			} else if (down && listSize > 0) {
-				if (isCustomTab) {
-					_selectedCustomIdx = (_selectedCustomIdx + 1) % listSize;
-					_selectedCustomDiffIdx = 0;
-				} else {
-					_selectedSongIdx = (_selectedSongIdx + 1) % listSize;
-					_selectedBaseDiffIdx = 0;
-				}
+				_selectedSongIdx = (_selectedSongIdx + 1) % listSize;
+				_selectedDiffIdx = 0;
 				syncSongSelectUI();
 			} else if ((accept || right) && listSize > 0) {
 				_songOptionsOpen = true;
@@ -1298,6 +1570,88 @@ public class InitScene extends Scene {
 			}
 		} else {
 			handleSongOptionsNavigation(up, down, left, right, accept);
+		}
+	}
+
+	/** Navegación dentro de la lista desplegable de amuletos en la pestaña CANCIONES. */
+	private void handleAmuletDropdownNavigation(
+		boolean up,
+		boolean down,
+		boolean left,
+		boolean accept,
+		boolean back
+	) {
+		if (back || left) {
+			_amuletDropdownOpen = false;
+			syncSongSelectUI();
+			return;
+		}
+		List<GameState.ItemDef> owned = GameState.getOwnedPowerUps();
+		if (owned.isEmpty()) {
+			if (accept) {
+				_amuletDropdownOpen = false;
+				syncSongSelectUI();
+			}
+			return;
+		}
+
+		int total = owned.size() + 1; // 0..owned.size()-1 amuletos + botón CERRAR LISTA
+		if (up) {
+			_amuletDropIdx = (_amuletDropIdx - 1 + total) % total;
+			syncSongSelectUI();
+		} else if (down) {
+			_amuletDropIdx = (_amuletDropIdx + 1) % total;
+			syncSongSelectUI();
+		} else if (accept) {
+			if (_amuletDropIdx == owned.size()) {
+				_amuletDropdownOpen = false;
+				syncSongSelectUI();
+			} else if (_amuletDropIdx >= 0 && _amuletDropIdx < owned.size()) {
+				toggleAmuletWithFeedback(owned.get(_amuletDropIdx));
+				syncSongSelectUI();
+			}
+		}
+	}
+
+	/** Navegación dentro de la pestaña TIENDA. */
+	private void handleShopTabNavigation(
+		boolean up,
+		boolean down,
+		boolean left,
+		boolean right,
+		boolean accept,
+		boolean back
+	) {
+		if (back) {
+			if (_songFocusCol == SONG_COL_OPTIONS) {
+				_songFocusCol = SONG_COL_LIST;
+				syncSongSelectUI();
+			} else {
+				GameState.saveGame();
+				switchView(ViewMode.SAVE_SELECT);
+			}
+			return;
+		}
+
+		List<GameState.ItemDef> shopList = GameState.getShopAmulets();
+		int listSize = shopList.size();
+		if (listSize == 0) return;
+
+		if (up) {
+			_shopSelectedIdx = (_shopSelectedIdx - 1 + listSize) % listSize;
+			syncSongSelectUI();
+		} else if (down) {
+			_shopSelectedIdx = (_shopSelectedIdx + 1) % listSize;
+			syncSongSelectUI();
+		} else if (right && _songFocusCol == SONG_COL_LIST) {
+			_songFocusCol = SONG_COL_OPTIONS;
+			_songRightIdx = RIGHT_FOCUS_PLAY;
+			syncSongSelectUI();
+		} else if (left && _songFocusCol == SONG_COL_OPTIONS) {
+			_songFocusCol = SONG_COL_LIST;
+			syncSongSelectUI();
+		} else if (accept) {
+			executeShopPrimaryAction();
 		}
 	}
 
@@ -1352,10 +1706,7 @@ public class InitScene extends Scene {
 	private void activateSongRightOption(int rightIdx) {
 		switch (rightIdx) {
 			case RIGHT_FOCUS_DIFF -> cycleSelectedDifficulty(1);
-			case RIGHT_FOCUS_M1 -> {
-				_songChipIdx = (_songChipIdx + 1) % CHIP_IDS.length;
-				syncSongSelectUI();
-			}
+			case RIGHT_FOCUS_M1 -> openAmuletDropdown();
 			case RIGHT_FOCUS_M2 -> {
 				_songInvincibleMode = !_songInvincibleMode;
 				syncSongSelectUI();
@@ -1411,15 +1762,15 @@ public class InitScene extends Scene {
 						else if (accept) toggleMuteSetting();
 					}
 					case SET_FOCUS_ALT_MODE -> {
-						if (right) { _settingsFocusIdx = 9; syncSettingsUI(); }
+						if (right) { _settingsFocusIdx = 8; syncSettingsUI(); }
 						else if (accept) toggleAltControlsMode();
 					}
 					case SET_FOCUS_RESET -> {
-						if (right) { _settingsFocusIdx = 13; syncSettingsUI(); }
+						if (right) { _settingsFocusIdx = 9; syncSettingsUI(); }
 						else if (accept) resetAllControlsSetting();
 					}
 					case SET_FOCUS_BACK -> {
-						if (right) { _settingsFocusIdx = 15; syncSettingsUI(); }
+						if (right) { _settingsFocusIdx = 9; syncSettingsUI(); }
 						else if (accept) {
 							_savedSettingsFocusIdx = 0;
 							Config.saveConfig(".config");
@@ -1431,16 +1782,13 @@ public class InitScene extends Scene {
 			return;
 		}
 
-		// Columna derecha: Carriles 6K (7..12) y Controles Hub/RPG (13..18)
+		// Columna derecha: Carriles 6K (7..12)
 		if (accept) {
-			if (_settingsFocusIdx <= SET_FOCUS_RHYTHM_END) {
+			if (_settingsFocusIdx >= SET_FOCUS_RHYTHM_START && _settingsFocusIdx <= SET_FOCUS_RHYTHM_END) {
 				_rebindCategory = REBIND_RHYTHM;
 				_rebindIndex = _settingsFocusIdx - SET_FOCUS_RHYTHM_START;
-			} else {
-				_rebindCategory = REBIND_RPG;
-				_rebindIndex = _settingsFocusIdx - SET_FOCUS_RPG_START;
+				syncSettingsUI();
 			}
-			syncSettingsUI();
 			return;
 		}
 
@@ -1460,9 +1808,8 @@ public class InitScene extends Scene {
 			} else {
 				_settingsFocusIdx = switch (row) {
 					case 0 -> SET_FOCUS_MUTE;
-					case 1, 2 -> SET_FOCUS_ALT_MODE;
-					case 3 -> SET_FOCUS_RESET;
-					default -> SET_FOCUS_BACK;
+					case 1 -> SET_FOCUS_ALT_MODE;
+					default -> SET_FOCUS_RESET;
 				};
 			}
 			syncSettingsUI();
@@ -1495,15 +1842,8 @@ public class InitScene extends Scene {
 		}
 	}
 
-	/** Sincroniza el chip y el multiplicador de velocidad con el estado global de GameState. */
-	private void syncChipSelectionFromState() {
-		_songChipIdx = 0;
-		for (int i = 0; i < CHIP_IDS.length; i++) {
-			if (CHIP_IDS[i].equals(GameState.equippedPowerUp)) {
-				_songChipIdx = i;
-				break;
-			}
-		}
+	/** Sincroniza el multiplicador de velocidad con el estado global de GameState. */
+	private void syncSpeedSelectionFromState() {
 		_songSpeedIdx = 1;
 		for (int i = 0; i < SPEED_OPTIONS.length; i++) {
 			if (Math.abs(SPEED_OPTIONS[i] - GameState.songSpeedMultiplier) < 0.02f) {
@@ -1517,20 +1857,25 @@ public class InitScene extends Scene {
 	private void scanSongsDirectory(boolean forceRefresh) {
 		_basePacks.clear();
 		_basePacks.addAll(SongPackLoader.loadBasePacks(forceRefresh));
-		if (_selectedSongIdx >= _basePacks.size()) {
-			_selectedSongIdx = Math.max(0, _basePacks.size() - 1);
-		}
-		_selectedBaseDiffIdx = clampDifficultyIdx(_basePacks, _selectedSongIdx, _selectedBaseDiffIdx);
+		rebuildAllPacks();
 	}
 
 	/** Recarga el catálogo de canciones custom desde SQLite y la carpeta de usuario. */
 	private void refreshCustomSongs(boolean syncFolder) {
 		_customPacks.clear();
 		_customPacks.addAll(SongPackLoader.loadCustomPacks(syncFolder));
-		if (_selectedCustomIdx >= _customPacks.size()) {
-			_selectedCustomIdx = Math.max(0, _customPacks.size() - 1);
+		rebuildAllPacks();
+	}
+
+	/** Reconstruye la lista unificada de canciones (Base + Custom). */
+	private void rebuildAllPacks() {
+		_allPacks.clear();
+		_allPacks.addAll(_basePacks);
+		_allPacks.addAll(_customPacks);
+		if (_selectedSongIdx >= _allPacks.size()) {
+			_selectedSongIdx = Math.max(0, _allPacks.size() - 1);
 		}
-		_selectedCustomDiffIdx = clampDifficultyIdx(_customPacks, _selectedCustomIdx, _selectedCustomDiffIdx);
+		_selectedDiffIdx = clampDifficultyIdx(_allPacks, _selectedSongIdx, _selectedDiffIdx);
 		ensureSelectionVisible();
 	}
 
@@ -1542,18 +1887,14 @@ public class InitScene extends Scene {
 	}
 
 	private SongPackLoader.SongPack getActivePack() {
-		boolean isCustomTab = (_songTab == SONG_TAB_CUSTOM);
-		List<SongPackLoader.SongPack> list = isCustomTab ? _customPacks : _basePacks;
-		int idx = isCustomTab ? _selectedCustomIdx : _selectedSongIdx;
-		if (list.isEmpty() || idx < 0 || idx >= list.size()) return null;
-		return list.get(idx);
+		if (_allPacks.isEmpty() || _selectedSongIdx < 0 || _selectedSongIdx >= _allPacks.size()) return null;
+		return _allPacks.get(_selectedSongIdx);
 	}
 
 	private SongPackLoader.ChartVariant getActiveChartVariant() {
 		SongPackLoader.SongPack pack = getActivePack();
 		if (pack == null || pack.difficulties.isEmpty()) return null;
-		int dIdx = (_songTab == SONG_TAB_CUSTOM) ? _selectedCustomDiffIdx : _selectedBaseDiffIdx;
-		dIdx = Math.max(0, Math.min(dIdx, pack.difficulties.size() - 1));
+		int dIdx = Math.max(0, Math.min(_selectedDiffIdx, pack.difficulties.size() - 1));
 		return pack.difficulties.get(dIdx);
 	}
 
@@ -1561,24 +1902,21 @@ public class InitScene extends Scene {
 		SongPackLoader.SongPack pack = getActivePack();
 		if (pack == null || pack.difficulties.size() <= 1) return;
 		int n = pack.difficulties.size();
-		if (_songTab == SONG_TAB_CUSTOM) {
-			_selectedCustomDiffIdx = (_selectedCustomDiffIdx + delta + n) % n;
-		} else {
-			_selectedBaseDiffIdx = (_selectedBaseDiffIdx + delta + n) % n;
-		}
+		_selectedDiffIdx = (_selectedDiffIdx + delta + n) % n;
 		syncSongSelectUI();
 	}
 
 	private void ensureSelectionVisible() {
 		int cap = _songListBtns.length;
-		if (_songTab == SONG_TAB_CUSTOM) {
-			if (_selectedCustomIdx < _customScrollOffset) _customScrollOffset = _selectedCustomIdx;
-			else if (_selectedCustomIdx >= _customScrollOffset + cap) _customScrollOffset = _selectedCustomIdx - cap + 1;
-			_customScrollOffset = Math.max(0, Math.min(_customScrollOffset, Math.max(0, _customPacks.size() - cap)));
+		if (_songTab == SONG_TAB_SHOP) {
+			List<GameState.ItemDef> shopList = GameState.getShopAmulets();
+			if (_shopSelectedIdx < _shopScrollOffset) _shopScrollOffset = _shopSelectedIdx;
+			else if (_shopSelectedIdx >= _shopScrollOffset + cap) _shopScrollOffset = _shopSelectedIdx - cap + 1;
+			_shopScrollOffset = Math.max(0, Math.min(_shopScrollOffset, Math.max(0, shopList.size() - cap)));
 		} else {
-			if (_selectedSongIdx < _storyScrollOffset) _storyScrollOffset = _selectedSongIdx;
-			else if (_selectedSongIdx >= _storyScrollOffset + cap) _storyScrollOffset = _selectedSongIdx - cap + 1;
-			_storyScrollOffset = Math.max(0, Math.min(_storyScrollOffset, Math.max(0, _basePacks.size() - cap)));
+			if (_selectedSongIdx < _songScrollOffset) _songScrollOffset = _selectedSongIdx;
+			else if (_selectedSongIdx >= _songScrollOffset + cap) _songScrollOffset = _selectedSongIdx - cap + 1;
+			_songScrollOffset = Math.max(0, Math.min(_songScrollOffset, Math.max(0, _allPacks.size() - cap)));
 		}
 	}
 

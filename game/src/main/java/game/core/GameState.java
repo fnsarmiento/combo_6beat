@@ -57,6 +57,7 @@ public class GameState {
 		public final String name;
 		public final ItemCategory category;
 		public final int healAmount;
+		public final int shopPrice;
 		public final String description;
 
 		public ItemDef(
@@ -66,10 +67,22 @@ public class GameState {
 			int healAmount,
 			String description
 		) {
+			this(id, name, category, healAmount, 0, description);
+		}
+
+		public ItemDef(
+			String id,
+			String name,
+			ItemCategory category,
+			int healAmount,
+			int shopPrice,
+			String description
+		) {
 			this.id = id;
 			this.name = name;
 			this.category = category;
 			this.healAmount = healAmount;
+			this.shopPrice = shopPrice;
 			this.description = description;
 		}
 	}
@@ -95,6 +108,9 @@ public class GameState {
 
 	/** Indice (0..3) de la ranura de guardado SQLite actualmente seleccionada. */
 	public static int activeSaveSlot = 0;
+
+	/** Puntos acumulados en la partida activa para comprar amuletos en la tienda. */
+	public static int shopPoints = 0;
 
 	/** Identificador del chip Power-Up primario equipado ("none" si no hay ninguno). */
 	public static String equippedPowerUp = "none";
@@ -216,6 +232,7 @@ public class GameState {
 		_flags.clear();
 		_inventory.clear();
 		_equippedPowerUps.clear();
+		shopPoints = 0;
 		equippedPowerUp = "none";
 		healStrategy = HealStrategy.OPTIMAL;
 		currentScenePath = "resources/scenes/beach_ruins.xml";
@@ -240,6 +257,7 @@ public class GameState {
 			"Pocion Pequena",
 			ItemCategory.HEAL,
 			25,
+			0,
 			"Restaura 25 HP"
 		));
 		registerItem(new ItemDef(
@@ -247,6 +265,7 @@ public class GameState {
 			"Pocion Mediana",
 			ItemCategory.HEAL,
 			50,
+			0,
 			"Restaura 50 HP"
 		));
 		registerItem(new ItemDef(
@@ -254,6 +273,7 @@ public class GameState {
 			"Pocion Grande",
 			ItemCategory.HEAL,
 			90,
+			0,
 			"Restaura 90 HP"
 		));
 		registerItem(new ItemDef(
@@ -261,54 +281,70 @@ public class GameState {
 			"Llave Virtual",
 			ItemCategory.KEY,
 			0,
+			0,
 			"Abre la puerta de salida de la realidad virtual"
 		));
 		registerItem(new ItemDef(
-			"powerup_reaction_plus",
-			"Chip +10ms",
-			ItemCategory.POWERUP,
+			"amulet_dual_slot",
+			"Relicario Gemelo",
+			ItemCategory.AMULET,
 			0,
-			"+10ms ventana de reaccion, +25 pts coste curacion"
+			1800,
+			"Te permite equipar 2 amuletos adicionales al mismo tiempo."
+		));
+		registerItem(new ItemDef(
+			"powerup_reaction_plus",
+			"Amuleto de Calma (+10ms)",
+			ItemCategory.AMULET,
+			0,
+			1200,
+			"Amplia +10ms las ventanas de acierto PERFECT, GOOD y SAFE."
 		));
 		registerItem(new ItemDef(
 			"powerup_reaction_minus",
-			"Chip -7.5ms",
-			ItemCategory.POWERUP,
+			"Amuleto de Filo (-7.5ms)",
+			ItemCategory.AMULET,
 			0,
-			"-7.5ms ventana de reaccion, -20 pts coste curacion"
-		));
-		registerItem(new ItemDef(
-			"powerup_invincibility",
-			"Escudo Unico",
-			ItemCategory.POWERUP,
-			0,
-			"Invencibilidad de un solo uso por pista"
+			1500,
+			"Reduce -7.5ms las ventanas de juicio a cambio de +25% de puntaje y puntos."
 		));
 		registerItem(new ItemDef(
 			"amulet_healing",
 			"Amuleto de Curacion",
 			ItemCategory.AMULET,
 			0,
-			"Aumenta la curacion por notas consecutivas del 50% al 75% del dano recibido"
+			2200,
+			"Aumenta la curacion cada 2 aciertos del 50% al 75% del dano recibido."
+		));
+		registerItem(new ItemDef(
+			"powerup_invincibility",
+			"Amuleto de Escudo Unico",
+			ItemCategory.AMULET,
+			0,
+			2800,
+			"Evita un golpe mortal por cancion otorgando 4s de invencibilidad."
 		));
 		registerItem(new ItemDef(
 			"amulet_medallion_swamp",
-			"Medallon del Pantano",
+			"Medallon de Vitalidad",
 			ItemCategory.AMULET,
 			0,
-			"Eco del tercer escondite de La Gata en el Pantano"
+			3400,
+			"Aumenta tu vida maxima de 200 a 260 HP en cada cancion."
 		));
 		registerItem(new ItemDef(
 			"amulet_medallion_ruins",
-			"Medallon del Ocaso",
+			"Medallon del Compas",
 			ItemCategory.AMULET,
 			0,
-			"Eco del tercer escondite de La Gata en Playas y Ruinas"
+			4200,
+			"El multiplicador sube cada 5 notas GOOD/PERFECT en vez de cada 7."
 		));
 		registerItem(new ItemDef(
 			"key_copper",
 			"Llave de Cobre",
 			ItemCategory.KEY,
+			0,
 			0,
 			"Abre la puerta de la Sala de Control (Ala Este)"
 		));
@@ -317,12 +353,14 @@ public class GameState {
 			"Llave del Estudio",
 			ItemCategory.KEY,
 			0,
+			0,
 			"Abre el acceso al Archivo Sur"
 		));
 		registerItem(new ItemDef(
 			"key_crest_a",
 			"Sello de Bruma",
 			ItemCategory.KEY,
+			0,
 			0,
 			"Primer sello de la Puerta del Nucleo"
 		));
@@ -331,6 +369,7 @@ public class GameState {
 			"Sello de Marea",
 			ItemCategory.KEY,
 			0,
+			0,
 			"Segundo sello de la Puerta del Nucleo"
 		));
 		registerItem(new ItemDef(
@@ -338,8 +377,107 @@ public class GameState {
 			"Sello de Eco",
 			ItemCategory.KEY,
 			0,
+			0,
 			"Tercer sello de la Puerta del Nucleo"
 		));
+	}
+
+	/** Devuelve en orden la lista de amuletos del catalogo disponibles en la tienda (`shopPrice > 0`). */
+	public static List<ItemDef> getShopAmulets() {
+		ensureCatalogLoaded();
+		List<ItemDef> list = new ArrayList<>();
+		for (ItemDef def : _catalog.values()) {
+			if (def != null && def.shopPrice > 0) {
+				list.add(def);
+			}
+		}
+		return list;
+	}
+
+	/** Devuelve la cantidad actual de puntos de tienda acumulados en la partida. */
+	public static int getShopPoints() {
+		return shopPoints;
+	}
+
+	/** Define directamente la cantidad de puntos de tienda (no negativa). */
+	public static void setShopPoints(int pts) {
+		shopPoints = Math.max(0, pts);
+	}
+
+	/** Suma una cantidad positiva de puntos al saldo de la partida. */
+	public static void addShopPoints(int delta) {
+		if (delta > 0) {
+			shopPoints += delta;
+		}
+	}
+
+	/** Intenta gastar `cost` puntos de tienda; devuelve `true` si habia saldo suficiente. */
+	public static boolean spendShopPoints(int cost) {
+		if (cost < 0 || shopPoints < cost) return false;
+		shopPoints -= cost;
+		return true;
+	}
+
+	/**
+	 * Compra un amuleto de la tienda descontando su precio en puntos, agregandolo al inventario
+	 * y persistiendo inmediatamente el estado de la partida.
+	 */
+	public static boolean buyShopAmulet(String itemId) {
+		ensureCatalogLoaded();
+		ItemDef def = getOrRegisterItemDef(itemId);
+		if (def == null || def.shopPrice <= 0 || hasItem(itemId)) return false;
+		if (!spendShopPoints(def.shopPrice)) return false;
+		addItem(itemId, 1);
+		saveGame();
+		return true;
+	}
+
+	/**
+	 * Calcula la cantidad entera de puntos (`1 .. 10000`) ganados al finalizar una cancion.
+	 * <p>
+	 * El Full Combo (0 MISS) garantiza la gran mayoria del potencial de puntos de la pista
+	 * (entre el 80% y el 100%), mientras que sin Full Combo la recompensa se limita a ~60% maximo.
+	 */
+	public static int computeSongRewardPoints(
+		float difficultyRating,
+		int totalNotes,
+		int perfectCount,
+		int goodCount,
+		int safeCount,
+		int missCount,
+		int maxCombo,
+		float accuracyPercent,
+		boolean won
+	) {
+		float normDiff = Math.max(0.10f, Math.min(1.0f, difficultyRating / 11.5f));
+		float maxPotential = 650.0f + 9350.0f * (float) Math.pow(normDiff, 1.20);
+
+		if (!won) {
+			return Math.max(
+				1,
+				Math.min(300, Math.round(maxPotential * (Math.max(0.0f, accuracyPercent) / 100.0f) * 0.08f))
+			);
+		}
+
+		int notesHit = perfectCount + goodCount + safeCount;
+		int effTotal = Math.max(1, Math.max(totalNotes, notesHit + missCount));
+		boolean fullCombo = (missCount == 0 && notesHit > 0);
+		float accRatio = Math.max(0.0f, Math.min(1.0f, accuracyPercent / 100.0f));
+		float comboRatio = Math.max(0.0f, Math.min(1.0f, (float) maxCombo / effTotal));
+		float perfectRatio = Math.max(0.0f, Math.min(1.0f, (float) perfectCount / effTotal));
+
+		float factor;
+		if (fullCombo) {
+			factor = 0.55f + 0.25f * accRatio + 0.20f * perfectRatio;
+		} else {
+			factor = 0.28f * accRatio + 0.22f * comboRatio + 0.10f * perfectRatio;
+		}
+
+		if (isPowerUpEquipped("powerup_reaction_minus")) {
+			factor *= 1.25f;
+		}
+
+		return Math.max(1, Math.min(10000, Math.round(maxPotential * factor)));
 	}
 
 	// =========================================================================
@@ -381,9 +519,9 @@ public class GameState {
 		return true;
 	}
 
-	/** Indica si el jugador posee el Amuleto de Curacion en su inventario. */
+	/** Indica si el jugador tiene equipado el Amuleto de Curacion. */
 	public static boolean hasHealingAmulet() {
-		return getItemCount("amulet_healing") > 0;
+		return isPowerUpEquipped("amulet_healing");
 	}
 
 	/** Lista todos los chips Power-Up y amuletos actualmente en posesion del jugador. */
@@ -404,6 +542,11 @@ public class GameState {
 		return new LinkedHashMap<>(_inventory);
 	}
 
+	/** Devuelve el maximo de amuletos simultaneos permitidos (3 con Relicario Gemelo equipado, 1 base). */
+	public static int getMaxEquippedAmulets() {
+		return _equippedPowerUps.contains("amulet_dual_slot") ? 3 : 1;
+	}
+
 	/** Equipa un unico chip Power-Up como primario (o limpia el equipamiento si es `"none"`). */
 	public static void equipPowerUp(String powerUpId) {
 		_equippedPowerUps.clear();
@@ -419,15 +562,48 @@ public class GameState {
 		}
 	}
 
-	/** Alterna el estado equipado/desequipado de un chip Power-Up o amuleto. */
+	/**
+	 * Alterna el estado equipado/desequipado de un amuleto respetando la capacidad maxima:
+	 * 1 ranura por defecto, o hasta 3 ranuras (el Relicario Gemelo + 2 amuletos adicionales)
+	 * cuando `"amulet_dual_slot"` esta equipado.
+	 */
 	public static void toggleEquippedPowerUp(String powerUpId) {
 		if (powerUpId == null || powerUpId.isEmpty() || "none".equals(powerUpId)) return;
 		if (!hasItem(powerUpId)) return;
 
 		if (_equippedPowerUps.contains(powerUpId)) {
 			_equippedPowerUps.remove(powerUpId);
+			if ("amulet_dual_slot".equals(powerUpId) && _equippedPowerUps.size() > 1) {
+				String keep = null;
+				for (String id : _equippedPowerUps) {
+					keep = id;
+					break;
+				}
+				_equippedPowerUps.clear();
+				if (keep != null) {
+					_equippedPowerUps.add(keep);
+				}
+			}
 		} else {
-			_equippedPowerUps.add(powerUpId);
+			if ("amulet_dual_slot".equals(powerUpId)) {
+				_equippedPowerUps.add(powerUpId);
+			} else if (_equippedPowerUps.contains("amulet_dual_slot")) {
+				if (_equippedPowerUps.size() >= 3) {
+					String toRemove = null;
+					for (String id : _equippedPowerUps) {
+						if (!"amulet_dual_slot".equals(id)) {
+							toRemove = id;
+						}
+					}
+					if (toRemove != null) {
+						_equippedPowerUps.remove(toRemove);
+					}
+				}
+				_equippedPowerUps.add(powerUpId);
+			} else {
+				_equippedPowerUps.clear();
+				_equippedPowerUps.add(powerUpId);
+			}
 		}
 		syncPrimaryEquipped();
 	}
@@ -676,6 +852,23 @@ public class GameState {
 		return SaveRepository.getSlotSummary(clampSaveSlot(slot));
 	}
 
+	/** Obtiene los puntos de tienda almacenados en la ranura de guardado indicada en SQLite. */
+	public static int getSaveSlotPoints(int slot) {
+		init();
+		SaveRepository.LoadedSaveData d = SaveRepository.loadState(clampSaveSlot(slot));
+		if (d == null || d.flags == null) return 0;
+		for (String flag : d.flags) {
+			if (flag != null && flag.startsWith("SHOP_POINTS:")) {
+				try {
+					return Math.max(0, Integer.parseInt(flag.substring("SHOP_POINTS:".length()).trim()));
+				} catch (NumberFormatException ignored) {
+					return 0;
+				}
+			}
+		}
+		return 0;
+	}
+
 	/** Ejecuta un autoguardado en SQLite solo si la sesion actual pertenece al modo historia. */
 	public static void autoSaveIfStory() {
 		if (!isDebugSession && !launchedFromMenu) {
@@ -695,6 +888,9 @@ public class GameState {
 			(scenePath != null && !scenePath.isEmpty()) ? scenePath : currentScenePath
 		);
 		currentScenePath = relScene;
+
+		_flags.removeIf(f -> f != null && f.startsWith("SHOP_POINTS:"));
+		_flags.add("SHOP_POINTS:" + shopPoints);
 
 		Set<String> equippedSet = new LinkedHashSet<>(getEquippedPowerUps());
 		SaveRepository.saveState(
@@ -732,9 +928,17 @@ public class GameState {
 		returnPlayerY = data.returnY;
 		healStrategy = (data.healStrategy != null) ? data.healStrategy : HealStrategy.OPTIMAL;
 
+		shopPoints = 0;
 		for (String flag : data.flags) {
+			if (flag != null && flag.startsWith("SHOP_POINTS:")) {
+				try {
+					shopPoints = Math.max(0, Integer.parseInt(flag.substring("SHOP_POINTS:".length()).trim()));
+				} catch (NumberFormatException ignored) {}
+			}
 			defineFlag(flag);
 		}
+		_flags.removeIf(f -> f != null && f.startsWith("SHOP_POINTS:"));
+		_flags.add("SHOP_POINTS:" + shopPoints);
 
 		_inventory.clear();
 		for (Map.Entry<String, Integer> entry : data.inventory.entrySet()) {
