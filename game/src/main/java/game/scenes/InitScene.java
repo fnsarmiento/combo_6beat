@@ -71,8 +71,9 @@ public class InitScene extends Scene {
 	private int _selectedSongIdx = 0;
 	private int _selectedBaseDiffIdx = 0;
 	private int _storyScrollOffset = 0;
-	private int _songFocusCol = 0; // 0 = lista de canciones, 1 = controles derechos
-	private int _songRightIdx = 0; // 0 = Dificultad, 1 = Chip, 2 = Jefe, 3 = Cura, 4 = Velocidad, 5 = Iniciar, 6 = Volver
+	private int _songFocusCol = 0; // 0 = lista de canciones, 1 = opciones de canción
+	private boolean _songOptionsOpen = false;
+	private int _songRightIdx = 0; // 0 = Dificultad, 1 = Chip, 2 = Jefe, 3 = Cura, 4 = Velocidad, 5 = PLAY, 6 = Volver
 	private int _settingsFocusIdx = 0; // 0..6 izq, 7..12 ritmo, 13..17 rpg
 	private static int _savedSettingsFocusIdx = 0;
 	private int _songChipIdx = 0; // 0=Ninguno, 1=+10ms, 2=-7.5ms, 3=Escudo
@@ -524,14 +525,18 @@ public class InitScene extends Scene {
 						if (actualIdx < _customPacks.size()) {
 							if (_selectedCustomIdx != actualIdx) _selectedCustomDiffIdx = 0;
 							_selectedCustomIdx = actualIdx;
-							_songFocusCol = 0;
+							_songOptionsOpen = true;
+							_songFocusCol = 1;
+							_songRightIdx = 0;
 							syncSongSelectUI();
 						}
 					} else {
 						if (actualIdx < _basePacks.size()) {
 							if (_selectedSongIdx != actualIdx) _selectedBaseDiffIdx = 0;
 							_selectedSongIdx = actualIdx;
-							_songFocusCol = 0;
+							_songOptionsOpen = true;
+							_songFocusCol = 1;
+							_songRightIdx = 0;
 							syncSongSelectUI();
 						}
 					}
@@ -596,20 +601,29 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			});
 
-		_songPlayBtn = addUIButton("ui_song_play_btn", _songsGroup, "INICIAR COMBATE", 220, 202, 238, 24,
+		_songPlayBtn = addUIButton("ui_song_play_btn", _songsGroup, "PLAY", 220, 202, 238, 24,
 			app.color(35, 125, 85), app.color(55, 170, 115), fontMed, () -> {
 				_songFocusCol = 1;
 				_songRightIdx = 5;
 				launchSelectedSong();
 			});
 
-		_songBackBtn = addUIButton("ui_song_back_btn", _songsGroup, "VOLVER AL MENU", 220, 231, 238, 19,
-			app.color(85, 36, 48), app.color(130, 52, 70), fontSmall, () -> switchView(ViewMode.MAIN));
+		_songBackBtn = addUIButton("ui_song_back_btn", _songsGroup, "VOLVER", 220, 231, 238, 19,
+			app.color(85, 36, 48), app.color(130, 52, 70), fontSmall, () -> {
+				if (_songOptionsOpen) {
+					_songOptionsOpen = false;
+					_songFocusCol = 0;
+					syncSongSelectUI();
+				} else {
+					switchView(ViewMode.MAIN);
+				}
+			});
 	}
 
 	private void setSongTab(int tab) {
 		_songTab = (tab == 1) ? 1 : 0;
 		_savedSongTab = _songTab;
+		_songOptionsOpen = false;
 		_songFocusCol = 0;
 		_songStatusMsg = "";
 		syncSongSelectUI();
@@ -929,6 +943,7 @@ public class InitScene extends Scene {
 			_saveFocusCol = 0;
 		} else if (mode == ViewMode.SONG_SELECT) {
 			_songTab = _savedSongTab;
+			_songOptionsOpen = false;
 			_songFocusCol = 0;
 			_songRightIdx = 0;
 			refreshCustomSongs(false);
@@ -1180,51 +1195,81 @@ public class InitScene extends Scene {
 			}
 		}
 
-		boolean rightActive = (_songFocusCol == 1);
+		boolean showOpts = _songOptionsOpen && activeVar != null;
+		boolean rightActive = showOpts && (_songFocusCol == 1);
+
 		if (_songDiffBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 0);
-			String diffLabel;
-			if (activePack == null || activeVar == null) {
-				diffLabel = "Dificultad: -";
-			} else if (activePack.difficulties.size() > 1) {
-				int dIdx = isCustomTab ? _selectedCustomDiffIdx : _selectedBaseDiffIdx;
-				diffLabel = "Dificultad: < " + activeVar.difficulty + " > (" + (dIdx + 1) + "/" + activePack.difficulties.size() + ")";
+			if (showOpts) {
+				boolean f = rightActive && (_songRightIdx == 0);
+				String diffLabel;
+				if (activePack.difficulties.size() > 1) {
+					int dIdx = isCustomTab ? _selectedCustomDiffIdx : _selectedBaseDiffIdx;
+					diffLabel = "Dificultad: < " + activeVar.difficulty + " > (" + (dIdx + 1) + "/" + activePack.difficulties.size() + ")";
+				} else {
+					diffLabel = "Dificultad: " + activeVar.difficulty;
+				}
+				_songDiffBtn.setLabel((f ? "> " : "") + diffLabel);
+				_songDiffBtn.setColorBackground(f ? app.color(65, 118, 210) : app.color(42, 62, 108));
+				_songDiffBtn.show();
 			} else {
-				diffLabel = "Dificultad: " + activeVar.difficulty;
+				_songDiffBtn.hide();
 			}
-			_songDiffBtn.setLabel((f ? "> " : "") + diffLabel);
-			_songDiffBtn.setColorBackground(f ? app.color(65, 118, 210) : app.color(42, 62, 108));
 		}
 		if (_songChipBtn != null) {
-			String chipId = _chipIds[_songChipIdx];
-			String chipLabel = "none".equals(chipId) ? "Ninguno" : GameState.getItemName(chipId);
-			boolean f = rightActive && (_songRightIdx == 1);
-			_songChipBtn.setLabel((f ? "> " : "") + "Chip: " + chipLabel);
-			_songChipBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+			if (showOpts) {
+				String chipId = _chipIds[_songChipIdx];
+				String chipLabel = "none".equals(chipId) ? "Ninguno" : GameState.getItemName(chipId);
+				boolean f = rightActive && (_songRightIdx == 1);
+				_songChipBtn.setLabel((f ? "> " : "") + "Chip: " + chipLabel);
+				_songChipBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+				_songChipBtn.show();
+			} else {
+				_songChipBtn.hide();
+			}
 		}
 		if (_songInvincibleBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 2);
-			_songInvincibleBtn.setLabel((f ? "> " : "") + "Jefe: " + (_songInvincibleMode ? "Invencible" : "Normal"));
-			_songInvincibleBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+			if (showOpts) {
+				boolean f = rightActive && (_songRightIdx == 2);
+				_songInvincibleBtn.setLabel((f ? "> " : "") + "Jefe: " + (_songInvincibleMode ? "Invencible" : "Normal"));
+				_songInvincibleBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+				_songInvincibleBtn.show();
+			} else {
+				_songInvincibleBtn.hide();
+			}
 		}
 		if (_songHealBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 3);
-			_songHealBtn.setLabel((f ? "> " : "") + "Cura: " + GameState.healStrategy.label);
-			_songHealBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+			if (showOpts) {
+				boolean f = rightActive && (_songRightIdx == 3);
+				_songHealBtn.setLabel((f ? "> " : "") + "Cura: " + GameState.healStrategy.label);
+				_songHealBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+				_songHealBtn.show();
+			} else {
+				_songHealBtn.hide();
+			}
 		}
 		if (_songSpeedBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 4);
-			_songSpeedBtn.setLabel((f ? "> " : "") + "Velocidad: " + String.format("%.2fx", _speedOptions[_songSpeedIdx]));
-			_songSpeedBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+			if (showOpts) {
+				boolean f = rightActive && (_songRightIdx == 4);
+				_songSpeedBtn.setLabel((f ? "> " : "") + "Velocidad: " + String.format("%.2fx", _speedOptions[_songSpeedIdx]));
+				_songSpeedBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
+				_songSpeedBtn.show();
+			} else {
+				_songSpeedBtn.hide();
+			}
 		}
 		if (_songPlayBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 5);
-			_songPlayBtn.setLabel((f ? "> " : "") + "INICIAR COMBATE");
-			_songPlayBtn.setColorBackground(f ? app.color(55, 175, 115) : app.color(35, 125, 85));
+			if (showOpts) {
+				boolean f = rightActive && (_songRightIdx == 5);
+				_songPlayBtn.setLabel((f ? "> " : "") + "PLAY");
+				_songPlayBtn.setColorBackground(f ? app.color(55, 185, 120) : app.color(35, 130, 85));
+				_songPlayBtn.show();
+			} else {
+				_songPlayBtn.hide();
+			}
 		}
 		if (_songBackBtn != null) {
 			boolean f = rightActive && (_songRightIdx == 6);
-			_songBackBtn.setLabel((f ? "> " : "") + "VOLVER AL MENU");
+			_songBackBtn.setLabel((f ? "> " : "") + (showOpts ? "VOLVER A CANCIONES" : "VOLVER AL MENU"));
 			_songBackBtn.setColorBackground(f ? app.color(145, 58, 78) : app.color(85, 36, 48));
 		}
 	}
@@ -1466,10 +1511,16 @@ public class InitScene extends Scene {
 					return;
 				}
 				if (back) {
-					switchView(ViewMode.MAIN);
+					if (_songOptionsOpen) {
+						_songOptionsOpen = false;
+						_songFocusCol = 0;
+						syncSongSelectUI();
+					} else {
+						switchView(ViewMode.MAIN);
+					}
 					return;
 				}
-				if (_songFocusCol == 0) {
+				if (!_songOptionsOpen || _songFocusCol == 0) {
 					int listSize = (_songTab == 0) ? _customPacks.size() : _basePacks.size();
 					if (up && listSize > 0) {
 						if (_songTab == 0) {
@@ -1489,73 +1540,80 @@ public class InitScene extends Scene {
 							_selectedBaseDiffIdx = 0;
 						}
 						syncSongSelectUI();
-					} else if (right) {
+					} else if ((accept || right) && listSize > 0) {
+						_songOptionsOpen = true;
 						_songFocusCol = 1;
+						_songRightIdx = 0;
 						syncSongSelectUI();
-					} else if (accept) {
-						launchSelectedSong();
 					}
 				} else {
+					// Navegación 2D en las opciones de la canción:
+					// Fila 0: 0 (Dificultad)
+					// Fila 1: 1 (Chip) | 2 (Jefe)
+					// Fila 2: 3 (Cura) | 4 (Velocidad)
+					// Fila 3: 5 (PLAY)
+					// Fila 4: 6 (VOLVER)
 					if (up) {
-						_songRightIdx = (_songRightIdx - 1 + 7) % 7;
+						_songRightIdx = switch (_songRightIdx) {
+							case 0 -> 6;
+							case 1, 2 -> 0;
+							case 3 -> 1;
+							case 4 -> 2;
+							case 5 -> 3;
+							default -> 5;
+						};
 						syncSongSelectUI();
 					} else if (down) {
-						_songRightIdx = (_songRightIdx + 1) % 7;
+						_songRightIdx = switch (_songRightIdx) {
+							case 0 -> 1;
+							case 1 -> 3;
+							case 2 -> 4;
+							case 3, 4 -> 5;
+							case 5 -> 6;
+							default -> 0;
+						};
 						syncSongSelectUI();
-					} else {
+					} else if (left) {
 						switch (_songRightIdx) {
-							case 0 -> {
-								if (left) {
-									cycleSelectedDifficulty(-1);
-								} else if (right || accept) {
-									cycleSelectedDifficulty(1);
-								}
+							case 0 -> cycleSelectedDifficulty(-1);
+							case 2 -> { _songRightIdx = 1; syncSongSelectUI(); }
+							case 4 -> { _songRightIdx = 3; syncSongSelectUI(); }
+							default -> {
+								_songOptionsOpen = false;
+								_songFocusCol = 0;
+								syncSongSelectUI();
 							}
+						}
+					} else if (right) {
+						switch (_songRightIdx) {
+							case 0 -> cycleSelectedDifficulty(1);
+							case 1 -> { _songRightIdx = 2; syncSongSelectUI(); }
+							case 3 -> { _songRightIdx = 4; syncSongSelectUI(); }
+						}
+					} else if (accept) {
+						switch (_songRightIdx) {
+							case 0 -> cycleSelectedDifficulty(1);
 							case 1 -> {
-								if (left) {
-									_songChipIdx = (_songChipIdx - 1 + _chipIds.length) % _chipIds.length;
-									syncSongSelectUI();
-								} else if (right || accept) {
-									_songChipIdx = (_songChipIdx + 1) % _chipIds.length;
-									syncSongSelectUI();
-								}
+								_songChipIdx = (_songChipIdx + 1) % _chipIds.length;
+								syncSongSelectUI();
 							}
 							case 2 -> {
-								if (left || right || accept) {
-									_songInvincibleMode = !_songInvincibleMode;
-									syncSongSelectUI();
-								}
+								_songInvincibleMode = !_songInvincibleMode;
+								syncSongSelectUI();
 							}
 							case 3 -> {
-								if (left || right || accept) {
-									GameState.toggleHealStrategy();
-									syncSongSelectUI();
-								}
+								GameState.toggleHealStrategy();
+								syncSongSelectUI();
 							}
 							case 4 -> {
-								if (left) {
-									_songSpeedIdx = (_songSpeedIdx - 1 + _speedOptions.length) % _speedOptions.length;
-									syncSongSelectUI();
-								} else if (right || accept) {
-									_songSpeedIdx = (_songSpeedIdx + 1) % _speedOptions.length;
-									syncSongSelectUI();
-								}
+								_songSpeedIdx = (_songSpeedIdx + 1) % _speedOptions.length;
+								syncSongSelectUI();
 							}
-							case 5 -> {
-								if (left) {
-									_songFocusCol = 0;
-									syncSongSelectUI();
-								} else if (accept) {
-									launchSelectedSong();
-								}
-							}
+							case 5 -> launchSelectedSong();
 							case 6 -> {
-								if (left) {
-									_songFocusCol = 0;
-									syncSongSelectUI();
-								} else if (accept) {
-									switchView(ViewMode.MAIN);
-								}
+								_songOptionsOpen = false;
+								_songFocusCol = 0;
+								syncSongSelectUI();
 							}
 						}
 					}

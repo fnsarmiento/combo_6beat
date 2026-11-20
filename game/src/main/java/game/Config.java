@@ -208,7 +208,6 @@ public class Config {
 	public static void applyVideoConfig() {
 		pixelPerfect = true;
 		Engine.setPixelPerfect(true);
-		Engine.setWindowResolution(windowWidth, windowHeight);
 	}
 
 	private static void loadKeyArray(JSONObject section, int[] primary, int[] alt, String[] namedKeys) {

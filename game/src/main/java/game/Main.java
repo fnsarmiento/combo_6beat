@@ -25,19 +25,21 @@ public class Main extends PApplet {
 
 	public void settings() {
 		Config.preloadWindowSize(".config");
-		size(Config.windowWidth, Config.windowHeight, PConstants.P2D);
+		size(displayWidth, displayHeight, PConstants.P2D);
 		noSmooth();
 	}
 
 	public void setup() {
 		surface.setTitle("Combo 6Beat");
-		surface.setResizable(true);
+		enableBorderlessFullscreen();
 
 		Engine.init(this);
 		Engine.resizeVirtualScreen((int) BASE_W, (int) BASE_H);
 		Engine.setFramesToMonitorHZ();
 
 		Config.loadConfig(".config");
+		Config.windowWidth = displayWidth;
+		Config.windowHeight = displayHeight;
 		Config.applyAudioConfig();
 		Config.applyVideoConfig();
 
@@ -53,6 +55,24 @@ public class Main extends PApplet {
 	}
 
 	public void draw() {}
+
+	private void enableBorderlessFullscreen() {
+		surface.setResizable(false);
+		Object nativeWin = surface.getNative();
+		if (nativeWin != null) {
+			try {
+				nativeWin.getClass().getMethod("setUndecorated", boolean.class).invoke(nativeWin, true);
+			} catch (Exception ignored) {}
+			try {
+				nativeWin.getClass().getMethod("setPosition", int.class, int.class).invoke(nativeWin, 0, 0);
+			} catch (Exception ignored) {}
+			try {
+				nativeWin.getClass().getMethod("setSize", int.class, int.class).invoke(nativeWin, displayWidth, displayHeight);
+			} catch (Exception ignored) {}
+		}
+		surface.setLocation(0, 0);
+		surface.setSize(displayWidth, displayHeight);
+	}
 
 	public void keyPressed() {
 		if (key == ESC) {
