@@ -110,9 +110,9 @@ public class ROTNScene extends Scene {
 	private final XML _manifestChartNode;
 
 	// Metadatos del encuentro y progreso de campaña/modo libre
-	private String _bossId = "boss_generic";
-	private String _bossName = "Enemigo Rítmico";
-	private String _bossSpecies = "";
+	private String _trackId = "track_generic";
+	private String _trackTitle = "Pista Ritmica";
+	private String _trackSubtitle = "";
 	private String _returnScene = "";
 	private String _defeatFlag = "";
 	private String _rewardItem = "";
@@ -167,8 +167,6 @@ public class ROTNScene extends Scene {
 	private Textlabel _uiHpLbl;
 	private Textlabel _uiShieldLbl;
 
-	// private Button _uiBossHpFill;
-
 	private Textlabel _uiHealRatioLbl;
 	private Button _uiHealFill;
 
@@ -183,18 +181,20 @@ public class ROTNScene extends Scene {
 	private int _modalFocusIdx = 0;
 	private boolean _modalWasOpen = false;
 
-	// Sub-modal de Configuración en Partida (Audio inmediato + Rebinding 6K)
+	// Sub-modal de Configuración en Partida (Audio inmediato + Rebinding 6K Primario/Alternativo)
 	private static final int INGAME_SET_BGM = 0;
 	private static final int INGAME_SET_SFX = 1;
 	private static final int INGAME_SET_MUTE = 2;
-	private static final int INGAME_SET_ALT_MODE = 3;
-	private static final int INGAME_SET_RESET = 4;
-	private static final int INGAME_SET_BACK = 5;
-	private static final int INGAME_SET_RHYTHM_START = 6; // 6..11 -> C1..C6
+	private static final int INGAME_SET_RESET = 3;
+	private static final int INGAME_SET_BACK = 4;
+	private static final int INGAME_SET_RHYTHM_START = 5; // 5..10 -> C1..C6, 11..16 -> A1..A6
 	private static final int[][] INGAME_SET_RIGHT_GRID = {
-		{ 6,  9 },
-		{ 7, 10 },
-		{ 8, 11 }
+		{  5, 11 },
+		{  6, 12 },
+		{  7, 13 },
+		{  8, 14 },
+		{  9, 15 },
+		{ 10, 16 }
 	};
 
 	private Group _uiSettingsGroup;
@@ -203,15 +203,16 @@ public class ROTNScene extends Scene {
 	private Textlabel _uiSetSfxLbl;
 	private Button _uiSetSfxBarFill;
 	private Button _uiSetMuteBtn;
-	private Button _uiSetAltModeBtn;
 	private Button _uiSetResetBtn;
 	private Button _uiSetBackBtn;
 	private final Button[] _uiSetRhythmBtns = new Button[LANE_COUNT];
+	private final Button[] _uiSetRhythmAltBtns = new Button[LANE_COUNT];
 	private boolean _inGameSettingsOpen = false;
 	private int _inGameSettingsFocus = INGAME_SET_BGM;
-	private int _rebindLane = -1;
-	private boolean _editingAltControls = false;
+	private int _rebindTarget = -1; // -1 = ninguno, 0..5 = primario C1..C6, 6..11 = alternativo A1..A6
 	private boolean _ignoreSettingsNavOnce = false;
+	private final Config.UIHoldRepeat _settingsUpHold = new Config.UIHoldRepeat();
+	private final Config.UIHoldRepeat _settingsDownHold = new Config.UIHoldRepeat();
 
 	// =========================================================================
 	// 3. Constructores y ciclo de vida (setup, inicialización de canción, close)
@@ -281,9 +282,7 @@ public class ROTNScene extends Scene {
 	/** Parámetros de combate recolectados durante la carga del beatmap/escena. */
 	private static class CombatConfig {
 		int playerMaxHp = 200;
-		int bossMaxHp = 1500;
-		int bossAttackDamage = 12;
-		int bossHitDamage = 6;
+		int missDamage = 12;
 		int healThreshold = 50;
 		float healActiveDuration = 6.0f;
 		int laneLockInterval = 10000;
@@ -310,12 +309,9 @@ public class ROTNScene extends Scene {
 			: new long[0];
 
 		_rhythmCore = new ROTNCore(loadedNotes);
-		_rhythmCore.setBossInvincible(GameState.launchedFromMenu && GameState.bossInvincibleMode);
 		_rhythmCore.configureCombat(
 			cfg.playerMaxHp,
-			cfg.bossMaxHp,
-			cfg.bossAttackDamage,
-			cfg.bossHitDamage,
+			cfg.missDamage,
 			cfg.healThreshold,
 			cfg.healActiveDuration,
 			cfg.laneLockInterval,
@@ -341,9 +337,9 @@ public class ROTNScene extends Scene {
 		OsuManiaReader reader = null;
 
 		if (_customSong != null) {
-			_bossId = "custom_" + _customSong.idCancion;
-			_bossName = _customSong.titulo;
-			_bossSpecies = _customSong.dificultad + " | " + Math.round(_customSong.bpm) + " BPM";
+			_trackId = "custom_" + _customSong.idCancion;
+			_trackTitle = _customSong.titulo;
+			_trackSubtitle = _customSong.dificultad + " | " + Math.round(_customSong.bpm) + " BPM";
 			_scrollSpeed = DEFAULT_SCROLL_SPEED * speedMult;
 
 			if (!_customSong.rutaChart.isEmpty()) {
@@ -366,12 +362,9 @@ public class ROTNScene extends Scene {
 				_bgm = reader.getSong();
 			}
 
-			_bossId = !_chartVariant.bossId.isEmpty() ? _chartVariant.bossId : _chartVariant.id;
-			_bossName = _chartVariant.bossName;
-			_bossSpecies = _chartVariant.bossSpecies;
-			cfg.bossMaxHp = _chartVariant.bossHp;
-			cfg.bossAttackDamage = _chartVariant.attackDamage;
-			cfg.bossHitDamage = _chartVariant.hitDamage;
+			_trackId = !_chartVariant.id.isEmpty() ? _chartVariant.id : _chartVariant.osuRelPath;
+			_trackTitle = _chartVariant.title;
+			_trackSubtitle = _chartVariant.artist;
 			_defeatFlag = _chartVariant.defeatFlag;
 			_rewardItem = _chartVariant.rewardItem;
 		} else if (_manifestChartNode != null) {
@@ -385,12 +378,20 @@ public class ROTNScene extends Scene {
 				_bgm = reader.getSong();
 			}
 
-			_bossId = _manifestChartNode.getString("boss-id", _manifestChartId);
-			_bossName = _manifestChartNode.getString("boss-name", _bossName);
-			_bossSpecies = _manifestChartNode.getString("boss-species", "");
-			cfg.bossMaxHp = _manifestChartNode.getInt("boss-hp", cfg.bossMaxHp);
-			cfg.bossAttackDamage = _manifestChartNode.getInt("attack-damage", cfg.bossAttackDamage);
-			cfg.bossHitDamage = _manifestChartNode.getInt("hit-damage", cfg.bossHitDamage);
+			_trackId = _manifestChartNode.getString("id", _manifestChartId);
+			String packTitle = (_manifestPackNode != null) ? _manifestPackNode.getString("title", "") : "";
+			String packArtist = (_manifestPackNode != null) ? _manifestPackNode.getString("artist", "") : "";
+			if (!packTitle.isEmpty()) {
+				_trackTitle = packTitle;
+			} else if (reader != null && !reader.getTitle().isEmpty()) {
+				_trackTitle = reader.getTitle();
+			}
+			if (!packArtist.isEmpty()) {
+				_trackSubtitle = packArtist;
+			} else if (reader != null && !reader.getArtist().isEmpty()) {
+				_trackSubtitle = reader.getArtist();
+			}
+			cfg.missDamage = _manifestChartNode.getInt("miss-damage", cfg.missDamage);
 			_defeatFlag = _manifestChartNode.getString("defeat-flag", _defeatFlag);
 			_rewardItem = _manifestChartNode.getString("reward-item", _rewardItem);
 		} else if (_xmlScene != null) {
@@ -409,32 +410,18 @@ public class ROTNScene extends Scene {
 				_bgm = reader.getSong();
 			}
 
-			if (reader != null && reader.hasBossSection()) {
-				if (!reader.getBossName().isEmpty()) _bossName = reader.getBossName();
-				if (!reader.getBossSpecies().isEmpty()) _bossSpecies = reader.getBossSpecies();
-				cfg.bossMaxHp = reader.getBossMaxHp();
-				cfg.bossAttackDamage = reader.getBossAttackDamage();
-				cfg.bossHitDamage = reader.getBossHitDamage();
+			if (reader != null) {
+				if (!reader.getTitle().isEmpty()) _trackTitle = reader.getTitle();
+				if (!reader.getArtist().isEmpty()) _trackSubtitle = reader.getArtist();
 				if (!reader.getReturnScene().isEmpty()) _returnScene = reader.getReturnScene();
 				if (!reader.getDefeatFlag().isEmpty()) _defeatFlag = reader.getDefeatFlag();
 				if (!reader.getRewardItem().isEmpty()) _rewardItem = reader.getRewardItem();
 			}
 
-			XML bossNode = _xmlScene.getChild("Boss");
-			if (bossNode != null) {
-				_bossId = bossNode.getString("id", _bossId);
-				_bossName = bossNode.getString("name", _bossName);
-				_bossSpecies = bossNode.getString("species", _bossSpecies);
-				cfg.bossMaxHp = bossNode.getInt("max-hp", cfg.bossMaxHp);
-				cfg.bossAttackDamage = bossNode.getInt("attack-damage", cfg.bossAttackDamage);
-				cfg.bossHitDamage = bossNode.getInt("hit-damage", cfg.bossHitDamage);
-				_defeatFlag = bossNode.getString("defeat-flag", _defeatFlag);
-				_rewardItem = bossNode.getString("reward-item", _rewardItem);
-			}
-
 			XML combatNode = _xmlScene.getChild("Combat");
 			if (combatNode != null) {
 				cfg.playerMaxHp = combatNode.getInt("player-max-hp", cfg.playerMaxHp);
+				cfg.missDamage = combatNode.getInt("miss-damage", cfg.missDamage);
 				cfg.healThreshold = combatNode.getInt("heal-threshold", cfg.healThreshold);
 				cfg.healActiveDuration = combatNode.getFloat("heal-active-duration", cfg.healActiveDuration);
 				cfg.laneLockInterval = combatNode.getInt("lane-lock-interval", cfg.laneLockInterval);
@@ -627,11 +614,7 @@ public class ROTNScene extends Scene {
 		_uiHpFill = addUIBox("ui_rotn_hp_fill", null, 38, 21, 96, 7, app.color(230, 65, 85, 245));
 		_uiShieldLbl = addUILabel("ui_rotn_shield_lbl", null, "", 38, 31, app.color(110, 235, 255), fontSmall);
 
-		// 2. Arriba-Centro: Barra de HP del Jefe y Avisos de bloqueo de carril
-		// addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
-		// _uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
-
-		// 3. HUD Derecho en ControlP5 (Score multi-color por bloques de 3 cifras, Multiplicador amarillo, Combo azul)
+		// 2. HUD Derecho en ControlP5 (Score multi-color por bloques de 3 cifras, Multiplicador amarillo, Combo azul)
 		for (int i = 0; i < _uiScoreChunkLbls.length; i++) {
 			ControlFont chunkFont = makeFont(SCORE_CHUNK_BASE_SIZES[i], true);
 			_uiScoreChunkLbls[i] = addUILabel("ui_rotn_score_c" + i, null, "", BASE_W - 14, 8, app.color(255), chunkFont);
@@ -718,41 +701,40 @@ public class ROTNScene extends Scene {
 				_inGameSettingsFocus = INGAME_SET_MUTE;
 				toggleInGameMute();
 			});
-		_uiSetAltModeBtn = addUIButton("ui_rotn_set_alt", _uiSettingsGroup, "TECLAS: PRINCIPALES", 14, 134, 190, 20,
-			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
-				_inGameSettingsFocus = INGAME_SET_ALT_MODE;
-				_rebindLane = -1;
-				_editingAltControls = !_editingAltControls;
-				syncInGameSettingsUI(app);
-			});
-		_uiSetResetBtn = addUIButton("ui_rotn_set_reset", _uiSettingsGroup, "RESTAURAR TECLAS", 14, 160, 190, 20,
+		_uiSetResetBtn = addUIButton("ui_rotn_set_reset", _uiSettingsGroup, "RESTAURAR TECLAS", 14, 138, 190, 20,
 			app.color(65, 52, 32), app.color(110, 88, 52), fontSmall, () -> {
 				_inGameSettingsFocus = INGAME_SET_RESET;
-				_rebindLane = -1;
+				_rebindTarget = -1;
 				Config.resetDefaultControls();
 				Config.saveConfig(".config");
 				syncInGameSettingsUI(app);
 			});
-		_uiSetBackBtn = addUIButton("ui_rotn_set_back", _uiSettingsGroup, "LISTO / VOLVER", 14, 186, 190, 22,
+		_uiSetBackBtn = addUIButton("ui_rotn_set_back", _uiSettingsGroup, "LISTO / VOLVER", 14, 168, 190, 22,
 			app.color(35, 115, 78), app.color(55, 160, 110), fontSmall, this::closeInGameSettings);
 
-		// Columna derecha: Rebinding rápido de los 6 carriles (C1..C3, C4..C6)
-		addUILabel("ui_rotn_set_keys_hdr", _uiSettingsGroup, "CARRILES RITMO 6K", 218, 34, app.color(140, 215, 255), fontSmall);
+		// Columna derecha: Rebinding rápido de los 6 carriles (Primarios C1..C6 y Alternativos A1..A6)
+		addUILabel("ui_rotn_set_keys_hdr", _uiSettingsGroup, "CARRILES 6K (PRIM / ALT)", 218, 30, app.color(140, 215, 255), fontSmall);
 		for (int i = 0; i < LANE_COUNT; i++) {
 			final int lane = i;
-			int col = i / 3;
-			int row = i % 3;
+			int btnY = 44 + i * 24;
 			_uiSetRhythmBtns[i] = addUIButton("ui_rotn_set_k_" + i, _uiSettingsGroup, "",
-				218 + col * 96, 48 + row * 28, 92, 22,
+				218, btnY, 92, 20,
 				app.color(28, 34, 52), app.color(50, 95, 165), fontSmall, () -> {
 					_inGameSettingsFocus = INGAME_SET_RHYTHM_START + lane;
-					_rebindLane = lane;
+					_rebindTarget = lane;
+					syncInGameSettingsUI(app);
+				});
+			_uiSetRhythmAltBtns[i] = addUIButton("ui_rotn_set_ka_" + i, _uiSettingsGroup, "",
+				314, btnY, 92, 20,
+				app.color(28, 34, 52), app.color(50, 95, 165), fontSmall, () -> {
+					_inGameSettingsFocus = INGAME_SET_RHYTHM_START + LANE_COUNT + lane;
+					_rebindTarget = LANE_COUNT + lane;
 					syncInGameSettingsUI(app);
 				});
 		}
 		addUITextarea("ui_rotn_set_hint", _uiSettingsGroup,
-			"Click o Enter: reasignar tecla\nIzq / Der: ajustar volumen\nESC: volver a Pausa",
-			218, 140, 188, 66, app.color(175, 205, 240), app.color(18, 22, 36), fontSmall);
+			"Click/Enter: reasignar | Izq/Der: vol | ESC: volver",
+			218, 190, 188, 22, app.color(175, 205, 240), app.color(18, 22, 36), fontSmall);
 
 		_uiSettingsGroup.hide();
 	}
@@ -774,7 +756,9 @@ public class ROTNScene extends Scene {
 		_rhythmCore.togglePause();
 		_modalWasOpen = false;
 		_inGameSettingsOpen = false;
-		_rebindLane = -1;
+		_rebindTarget = -1;
+		_settingsUpHold.reset();
+		_settingsDownHold.reset();
 		beginResumeCountdown();
 	}
 
@@ -919,13 +903,17 @@ public class ROTNScene extends Scene {
 	private void openInGameSettings() {
 		_inGameSettingsOpen = true;
 		_inGameSettingsFocus = INGAME_SET_BGM;
-		_rebindLane = -1;
+		_rebindTarget = -1;
 		_ignoreSettingsNavOnce = true;
+		_settingsUpHold.reset();
+		_settingsDownHold.reset();
 	}
 
 	private void closeInGameSettings() {
-		_rebindLane = -1;
+		_rebindTarget = -1;
 		_inGameSettingsOpen = false;
+		_settingsUpHold.reset();
+		_settingsDownHold.reset();
 		Config.saveConfig(".config");
 		if (_uiSettingsGroup != null) _uiSettingsGroup.hide();
 	}
@@ -989,23 +977,7 @@ public class ROTNScene extends Scene {
 			}
 		}
 
-		// 2. HP del Jefe y Alerta de ataque de carril
-		boolean bossInvincible = _rhythmCore.isBossInvincible();
-		float bHpRatio = bossInvincible
-			? 1.0f
-			: (float) _rhythmCore.getBossHp() / Math.max(1, _rhythmCore.getBossMaxHp());
-		bHpRatio = PApplet.constrain(bHpRatio, 0.0f, 1.0f);
-		// if (_uiBossHpFill != null) {
-		// 	int bw = Math.max(1, Math.round(scaleW(130) * bHpRatio));
-		// 	_uiBossHpFill.setSize(bw, Math.max(1, (int) scaleH(6)));
-		// 	_uiBossHpFill.setColorBackground(
-		// 		bossInvincible
-		// 			? app.color(175, 110, 255, 245)
-		// 			: app.color(235, 65, 85, 245)
-		// 	);
-		// }
-
-		// 3. HUD Derecho y contador regresivo en ControlP5
+		// 2. HUD Derecho y contador regresivo en ControlP5
 		syncRightHudControlP5(app);
 
 		// 4. Barra vertical de Curación Dinámica (abajo-izquierda)
@@ -1158,14 +1130,6 @@ public class ROTNScene extends Scene {
 				  : (Config.isMuted ? app.color(145, 45, 58) : app.color(32, 42, 66))
 			);
 		}
-		if (_uiSetAltModeBtn != null) {
-			boolean f = (_inGameSettingsFocus == INGAME_SET_ALT_MODE);
-			_uiSetAltModeBtn.setLabel((f ? "> " : "") + "TECLAS: " + (_editingAltControls ? "ALTERNATIVAS" : "PRINCIPALES"));
-			_uiSetAltModeBtn.setColorBackground(
-				f ? app.color(55, 110, 195)
-				  : (_editingAltControls ? app.color(85, 60, 130) : app.color(32, 42, 66))
-			);
-		}
 		if (_uiSetResetBtn != null) {
 			boolean f = (_inGameSettingsFocus == INGAME_SET_RESET);
 			_uiSetResetBtn.setLabel((f ? "> " : "") + "RESTAURAR TECLAS");
@@ -1177,16 +1141,25 @@ public class ROTNScene extends Scene {
 			_uiSetBackBtn.setColorBackground(f ? app.color(55, 165, 110) : app.color(35, 115, 78));
 		}
 
-		int[] rhythmArr = _editingAltControls ? Config.RhythmAltButtons : Config.RhythmButtons;
 		for (int i = 0; i < LANE_COUNT; i++) {
 			Button b = _uiSetRhythmBtns[i];
-			if (b == null) continue;
-			boolean listening = (_rebindLane == i);
-			boolean f = (_inGameSettingsFocus == INGAME_SET_RHYTHM_START + i);
-			b.setLabel((f ? "> " : "") + "C" + (i + 1) + ": " + (listening ? "[ ? ]" : Config.getKeyLabel(rhythmArr[i])));
-			b.setColorBackground(
-				listening ? app.color(175, 115, 25) : (f ? app.color(55, 110, 195) : app.color(28, 34, 52))
-			);
+			if (b != null) {
+				boolean listening = (_rebindTarget == i);
+				boolean f = (_inGameSettingsFocus == INGAME_SET_RHYTHM_START + i);
+				b.setLabel((f ? "> " : "") + "C" + (i + 1) + ": " + (listening ? "[ ? ]" : Config.getKeyLabel(Config.RhythmButtons[i])));
+				b.setColorBackground(
+					listening ? app.color(175, 115, 25) : (f ? app.color(55, 110, 195) : app.color(28, 34, 52))
+				);
+			}
+			Button ba = _uiSetRhythmAltBtns[i];
+			if (ba != null) {
+				boolean listening = (_rebindTarget == LANE_COUNT + i);
+				boolean f = (_inGameSettingsFocus == INGAME_SET_RHYTHM_START + LANE_COUNT + i);
+				ba.setLabel((f ? "> " : "") + "A" + (i + 1) + ": " + (listening ? "[ ? ]" : Config.getKeyLabel(Config.RhythmAltButtons[i])));
+				ba.setColorBackground(
+					listening ? app.color(175, 115, 25) : (f ? app.color(55, 110, 195) : app.color(28, 34, 52))
+				);
+			}
 		}
 	}
 
@@ -1239,7 +1212,7 @@ public class ROTNScene extends Scene {
 		// 3c. Si está abierto el submenú de Configuración en Partida, retener ESC dentro del submenú
 		if (_rhythmCore.isPaused() && _inGameSettingsOpen) {
 			resolveCurrentSongTimeMs(dt);
-			handleInGameSettingsInput();
+			handleInGameSettingsInput(dt);
 			syncCombatUI();
 			return;
 		}
@@ -1258,7 +1231,9 @@ public class ROTNScene extends Scene {
 		} else if (wasPausedBefore && !nowPaused) {
 			_modalWasOpen = false;
 			_inGameSettingsOpen = false;
-			_rebindLane = -1;
+			_rebindTarget = -1;
+			_settingsUpHold.reset();
+			_settingsDownHold.reset();
 			beginResumeCountdown();
 			syncCombatUI();
 			return;
@@ -1276,7 +1251,7 @@ public class ROTNScene extends Scene {
 		} else {
 			_modalWasOpen = false;
 			_inGameSettingsOpen = false;
-			_rebindLane = -1;
+			_rebindTarget = -1;
 			updateActiveGameplayEffects(dt);
 		}
 
@@ -1348,7 +1323,7 @@ public class ROTNScene extends Scene {
 	 */
 	private void updateIntroCountdown(float dt) {
 		if (_rhythmCore.isPaused() && _inGameSettingsOpen) {
-			handleInGameSettingsInput();
+			handleInGameSettingsInput(dt);
 			return;
 		}
 
@@ -1370,7 +1345,7 @@ public class ROTNScene extends Scene {
 		} else {
 			_modalWasOpen = false;
 			_inGameSettingsOpen = false;
-			_rebindLane = -1;
+			_rebindTarget = -1;
 			_introCountdown -= dt;
 			if (_introCountdown <= 0.0f) {
 				_introCountdown = 0.0f;
@@ -1471,21 +1446,25 @@ public class ROTNScene extends Scene {
 
 	@Override
 	public void keyEvent(KeyEvent e) {
-		if (_inGameSettingsOpen && _rebindLane >= 0 && e.getAction() == KeyEvent.PRESS) {
+		if (_inGameSettingsOpen && _rebindTarget >= 0 && e.getAction() == KeyEvent.PRESS) {
 			int code = e.getKeyCode();
 			if (code == 27) { // ESC cancela la captura de tecla sin cerrar el submenú
-				_rebindLane = -1;
+				_rebindTarget = -1;
 				_ignoreSettingsNavOnce = true;
 				return;
 			}
 			int normalized = KBInput.normalizeKey(code);
 			if (normalized > 0 && normalized < 256) {
-				int[] rhythmArr = _editingAltControls ? Config.RhythmAltButtons : Config.RhythmButtons;
-				if (_rebindLane < rhythmArr.length) {
-					rhythmArr[_rebindLane] = normalized;
+				if (_rebindTarget < LANE_COUNT) {
+					Config.RhythmButtons[_rebindTarget] = normalized;
+				} else {
+					int altIdx = _rebindTarget - LANE_COUNT;
+					if (altIdx < Config.RhythmAltButtons.length) {
+						Config.RhythmAltButtons[altIdx] = normalized;
+					}
 				}
 				Config.saveConfig(".config");
-				_rebindLane = -1;
+				_rebindTarget = -1;
 				_ignoreSettingsNavOnce = true;
 			}
 		}
@@ -1508,15 +1487,15 @@ public class ROTNScene extends Scene {
 		}
 	}
 
-	private void handleInGameSettingsInput() {
+	private void handleInGameSettingsInput(float dt) {
 		if (_ignoreSettingsNavOnce) {
 			_ignoreSettingsNavOnce = false;
 			return;
 		}
-		if (_rebindLane >= 0) return;
+		if (_rebindTarget >= 0) return;
 
-		boolean up = Config.wasUIKeyJustPressed(Config.UP);
-		boolean down = Config.wasUIKeyJustPressed(Config.DOWN);
+		boolean up = _settingsUpHold.poll(Config.wasUIKeyJustPressed(Config.UP), Config.isUIKeyDown(Config.UP), dt);
+		boolean down = _settingsDownHold.poll(Config.wasUIKeyJustPressed(Config.DOWN), Config.isUIKeyDown(Config.DOWN), dt);
 		boolean left = Config.wasUIKeyJustPressed(Config.LEFT);
 		boolean right = Config.wasUIKeyJustPressed(Config.RIGHT);
 		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT);
@@ -1527,12 +1506,12 @@ public class ROTNScene extends Scene {
 			return;
 		}
 
-		// Columna izquierda (0..5): BGM, SFX, Mute, Principales/Alt, Restaurar, Volver
+		// Columna izquierda (0..4): BGM, SFX, Mute, Restaurar, Volver
 		if (_inGameSettingsFocus <= INGAME_SET_BACK) {
 			if (up) {
-				_inGameSettingsFocus = (_inGameSettingsFocus - 1 + 6) % 6;
+				_inGameSettingsFocus = (_inGameSettingsFocus - 1 + 5) % 5;
 			} else if (down) {
-				_inGameSettingsFocus = (_inGameSettingsFocus + 1) % 6;
+				_inGameSettingsFocus = (_inGameSettingsFocus + 1) % 5;
 			} else {
 				switch (_inGameSettingsFocus) {
 					case INGAME_SET_BGM -> {
@@ -1546,12 +1525,6 @@ public class ROTNScene extends Scene {
 					case INGAME_SET_MUTE -> {
 						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
 						else if (accept) toggleInGameMute();
-					}
-					case INGAME_SET_ALT_MODE -> {
-						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
-						else if (accept) {
-							_editingAltControls = !_editingAltControls;
-						}
 					}
 					case INGAME_SET_RESET -> {
 						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
@@ -1569,7 +1542,7 @@ public class ROTNScene extends Scene {
 			return;
 		}
 
-		// Columna derecha (6..11): Carriles 6K en grilla 3x2
+		// Columna derecha (5..16): Carriles 6K (Primarios + Alternativos) en grilla 6x2
 		int row = 0, col = 0;
 		for (int r = 0; r < INGAME_SET_RIGHT_GRID.length; r++) {
 			for (int c = 0; c < 2; c++) {
@@ -1581,7 +1554,7 @@ public class ROTNScene extends Scene {
 		}
 
 		if (accept) {
-			_rebindLane = _inGameSettingsFocus - INGAME_SET_RHYTHM_START;
+			_rebindTarget = _inGameSettingsFocus - INGAME_SET_RHYTHM_START;
 		} else if (left) {
 			_inGameSettingsFocus = (col == 1) ? INGAME_SET_RIGHT_GRID[row][0] : INGAME_SET_BGM;
 		} else if (right && col == 0) {
@@ -1648,9 +1621,9 @@ public class ROTNScene extends Scene {
 				}
 				if (!GameState.isDebugSession) {
 					GameState.recordBattleVictory(
-						_bossId,
-						_bossName,
-						_bossSpecies,
+						_trackId,
+						_trackTitle,
+						_trackSubtitle,
 						_defeatFlag,
 						_sceneFilePath,
 						resolveReturnTargetScene(),

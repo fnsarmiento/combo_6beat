@@ -31,7 +31,7 @@ import java.util.Map;
  *   <li>{@code [HitObjects]}: Mapea la coordenada horizontal {@code X (0..512)} a 6 carriles ({@code 0..5})
  *       y empaqueta notas tap y Hold Notes ({@code type & 128}) con {@link NotePacker}.</li>
  *   <li>{@code [Events]}: Identifica la imagen de portada/fondo y eventos de sprites sincronizados.</li>
- *   <li>{@code [Combo6Beat]}: Extensión opcional con metadatos de jefe (HP, sprite, daño, flags y recompensas).</li>
+ *   <li>{@code [Combo6Beat]}: Extensión opcional con metadatos de progresión (escena de retorno, flags y recompensas).</li>
  * </ul>
  */
 public class OsuManiaReader {
@@ -61,18 +61,9 @@ public class OsuManiaReader {
 	private float primaryBpm = 120.0f;
 
 	// =========================================================================
-	// Metadatos Opcionales de Jefe ([Combo6Beat])
+	// Metadatos Opcionales de Progresion ([Combo6Beat])
 	// =========================================================================
 
-	private boolean hasBossSection = false;
-	private String bossName = "";
-	private String bossSpecies = "";
-	private int bossMaxHp = 1500;
-	private String bossSprite = "";
-	private int bossRows = 1;
-	private int bossCols = 1;
-	private int bossAttackDamage = 12;
-	private int bossHitDamage = 6;
 	private String returnScene = "";
 	private String defeatFlag = "";
 	private String rewardItem = "";
@@ -225,22 +216,13 @@ public class OsuManiaReader {
 		int colonIdx = line.indexOf(':');
 		if (colonIdx == -1) return;
 
-		hasBossSection = true;
 		String key = line.substring(0, colonIdx).trim();
 		String val = line.substring(colonIdx + 1).trim();
 
 		switch (key) {
-			case "BossName"         -> bossName = val;
-			case "BossSpecies"      -> bossSpecies = val;
-			case "BossMaxHP"        -> bossMaxHp = Math.max(10, parseInt(val, 400));
-			case "BossSprite"       -> bossSprite = val;
-			case "BossRows"         -> bossRows = Math.max(1, parseInt(val, 1));
-			case "BossCols"         -> bossCols = Math.max(1, parseInt(val, 1));
-			case "BossAttackDamage" -> bossAttackDamage = Math.max(1, parseInt(val, 12));
-			case "BossHitDamage"    -> bossHitDamage = Math.max(1, parseInt(val, 6));
-			case "ReturnScene"      -> returnScene = val;
-			case "DefeatFlag"       -> defeatFlag = val;
-			case "RewardItem"       -> rewardItem = val;
+			case "ReturnScene" -> returnScene = val;
+			case "DefeatFlag"  -> defeatFlag = val;
+			case "RewardItem"  -> rewardItem = val;
 		}
 	}
 
@@ -403,15 +385,6 @@ public class OsuManiaReader {
 	public String getCoverAbsPath() { return coverAbsPath; }
 	public float getPrimaryBpm() { return primaryBpm; }
 
-	public boolean hasBossSection() { return hasBossSection; }
-	public String getBossName() { return bossName; }
-	public String getBossSpecies() { return bossSpecies; }
-	public int getBossMaxHp() { return bossMaxHp; }
-	public String getBossSprite() { return bossSprite; }
-	public int getBossRows() { return bossRows; }
-	public int getBossCols() { return bossCols; }
-	public int getBossAttackDamage() { return bossAttackDamage; }
-	public int getBossHitDamage() { return bossHitDamage; }
 	public String getReturnScene() { return returnScene; }
 	public String getDefeatFlag() { return defeatFlag; }
 	public String getRewardItem() { return rewardItem; }

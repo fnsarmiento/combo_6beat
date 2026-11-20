@@ -8,7 +8,7 @@ import game.core.notes.NotePacker;
 /**
  * Núcleo lógico del combate rítmico de 6 carriles (inspirado en Rift of the NecroDancer).
  * Gestiona las ventanas de juicio, las notas simples y mantenidas (Hold Notes),
- * la salud del jugador y del jefe, la curación progresiva y los bloqueos temporales de carril.
+ * la salud del jugador, la curación progresiva y los bloqueos temporales de carril.
  */
 public class ROTNCore {
 
@@ -28,15 +28,12 @@ public class ROTNCore {
 	private static final float POWERUP_REACTION_PLUS_MS = 10.0f;
 	private static final float POWERUP_REACTION_MINUS_MS = -7.5f;
 
-	// Puntuación base y multiplicadores de daño al jefe según precisión
+	// Puntuación base por precisión
 	private static final int SCORE_PERFECT_BASE = 300;
 	private static final int SCORE_PERFECT_COMBO_MULT = 10;
 	private static final int SCORE_GOOD_BASE = 200;
 	private static final int SCORE_GOOD_COMBO_MULT = 5;
 	private static final int SCORE_SAFE_BASE = 100;
-	private static final float BOSS_DMG_PERFECT_MULT = 1.5f;
-	private static final float BOSS_DMG_SAFE_MULT = 0.6f;
-	private static final float BOSS_FLASH_DURATION_SEC = 0.14f;
 
 	// Curación progresiva por racha corta y barra de autocuración
 	private static final int CONSECUTIVE_HITS_FOR_HEAL = 2;
@@ -51,7 +48,7 @@ public class ROTNCore {
 	private static final float INVINCIBILITY_SHIELD_DURATION_SEC = 4.0f;
 	private static final int INVINCIBILITY_SHIELD_MIN_HP = 15;
 
-	// Bloqueo temporal de carriles por ataques del jefe
+	// Bloqueo temporal de carriles
 	private static final int[] LANE_LOCK_CYCLE_ORDER = { 1, 4, 0, 3, 5, 2 };
 	private static final float LOCK_WARNING_LEAD_SEC = 1.4f;
 	private static final int LOCK_WARNING_LEAD_MS = 1400;
@@ -119,17 +116,12 @@ public class ROTNCore {
 	private int perfectCount, greatCount, goodCount, missCount;
 	private OnHitListener hitListener;
 
-	// Salud del jugador y del jefe
+	// Salud del jugador y daño por fallo
 	private int basePlayerMaxHp = 200;
 	private int playerMaxHp = 200;
 	private int playerHp = 200;
 	private int lastDamageTaken = 0;
-	private int bossMaxHp = 1500;
-	private int bossHp = 1500;
-	private boolean bossInvincible = false;
-	private int bossAttackDamage = 12;
-	private int bossHitDamage = 6;
-	private float bossFlashTimer = 0.0f;
+	private int missDamage = 12;
 
 	// Curación progresiva, modificadores de ventana y escudo de invencibilidad
 	private float windowOffsetMs = 0.0f;
@@ -141,7 +133,7 @@ public class ROTNCore {
 	private boolean hasInvincibilityShield = false;
 	private float invincibilityTimer = 0.0f;
 
-	// Estado del ataque de bloqueo temporal de carril: intervalo [lockStartMs, lockEndMs]
+	// Estado del bloqueo temporal de carril: intervalo [lockStartMs, lockEndMs]
 	private int laneLockIntervalMs = 10000;
 	private int laneLockDurationMs = 2800;
 	private int nextLockTriggerMs = 10000;
@@ -163,13 +155,11 @@ public class ROTNCore {
 	}
 
 	/**
-	 * Configura los parámetros de combate del encuentro (salud, daño, curación y frecuencia de bloqueo).
+	 * Configura los parámetros de combate del encuentro (salud, daño por fallo, curación y frecuencia de bloqueo).
 	 */
 	public void configureCombat(
 		int playerMaxHp,
-		int bossMaxHp,
-		int bossAttackDamage,
-		int bossHitDamage,
+		int missDamage,
 		int healThreshold,
 		float healActiveDuration,
 		int laneLockIntervalMs,
@@ -178,10 +168,7 @@ public class ROTNCore {
 		this.basePlayerMaxHp = Math.max(10, playerMaxHp);
 		this.playerMaxHp = this.basePlayerMaxHp;
 		this.playerHp = this.playerMaxHp;
-		this.bossMaxHp = Math.max(10, bossMaxHp);
-		this.bossHp = this.bossMaxHp;
-		this.bossAttackDamage = Math.max(1, bossAttackDamage);
-		this.bossHitDamage = Math.max(1, bossHitDamage);
+		this.missDamage = Math.max(1, missDamage);
 		this.healActiveDuration = Math.max(1.0f, healActiveDuration);
 		this.laneLockIntervalMs = laneLockIntervalMs;
 		this.laneLockDurationMs = Math.max(500, laneLockDurationMs);
@@ -266,12 +253,10 @@ public class ROTNCore {
 		battleState = BattleState.PLAYING;
 		playerHp = playerMaxHp;
 		lastDamageTaken = 0;
-		bossHp = bossMaxHp;
 		healPoints = 0;
 		healBarActive = false;
 		healBarTimer = 0.0f;
 		healPulseTimer = 0.0f;
-		bossFlashTimer = 0.0f;
 		warningLane = -1;
 		lockWarningTimer = 0.0f;
 		lockedLane = -1;
@@ -303,7 +288,6 @@ public class ROTNCore {
 
 		if (isPaused || notes == null) return;
 
-		if (bossFlashTimer > 0.0f) bossFlashTimer = Math.max(0.0f, bossFlashTimer - dt);
 		if (invincibilityTimer > 0.0f) invincibilityTimer = Math.max(0.0f, invincibilityTimer - dt);
 
 		updateHealBar(dt);
@@ -475,15 +459,11 @@ public class ROTNCore {
 
 	/**
 	 * Verifica si el combate terminó por derrota (HP jugador <= 0) o por victoria
-	 * (HP jefe <= 0 o todas las notas procesadas tras el margen final de la canción).
+	 * (todas las notas procesadas tras el margen final de la canción).
 	 */
 	private void checkVictoryOrDefeat(int songTimeMs) {
 		if (playerHp <= 0) {
 			battleState = BattleState.DEFEAT;
-			return;
-		}
-		if (!bossInvincible && bossHp <= 0) {
-			battleState = BattleState.VICTORY;
 			return;
 		}
 		if (notes != null && notes.length > 0 && songTimeMs > lastNoteEndTimeMs + VICTORY_OUTRO_GRACE_MS) {
@@ -688,7 +668,7 @@ public class ROTNCore {
 	}
 
 	/**
-	 * Aplica los efectos de un juicio sobre el combo, el puntaje, el daño al jefe o al jugador
+	 * Aplica los efectos de un juicio sobre el combo, el puntaje, el daño al jugador
 	 * y la curación progresiva:
 	 * <ul>
 	 *   <li><b>Curación progresiva:</b> encadenar {@code 2} aciertos consecutivos ({@code PERFECT},
@@ -704,20 +684,17 @@ public class ROTNCore {
 				combo++;
 				advanceScoreMultiplier();
 				score += Math.round((SCORE_PERFECT_BASE + combo * SCORE_PERFECT_COMBO_MULT) * scoreMultiplier * scoreBonusMultiplier);
-				damageBoss(Math.round(bossHitDamage * BOSS_DMG_PERFECT_MULT));
 			}
 			case GOOD -> {
 				greatCount++;
 				combo++;
 				advanceScoreMultiplier();
 				score += Math.round((SCORE_GOOD_BASE + combo * SCORE_GOOD_COMBO_MULT) * scoreMultiplier * scoreBonusMultiplier);
-				damageBoss(bossHitDamage);
 			}
 			case SAFE -> {
 				goodCount++;
 				combo++;
 				score += Math.round(SCORE_SAFE_BASE * scoreMultiplier * scoreBonusMultiplier);
-				damageBoss(Math.max(1, Math.round(bossHitDamage * BOSS_DMG_SAFE_MULT)));
 			}
 			case MISS -> {
 				boolean hadCombo = (combo > 0);
@@ -727,7 +704,7 @@ public class ROTNCore {
 				scoreMultiplier = 1;
 				// El primer MISS que rompe un combo activo no quita HP; el siguiente sin combo sí
 				if (!hadCombo) {
-					applyPlayerDamage(bossAttackDamage);
+					applyPlayerDamage(missDamage);
 				}
 			}
 		}
@@ -742,7 +719,7 @@ public class ROTNCore {
 			if (healPoints >= CONSECUTIVE_HITS_FOR_HEAL) {
 				healPoints = 0;
 				if (playerHp < playerMaxHp) {
-					int baseRef = (lastDamageTaken > 0) ? lastDamageTaken : bossAttackDamage;
+					int baseRef = (lastDamageTaken > 0) ? lastDamageTaken : missDamage;
 					float healPercent = GameState.hasHealingAmulet()
 						? AMULET_DAMAGE_RECOVERY_RATIO
 						: BASE_DAMAGE_RECOVERY_RATIO;
@@ -774,13 +751,6 @@ public class ROTNCore {
 		int step = Math.max(1, multiplierStepHits);
 		int tiers = multiplierStreak / step;
 		scoreMultiplier = (tiers >= 30) ? maxScoreMultiplier : Math.min(maxScoreMultiplier, 1 << tiers);
-	}
-
-	private void damageBoss(int dmg) {
-		if (dmg <= 0) return;
-		bossFlashTimer = BOSS_FLASH_DURATION_SEC;
-		if (bossInvincible) return;
-		bossHp = Math.max(0, bossHp - dmg);
 	}
 
 	private void applyPlayerDamage(int dmg) {
@@ -858,11 +828,6 @@ public class ROTNCore {
 
 	public int getPlayerHp() { return playerHp; }
 	public int getPlayerMaxHp() { return playerMaxHp; }
-	public int getBossHp() { return bossHp; }
-	public int getBossMaxHp() { return bossMaxHp; }
-	public boolean isBossInvincible() { return bossInvincible; }
-	public void setBossInvincible(boolean bossInvincible) { this.bossInvincible = bossInvincible; }
-	public float getBossFlashTimer() { return bossFlashTimer; }
 
 	public int getHealPoints() { return healPoints; }
 	public int getEffectiveHealThreshold() { return CONSECUTIVE_HITS_FOR_HEAL; }

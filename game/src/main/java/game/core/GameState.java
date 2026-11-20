@@ -132,7 +132,6 @@ public class GameState {
 	/** Banderas de sesion para distinguir modo historia, selector libre (arcade) y depuracion. */
 	public static boolean launchedFromMenu = false;
 	public static boolean isDebugSession = false;
-	public static boolean bossInvincibleMode = false;
 	public static float songSpeedMultiplier = 1.0f;
 
 	/** Colecciones internas de banderas narrativas, catalogo maestro, inventario y equipamiento. */
@@ -242,7 +241,6 @@ public class GameState {
 		hasPendingSpawn = false;
 		launchedFromMenu = false;
 		isDebugSession = false;
-		bossInvincibleMode = false;
 		_notificationText = "";
 		_notificationTimer = 0.0f;
 		_initialized = false;

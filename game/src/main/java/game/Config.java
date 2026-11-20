@@ -143,10 +143,55 @@ public class Config {
 			|| KBInput.wasKeyJustPressed(RPGAltButtons[actionIndex]);
 	}
 
+	/** Intervalo general para repeticion de teclas mantenidas en UI (segundos). */
+	public static final float UI_REPEAT_INITIAL_DELAY = 0.32f;
+	public static final float UI_REPEAT_INTERVAL = 0.085f;
+
 	/** Comprueba si una accion de interfaz/menu fue pulsada en el frame actual. */
 	public static boolean wasUIKeyJustPressed(int actionIndex) {
 		return KBInput.wasKeyJustPressed(UIButtons[actionIndex])
 			|| KBInput.wasKeyJustPressed(UIAltButtons[actionIndex]);
+	}
+
+	/** Comprueba si una accion de interfaz/menu se mantiene presionada. */
+	public static boolean isUIKeyDown(int actionIndex) {
+		return KBInput.isKeyDown(UIButtons[actionIndex])
+			|| KBInput.isKeyDown(UIAltButtons[actionIndex]);
+	}
+
+	/** Temporizador reutilizable para repeticion continua al mantener teclas de navegacion. */
+	public static final class UIHoldRepeat {
+		private boolean wasHeld = false;
+		private float timer = 0.0f;
+
+		public boolean poll(boolean justPressed, boolean isHeld, float dt) {
+			if (justPressed) {
+				wasHeld = true;
+				timer = UI_REPEAT_INITIAL_DELAY;
+				return true;
+			}
+			if (!isHeld) {
+				wasHeld = false;
+				timer = 0.0f;
+				return false;
+			}
+			if (!wasHeld) {
+				wasHeld = true;
+				timer = UI_REPEAT_INITIAL_DELAY;
+				return false;
+			}
+			timer -= dt;
+			if (timer <= 0.0f) {
+				timer = UI_REPEAT_INTERVAL;
+				return true;
+			}
+			return false;
+		}
+
+		public void reset() {
+			wasHeld = false;
+			timer = 0.0f;
+		}
 	}
 
 	/** Restaura todas las asignaciones de teclas (ROTN, Hub y UI) a sus valores de fabrica. */

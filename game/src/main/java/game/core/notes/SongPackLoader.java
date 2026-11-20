@@ -25,7 +25,7 @@ import processing.data.XML;
  * <ul>
  *   <li><b>Canciones Base ({@code resources/songs/base/}):</b> escanea recursivamente archivos {@code .osu},
  *       los agrupa por carpeta dentro de un {@link SongPack} con sus variantes de dificultad ({@link ChartVariant})
- *       ordenadas por número de notas, y aplica overrides de jefes/sprites definidos en {@code resources/songs/songs.xml}.</li>
+ *       ordenadas por número de notas, y aplica overrides definidos en {@code resources/songs/songs.xml}.</li>
  *   <li><b>Canciones Personalizadas ({@code resources/songs/custom/}):</b> sincroniza el directorio con la tabla
  *       SQLite {@code CANCIONES_PERSONALIZADAS} mediante {@link CustomSongRepository} y agrupa las dificultades
  *       por {@code título|artista}.</li>
@@ -56,19 +56,7 @@ public class SongPackLoader {
 		public String difficultyTier = "Facil";
 		public float scrollSpeed = 0.22f;
 
-		// Metadatos opcionales de jefe (sobrescribibles desde songs.xml)
-		public String bossId = "";
-		public String bossName = "Jefe";
-		public String bossSpecies = "";
-		public int bossHp = 500;
-		public int attackDamage = 12;
-		public int hitDamage = 6;
-		public String bossSprite = "sprites/bosses/bear.png";
-		public int bossRows = 3;
-		public int bossCols = 3;
-		public float bossDelay = 0.11f;
-		public float bossScaleX = 1.6f;
-		public float bossScaleY = 1.6f;
+		// Metadatos opcionales de progresion (sobrescribibles desde songs.xml)
 		public String defeatFlag = "";
 		public String rewardItem = "";
 
@@ -134,9 +122,6 @@ public class SongPackLoader {
 				XML[] overridePair = manifestOverrides.get(normKey);
 				if (overridePair != null) {
 					applyManifestOverride(variant, overridePair[0], overridePair[1]);
-				} else {
-					variant.bossName = variant.title;
-					variant.bossSpecies = variant.artist;
 				}
 
 				if (variant.coverRelPath.isEmpty()) {
@@ -201,9 +186,6 @@ public class SongPackLoader {
 			v.noteCount = row.cantidadNotas;
 			v.bpm = row.bpm;
 			populateDurationAndDifficulty(v, new File(v.osuAbsPath));
-			v.bossId = v.id;
-			v.bossName = row.titulo;
-			v.bossSpecies = row.dificultad + " | " + Math.round(row.bpm) + " BPM";
 			v.customDbSummary = row;
 
 			String packKey = (row.titulo + "|" + row.artista).toLowerCase(Locale.ROOT);
@@ -272,18 +254,6 @@ public class SongPackLoader {
 			String diff = chartNode.getString("difficulty", "");
 			if (!diff.isEmpty()) v.difficulty = diff;
 			v.scrollSpeed = chartNode.getFloat("scroll-speed", v.scrollSpeed);
-			v.bossId = chartNode.getString("boss-id", v.id);
-			v.bossName = chartNode.getString("boss-name", v.title);
-			v.bossSpecies = chartNode.getString("boss-species", v.artist);
-			v.bossHp = chartNode.getInt("boss-hp", v.bossHp);
-			v.attackDamage = chartNode.getInt("attack-damage", v.attackDamage);
-			v.hitDamage = chartNode.getInt("hit-damage", v.hitDamage);
-			v.bossSprite = chartNode.getString("boss-sprite", v.bossSprite);
-			v.bossRows = chartNode.getInt("boss-rows", v.bossSprite.endsWith("bear.png") ? 3 : 1);
-			v.bossCols = chartNode.getInt("boss-cols", v.bossSprite.endsWith("bear.png") ? 3 : 1);
-			v.bossDelay = chartNode.getFloat("boss-delay", v.bossDelay);
-			v.bossScaleX = chartNode.getFloat("boss-scale-x", v.bossScaleX);
-			v.bossScaleY = chartNode.getFloat("boss-scale-y", v.bossScaleY);
 			v.defeatFlag = chartNode.getString("defeat-flag", v.defeatFlag);
 			v.rewardItem = chartNode.getString("reward-item", v.rewardItem);
 		}
