@@ -145,7 +145,6 @@ public class InitScene extends Scene {
 	private int _shopScrollOffset = 0;
 	private int _songFocusCol = SONG_COL_LIST;
 	private int _songTopFocus = -1; // -1 = lista de canciones, 0 = + IMPORTAR .OSU, 1 = ACTUALIZAR
-	private int _shopTopFocus = -1; // -1 = lista de amuletos, 0 = ACTUALIZAR
 	private boolean _songOptionsOpen = false;
 	private int _songRightIdx = RIGHT_FOCUS_DIFF;
 	private int _songSpeedIdx = 1;
@@ -171,10 +170,9 @@ public class InitScene extends Scene {
 	private final Button[] _songListBtns = new Button[SONG_VISIBLE_ROWS];
 	private Button _songImportBtn;
 	private Button _songRescanBtn;
-	private Button _shopRescanBtn;
 	private Textlabel _songListFooterLbl;
 	private Button _songCardBg;
-	private final Textlabel[] _songTitleOutlineLbls = new Textlabel[4];
+	private final Textlabel[] _songTitleOutlineLbls = new Textlabel[8];
 	private Textlabel _songTitleLbl;
 	private Textlabel _songArtistLbl;
 	private Textlabel _songDiffLbl;
@@ -398,7 +396,6 @@ public class InitScene extends Scene {
 			_songRightIdx = RIGHT_FOCUS_DIFF;
 			refreshCustomSongs(false);
 			_songTopFocus = (_allPacks.isEmpty() ? 0 : -1);
-			_shopTopFocus = (GameState.getShopAmulets().isEmpty() ? 0 : -1);
 		} else if (mode == ViewMode.SETTINGS) {
 			_settingsFocusIdx = _savedSettingsFocusIdx;
 		}
@@ -645,12 +642,6 @@ public class InitScene extends Scene {
 				_songTopFocus = 1;
 				rescanSongsAction();
 			});
-		_shopRescanBtn = addUIButton("ui_shop_rescan_btn", _songsGroup, "ACTUALIZAR", 22, 38, 188, 18,
-			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
-				_songFocusCol = SONG_COL_LIST;
-				_shopTopFocus = 0;
-				refreshShopAction();
-			});
 
 		_songListFooterLbl = addUILabel("ui_song_footer_lbl", _songsGroup, "", 22, 232, app.color(175, 200, 235), fontSmall);
 
@@ -663,7 +654,7 @@ public class InitScene extends Scene {
 				app.color(255, 255, 255), fontSongTitle);
 		}
 		_songTitleLbl = addUILabel("ui_song_title_lbl", _songsGroup, "Sin canciones", 228, 44,
-			app.color(80, 185, 255), fontSongTitle);
+			app.color(48, 132, 255), fontSongTitle);
 		_songArtistLbl = addUILabel("ui_song_artist_lbl", _songsGroup, "", 228, 63,
 			app.color(245, 248, 255), fontSongSmall);
 		_songDiffLbl = addUILabel("ui_song_diff_lbl", _songsGroup, "", 228, 79,
@@ -793,7 +784,6 @@ public class InitScene extends Scene {
 			List<GameState.ItemDef> shopList = GameState.getShopAmulets();
 			int actualIdx = _shopScrollOffset + visibleRow;
 			if (actualIdx >= 0 && actualIdx < shopList.size()) {
-				_shopTopFocus = -1;
 				_shopSelectedIdx = actualIdx;
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_PLAY;
@@ -822,7 +812,6 @@ public class InitScene extends Scene {
 		_amuletDropdownOpen = false;
 		_songFocusCol = SONG_COL_LIST;
 		_songTopFocus = (_allPacks.isEmpty() ? 0 : -1);
-		_shopTopFocus = (GameState.getShopAmulets().isEmpty() ? 0 : -1);
 		_songStatusMsg = "";
 		syncSongSelectUI();
 	}
@@ -832,13 +821,6 @@ public class InitScene extends Scene {
 		scanSongsDirectory(true);
 		refreshCustomSongs(true);
 		_songStatusMsg = "Actualizado: " + _allPacks.size() + " canciones (" + _basePacks.size() + " base, " + _customPacks.size() + " custom).";
-		syncSongSelectUI();
-	}
-
-	/** Actualiza el estado de la tienda de amuletos y muestra el saldo vigente. */
-	private void refreshShopAction() {
-		GameState.saveGame();
-		_songStatusMsg = "Tienda actualizada (" + GameState.getShopPoints() + " pts)";
 		syncSongSelectUI();
 	}
 
@@ -873,7 +855,6 @@ public class InitScene extends Scene {
 	/** Sincroniza la pestaña CANCIONES (lista unificada Base + Custom, metadatos, opciones y desplegable de amuletos). */
 	private void syncSongsTabUI(PApplet app) {
 		hideShopCardControls();
-		if (_shopRescanBtn != null) _shopRescanBtn.hide();
 		if (_allPacks.isEmpty() && _songTopFocus < 0) {
 			_songTopFocus = 0;
 		}
@@ -894,6 +875,7 @@ public class InitScene extends Scene {
 		for (int i = 0; i < _songListBtns.length; i++) {
 			Button btn = _songListBtns[i];
 			if (btn == null) continue;
+			btn.setPosition(scaleW(22), scaleH(60 + i * 27));
 			int idx = _songScrollOffset + i;
 			if (idx < _allPacks.size()) {
 				SongPackLoader.SongPack pack = _allPacks.get(idx);
@@ -1071,27 +1053,18 @@ public class InitScene extends Scene {
 		if (_shopSelectedIdx >= shopList.size()) {
 			_shopSelectedIdx = Math.max(0, shopList.size() - 1);
 		}
-		if (shopList.isEmpty() && _shopTopFocus < 0) {
-			_shopTopFocus = 0;
-		}
-
-		boolean shopTopFocused = (_songFocusCol == SONG_COL_LIST && _shopTopFocus >= 0);
-		if (_shopRescanBtn != null) {
-			_shopRescanBtn.setLabel((shopTopFocused ? "> " : "") + "ACTUALIZAR");
-			_shopRescanBtn.setColorBackground(shopTopFocused ? app.color(55, 110, 195) : app.color(32, 42, 66));
-			_shopRescanBtn.show();
-		}
 
 		for (int i = 0; i < _songListBtns.length; i++) {
 			Button btn = _songListBtns[i];
 			if (btn == null) continue;
+			btn.setPosition(scaleW(22), scaleH(40 + i * 30));
 			int idx = _shopScrollOffset + i;
 			if (idx < shopList.size()) {
 				GameState.ItemDef def = shopList.get(idx);
 				boolean owned = GameState.hasItem(def.id);
 				boolean equipped = GameState.isPowerUpEquipped(def.id);
 				boolean sel = (idx == _shopSelectedIdx);
-				boolean focused = sel && (_songFocusCol == SONG_COL_LIST) && (_shopTopFocus < 0);
+				boolean focused = sel && (_songFocusCol == SONG_COL_LIST);
 
 				String itemLabel;
 				if (owned && equipped) {
@@ -1209,7 +1182,10 @@ public class InitScene extends Scene {
 			_songCardBg.show();
 		}
 
-		int[][] outlineOffsets = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+		int[][] outlineOffsets = {
+			{ -2, 0 }, { 2, 0 }, { 0, -2 }, { 0, 2 },
+			{ -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 }
+		};
 		float baseTitleX = scaleW(228);
 		float baseTitleY = scaleH(44);
 
@@ -1836,60 +1812,23 @@ public class InitScene extends Scene {
 
 		List<GameState.ItemDef> shopList = GameState.getShopAmulets();
 		int listSize = shopList.size();
-		if (listSize == 0) {
-			_songFocusCol = SONG_COL_LIST;
-			_shopTopFocus = 0;
-		}
+		if (listSize == 0) return;
 
-		if (_songFocusCol == SONG_COL_LIST) {
-			if (_shopTopFocus >= 0) {
-				if (accept) {
-					refreshShopAction();
-				} else if (up && listSize > 0) {
-					_shopTopFocus = -1;
-					_shopSelectedIdx = listSize - 1;
-					syncSongSelectUI();
-				} else if (down && listSize > 0) {
-					_shopTopFocus = -1;
-					_shopSelectedIdx = 0;
-					syncSongSelectUI();
-				}
-			} else {
-				if (up) {
-					if (_shopSelectedIdx <= 0) {
-						_shopTopFocus = 0;
-					} else {
-						_shopSelectedIdx--;
-					}
-					syncSongSelectUI();
-				} else if (down) {
-					if (_shopSelectedIdx >= listSize - 1) {
-						_shopTopFocus = 0;
-					} else {
-						_shopSelectedIdx++;
-					}
-					syncSongSelectUI();
-				} else if (right && listSize > 0) {
-					_songFocusCol = SONG_COL_OPTIONS;
-					_songRightIdx = RIGHT_FOCUS_PLAY;
-					syncSongSelectUI();
-				} else if (accept && listSize > 0) {
-					executeShopPrimaryAction();
-				}
-			}
-		} else {
-			if (up && listSize > 0) {
-				_shopSelectedIdx = (_shopSelectedIdx - 1 + listSize) % listSize;
-				syncSongSelectUI();
-			} else if (down && listSize > 0) {
-				_shopSelectedIdx = (_shopSelectedIdx + 1) % listSize;
-				syncSongSelectUI();
-			} else if (left) {
-				_songFocusCol = SONG_COL_LIST;
-				syncSongSelectUI();
-			} else if (accept && listSize > 0) {
-				executeShopPrimaryAction();
-			}
+		if (up) {
+			_shopSelectedIdx = (_shopSelectedIdx - 1 + listSize) % listSize;
+			syncSongSelectUI();
+		} else if (down) {
+			_shopSelectedIdx = (_shopSelectedIdx + 1) % listSize;
+			syncSongSelectUI();
+		} else if (right && _songFocusCol == SONG_COL_LIST) {
+			_songFocusCol = SONG_COL_OPTIONS;
+			_songRightIdx = RIGHT_FOCUS_PLAY;
+			syncSongSelectUI();
+		} else if (left && _songFocusCol == SONG_COL_OPTIONS) {
+			_songFocusCol = SONG_COL_LIST;
+			syncSongSelectUI();
+		} else if (accept) {
+			executeShopPrimaryAction();
 		}
 	}
 
