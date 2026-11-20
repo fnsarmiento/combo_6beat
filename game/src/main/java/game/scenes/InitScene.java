@@ -349,6 +349,11 @@ public class InitScene extends Scene {
 	}
 
 	private void drawSongSelectOverlay(PGraphics g) {
+		// Fondo del panel principal dibujado en _virtualScreen (debajo de los controles ControlP5)
+		g.noStroke();
+		g.fill(14, 16, 28, 225);
+		g.rect(12.0f, 10.0f, BASE_W - 24.0f, BASE_H - 20.0f);
+
 		if (_songTab != SONG_TAB_SHOP) return;
 
 		float cardX = 220.0f;
@@ -356,8 +361,8 @@ public class InitScene extends Scene {
 		float cardW = 238.0f;
 		float cardH = 176.0f; // Desde el margen bajo los tabs (y=40) hasta justo arriba del botón COMPRAR/EQUIPAR (y=222)
 
-		g.fill(20, 24, 38, 240);
-		g.stroke(62, 86, 138, 220);
+		g.fill(22, 27, 46, 245);
+		g.stroke(82, 116, 178, 235);
 		g.strokeWeight(1.0f);
 		g.rect(cardX, cardY, cardW, cardH);
 
@@ -693,7 +698,6 @@ public class InitScene extends Scene {
 		ControlFont fontSmall = makeFont(6.5f, false);
 
 		_songsGroup = addUIGroup("ui_songs_group", 0, 0, BASE_W, BASE_H);
-		addUIBox("ui_songs_panel_bg", _songsGroup, 12, 10, BASE_W - 24, BASE_H - 20, app.color(14, 16, 28, 225));
 		_songsHeaderLbl = addUILabel("ui_songs_header", _songsGroup, "PARTIDA 1  |  PUNTOS: 0", 22, 16, app.color(255, 225, 130), fontTitle);
 
 		_songTabCustomBtn = addUIButton("ui_song_tab_custom", _songsGroup, "CANCIONES", 220, 14, 116, 18,
