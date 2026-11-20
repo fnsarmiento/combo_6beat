@@ -29,11 +29,15 @@ public class Config {
 	/** Indica si todo el subsistema de audio se encuentra silenciado. */
 	public static boolean isMuted = false;
 
+	/** Silencia temporalmente el audio cuando la ventana pierde el foco. */
+	public static boolean muteOnUnfocus = true;
+
 	/** Aplica los valores actuales de volumen y silencio al motor de audio (`TinySound`). */
 	public static void applyAudioConfig() {
 		Audio.setBGMVolume(BGMVolume);
 		Audio.setSFXVolume(SFXVolume);
 		Audio.setMute(isMuted);
+		Engine.setMuteOnUnfocus(muteOnUnfocus);
 	}
 
 	// =========================================================================
@@ -252,6 +256,7 @@ public class Config {
 			} else {
 				isMuted = audio.getBoolean("BGMMute", false) && audio.getBoolean("SFXMute", false);
 			}
+			muteOnUnfocus = audio.getBoolean("MuteOnUnfocus", true);
 		}
 
 		JSONObject video = json.getJSONObject("Video");
@@ -291,6 +296,7 @@ public class Config {
 		audio.setFloat("BGMVolume", BGMVolume);
 		audio.setFloat("SFXVolume", SFXVolume);
 		audio.setBoolean("Muted", isMuted);
+		audio.setBoolean("MuteOnUnfocus", muteOnUnfocus);
 		json.setJSONObject("Audio", audio);
 
 		JSONObject video = new JSONObject();

@@ -40,6 +40,7 @@ public class Engine {
 	private static int _lastTime;
 	private static PGraphics _virtualScreen;
 	private static boolean _pixelPerfect = true;
+	private static boolean _muteOnUnfocus = true;
 
 	/** Tipografías compartidas para encabezados y textos de HUD en escenas y overlays. */
 	public static PFont titleFont;
@@ -172,6 +173,14 @@ public class Engine {
 		return _pixelPerfect;
 	}
 
+	/** Activa o desactiva el silencio automático cuando la ventana pierde el foco. */
+	public static void setMuteOnUnfocus(boolean enabled) {
+		_muteOnUnfocus = enabled;
+		if (!_muteOnUnfocus) {
+			Audio.setFocusMute(false);
+		}
+	}
+
 	/**
 	 * Cambia la resolución física de la ventana en tiempo de ejecución y reconfigura {@link ControlP5}.
 	 */
@@ -229,6 +238,8 @@ public class Engine {
 		_lastTime = now;
 
 		KBInput.beginFrame();
+
+		Audio.setFocusMute(_muteOnUnfocus && _app != null && !_app.focused);
 
 		if (_currentScene != null) {
 			_currentScene.update(deltaTime);

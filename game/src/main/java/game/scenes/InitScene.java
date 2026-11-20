@@ -85,23 +85,24 @@ public class InitScene extends Scene {
 	private static final int SET_FOCUS_BGM = 0;
 	private static final int SET_FOCUS_SFX = 1;
 	private static final int SET_FOCUS_MUTE = 2;
-	private static final int SET_FOCUS_RESET = 3;
-	private static final int SET_FOCUS_BACK = 4;
-	private static final int SET_LEFT_COL_COUNT = 5; // Índices 0..4 en la columna izquierda
-	private static final int SET_FOCUS_RHYTHM_START = 5;  // Carriles 6K: 5..10 principales, 11..16 alternativos
-	private static final int SET_FOCUS_RHYTHM_END = 16;
+	private static final int SET_FOCUS_UNFOCUS_MUTE = 3;
+	private static final int SET_FOCUS_RESET = 4;
+	private static final int SET_FOCUS_BACK = 5;
+	private static final int SET_LEFT_COL_COUNT = 6; // Índices 0..5 en la columna izquierda
+	private static final int SET_FOCUS_RHYTHM_START = 6;  // Carriles 6K: 6..11 principales, 12..17 alternativos
+	private static final int SET_FOCUS_RHYTHM_END = 17;
 
 	private static final int REBIND_NONE = 0;
 	private static final int REBIND_RHYTHM = 1;
 
 	/** Grilla 6x2 de índices de foco en la columna derecha de Configuración (Carriles 6K: C1..C6 y A1..A6). */
 	private static final int[][] SETTINGS_RIGHT_GRID = {
-		{ 5, 11 },
 		{ 6, 12 },
 		{ 7, 13 },
 		{ 8, 14 },
 		{ 9, 15 },
-		{ 10, 16 }
+		{ 10, 16 },
+		{ 11, 17 }
 	};
 
 	// =========================================================================
@@ -213,6 +214,7 @@ public class InitScene extends Scene {
 	private Textlabel _setSfxLbl;
 	private Button _setSfxBarFill;
 	private Button _setMuteBtn;
+	private Button _setUnfocusMuteBtn;
 	private Button _setResetBtn;
 	private Button _setBackBtn;
 	private final Button[] _setRhythmBtns = new Button[6];
@@ -1459,19 +1461,21 @@ public class InitScene extends Scene {
 		addUIButton("ui_set_bgm_plus", _settingsGroup, "+", 198, 50, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
 			() -> { _settingsFocusIdx = SET_FOCUS_BGM; adjustBgmVolume(0.1f); });
 
-		_setSfxLbl = addUILabel("ui_set_sfx_lbl", _settingsGroup, "SFX: 50%", 22, 74, app.color(220, 235, 255), fontSmall);
-		addUIButton("ui_set_sfx_minus", _settingsGroup, "-", 22, 86, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
+		_setSfxLbl = addUILabel("ui_set_sfx_lbl", _settingsGroup, "SFX: 50%", 22, 72, app.color(220, 235, 255), fontSmall);
+		addUIButton("ui_set_sfx_minus", _settingsGroup, "-", 22, 84, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
 			() -> { _settingsFocusIdx = SET_FOCUS_SFX; adjustSfxVolume(-0.1f); });
-		addUIBox("ui_set_sfx_bar_bg", _settingsGroup, 48, 88, 146, 12, app.color(26, 30, 42));
-		_setSfxBarFill = addUIBox("ui_set_sfx_bar_fill", _settingsGroup, 48, 88, 73, 12, app.color(95, 235, 165));
-		addUIButton("ui_set_sfx_plus", _settingsGroup, "+", 198, 86, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
+		addUIBox("ui_set_sfx_bar_bg", _settingsGroup, 48, 86, 146, 12, app.color(26, 30, 42));
+		_setSfxBarFill = addUIBox("ui_set_sfx_bar_fill", _settingsGroup, 48, 86, 73, 12, app.color(95, 235, 165));
+		addUIButton("ui_set_sfx_plus", _settingsGroup, "+", 198, 84, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
 			() -> { _settingsFocusIdx = SET_FOCUS_SFX; adjustSfxVolume(0.1f); });
 
-		_setMuteBtn = addUIButton("ui_set_mute_btn", _settingsGroup, "MUTE GENERAL: OFF", 22, 118, 198, 22,
+		_setMuteBtn = addUIButton("ui_set_mute_btn", _settingsGroup, "MUTE GENERAL: OFF", 22, 110, 198, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> { _settingsFocusIdx = SET_FOCUS_MUTE; toggleMuteSetting(); });
-		_setResetBtn = addUIButton("ui_set_reset_btn", _settingsGroup, "RESTAURAR CONTROLES", 22, 154, 198, 22,
+		_setUnfocusMuteBtn = addUIButton("ui_set_unfocus_mute_btn", _settingsGroup, "MUTE SIN FOCO: ON", 22, 135, 198, 20,
+			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> { _settingsFocusIdx = SET_FOCUS_UNFOCUS_MUTE; toggleMuteOnUnfocusSetting(); });
+		_setResetBtn = addUIButton("ui_set_reset_btn", _settingsGroup, "RESTAURAR CONTROLES", 22, 166, 198, 20,
 			app.color(65, 52, 32), app.color(110, 88, 52), fontSmall, () -> { _settingsFocusIdx = SET_FOCUS_RESET; resetAllControlsSetting(); });
-		_setBackBtn = addUIButton("ui_set_back_btn", _settingsGroup, "GUARDAR Y VOLVER", 22, 216, 198, 24,
+		_setBackBtn = addUIButton("ui_set_back_btn", _settingsGroup, "GUARDAR Y VOLVER", 22, 218, 198, 24,
 			app.color(35, 115, 78), app.color(55, 160, 110), fontSmall, () -> {
 				_settingsFocusIdx = SET_FOCUS_BACK;
 				_rebindCategory = REBIND_NONE;
@@ -1542,6 +1546,15 @@ public class InitScene extends Scene {
 			);
 		}
 
+		if (_setUnfocusMuteBtn != null) {
+			boolean f = (_settingsFocusIdx == SET_FOCUS_UNFOCUS_MUTE);
+			_setUnfocusMuteBtn.setLabel((f ? "> " : "") + "MUTE SIN FOCO: " + (Config.muteOnUnfocus ? "ON" : "OFF"));
+			_setUnfocusMuteBtn.setColorBackground(
+				f ? (Config.muteOnUnfocus ? app.color(55, 110, 195) : app.color(85, 95, 120))
+				  : (Config.muteOnUnfocus ? app.color(32, 42, 66) : app.color(42, 46, 60))
+			);
+		}
+
 		if (_setResetBtn != null) {
 			boolean f = (_settingsFocusIdx == SET_FOCUS_RESET);
 			_setResetBtn.setLabel((f ? "> " : "") + "RESTAURAR CONTROLES");
@@ -1593,6 +1606,13 @@ public class InitScene extends Scene {
 
 	private void toggleMuteSetting() {
 		Config.isMuted = !Config.isMuted;
+		Config.applyAudioConfig();
+		Config.saveConfig(".config");
+		syncSettingsUI();
+	}
+
+	private void toggleMuteOnUnfocusSetting() {
+		Config.muteOnUnfocus = !Config.muteOnUnfocus;
 		Config.applyAudioConfig();
 		Config.saveConfig(".config");
 		syncSettingsUI();
@@ -2000,7 +2020,7 @@ public class InitScene extends Scene {
 			return;
 		}
 
-		// Columna izquierda (0..4): Audio y acciones generales
+		// Columna izquierda (0..5): Audio y acciones generales
 		if (_settingsFocusIdx < SET_LEFT_COL_COUNT) {
 			if (up) {
 				_settingsFocusIdx = (_settingsFocusIdx - 1 + SET_LEFT_COL_COUNT) % SET_LEFT_COL_COUNT;
@@ -2019,8 +2039,12 @@ public class InitScene extends Scene {
 						else if (right || accept) adjustSfxVolume(0.1f);
 					}
 					case SET_FOCUS_MUTE -> {
-						if (right) { _settingsFocusIdx = SETTINGS_RIGHT_GRID[0][0]; syncSettingsUI(); }
+						if (right) { _settingsFocusIdx = SETTINGS_RIGHT_GRID[1][0]; syncSettingsUI(); }
 						else if (accept) toggleMuteSetting();
+					}
+					case SET_FOCUS_UNFOCUS_MUTE -> {
+						if (right) { _settingsFocusIdx = SETTINGS_RIGHT_GRID[2][0]; syncSettingsUI(); }
+						else if (accept) toggleMuteOnUnfocusSetting();
 					}
 					case SET_FOCUS_RESET -> {
 						if (right) { _settingsFocusIdx = SETTINGS_RIGHT_GRID[3][0]; syncSettingsUI(); }
@@ -2039,7 +2063,7 @@ public class InitScene extends Scene {
 			return;
 		}
 
-		// Columna derecha: Carriles 6K principales (5..10) y alternativos (11..16)
+		// Columna derecha: Carriles 6K principales (6..11) y alternativos (12..17)
 		if (accept) {
 			if (_settingsFocusIdx >= SET_FOCUS_RHYTHM_START && _settingsFocusIdx <= SET_FOCUS_RHYTHM_END) {
 				_rebindCategory = REBIND_RHYTHM;
@@ -2064,7 +2088,8 @@ public class InitScene extends Scene {
 				_settingsFocusIdx = SETTINGS_RIGHT_GRID[row][0];
 			} else {
 				_settingsFocusIdx = switch (row) {
-					case 0, 1, 2 -> SET_FOCUS_MUTE;
+					case 0, 1 -> SET_FOCUS_MUTE;
+					case 2 -> SET_FOCUS_UNFOCUS_MUTE;
 					case 3, 4 -> SET_FOCUS_RESET;
 					default -> SET_FOCUS_BACK;
 				};

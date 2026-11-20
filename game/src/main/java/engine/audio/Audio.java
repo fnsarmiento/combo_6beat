@@ -38,6 +38,11 @@ public class Audio {
 	private static float _BGMVolume = 1.0f;
 	private static float _SFXVolume = 1.0f;
 	private static boolean _isMuted = false;
+	private static boolean _focusMuted = false;
+
+	private static boolean isEffectivelyMuted() {
+		return _isMuted || _focusMuted;
+	}
 
 	// =========================================================================
 	// Inicialización y Control de Volumen / Mute
@@ -51,7 +56,7 @@ public class Audio {
 	}
 
 	public static float getBGMVolume() {
-		return _isMuted ? 0.0f : _BGMVolume;
+		return isEffectivelyMuted() ? 0.0f : _BGMVolume;
 	}
 
 	public static boolean isMuted() {
@@ -67,28 +72,39 @@ public class Audio {
 	}
 
 	public static float getSFXVolume() {
-		return _isMuted ? 0.0f : _SFXVolume;
+		return isEffectivelyMuted() ? 0.0f : _SFXVolume;
 	}
 
 	public static void setSFXVolume(float volume) {
 		_SFXVolume = PApplet.constrain(volume, 0.0f, 1.0f);
-		TinySound.setGlobalVolume(_isMuted ? 0.0f : _SFXVolume);
+		TinySound.setGlobalVolume(isEffectivelyMuted() ? 0.0f : _SFXVolume);
 	}
 
 	public static void setMute(boolean mute) {
 		_isMuted = mute;
+		syncAllAudioState();
+	}
+
+	/** Activa o desactiva el silencio temporal por pérdida de foco sin alterar {@code _isMuted}. */
+	public static void setFocusMute(boolean focusMuted) {
+		if (_focusMuted == focusMuted) return;
+		_focusMuted = focusMuted;
+		syncAllAudioState();
+	}
+
+	private static void syncAllAudioState() {
 		syncTrackVolume(_actualBGM);
 		if (_persistentBGM != null && _persistentBGM != _actualBGM) {
 			syncTrackVolume(_persistentBGM);
 		}
-		TinySound.setGlobalVolume(_isMuted ? 0.0f : _SFXVolume);
+		TinySound.setGlobalVolume(isEffectivelyMuted() ? 0.0f : _SFXVolume);
 	}
 
 	/** Aplica de inmediato el volumen y estado de silencio globales sobre una pista {@link MusicTrack}. */
 	public static void syncTrackVolume(MusicTrack track) {
 		if (track == null) return;
 		track.setVolume(_BGMVolume);
-		track.setMute(_isMuted);
+		track.setMute(isEffectivelyMuted());
 	}
 
 	public static void toggleMute() {
@@ -104,7 +120,7 @@ public class Audio {
 	}
 
 	public static void playSFX(Sound sfx) {
-		if (sfx != null && !_isMuted) {
+		if (sfx != null && !isEffectivelyMuted()) {
 			sfx.play();
 		}
 	}
@@ -144,7 +160,7 @@ public class Audio {
 		if (_actualBGM == null) return;
 
 		_actualBGM.setVolume(_BGMVolume);
-		_actualBGM.setMute(_isMuted);
+		_actualBGM.setMute(isEffectivelyMuted());
 		_actualBGM.play(startMs, loop);
 	}
 
@@ -163,7 +179,7 @@ public class Audio {
 			}
 			_actualBGM = _persistentBGM;
 			_persistentBGM.setVolume(_BGMVolume);
-			_persistentBGM.setMute(_isMuted);
+			_persistentBGM.setMute(isEffectivelyMuted());
 			_persistentBGM.resume();
 			if (!_persistentBGM.isPlaying()) {
 				_persistentBGM.play(_persistentBGMPosMs, true);
@@ -180,7 +196,7 @@ public class Audio {
 		_actualBGM = _persistentBGM;
 		if (_persistentBGM != null) {
 			_persistentBGM.setVolume(_BGMVolume);
-			_persistentBGM.setMute(_isMuted);
+			_persistentBGM.setMute(isEffectivelyMuted());
 			_persistentBGM.play(0, true);
 		}
 	}

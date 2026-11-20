@@ -19,6 +19,7 @@ import game.Config;
 import game.Global;
 import game.core.GameState;
 import game.core.db.CustomSongRepository;
+import game.core.db.SaveRepository;
 import game.core.notes.NotePacker;
 import game.core.notes.OsuManiaReader;
 import game.core.notes.SongPackLoader;
@@ -121,6 +122,10 @@ public class ROTNScene extends Scene {
 	private boolean _customIsNewRecord = false;
 	private int _earnedShopPoints = 0;
 	private boolean _pointsGranted = false;
+	private boolean _dbBestChecked = false;
+	private boolean _hasDbBest = false;
+	private int _dbMaxScore = 0;
+	private int _dbMaxCombo = 0;
 
 	// Audio, núcleo rítmico y temporizadores de reproducción
 	private MusicTrack _bgm;
@@ -173,11 +178,19 @@ public class ROTNScene extends Scene {
 	private Textlabel _uiItemLbl;
 
 	private Group _uiModalGroup;
+	private Button _uiModalBg;
 	private Textlabel _uiModalTitle;
 	private Textarea _uiModalDesc;
+	private Button _uiModalDivider;
+	private Textlabel _uiModalLeftScoreLbl;
+	private Textlabel _uiModalLeftComboLbl;
+	private Textlabel _uiModalRightScoreLbl;
+	private Textlabel _uiModalRightComboLbl;
+	private Textlabel _uiModalPointsLbl;
 	private Button _uiModalBtn1;
 	private Button _uiModalBtn2;
 	private Button _uiModalBtn3;
+	private Button _uiModalBtn4;
 	private int _modalFocusIdx = 0;
 	private boolean _modalWasOpen = false;
 
@@ -185,16 +198,17 @@ public class ROTNScene extends Scene {
 	private static final int INGAME_SET_BGM = 0;
 	private static final int INGAME_SET_SFX = 1;
 	private static final int INGAME_SET_MUTE = 2;
-	private static final int INGAME_SET_RESET = 3;
-	private static final int INGAME_SET_BACK = 4;
-	private static final int INGAME_SET_RHYTHM_START = 5; // 5..10 -> C1..C6, 11..16 -> A1..A6
+	private static final int INGAME_SET_UNFOCUS_MUTE = 3;
+	private static final int INGAME_SET_RESET = 4;
+	private static final int INGAME_SET_BACK = 5;
+	private static final int INGAME_SET_RHYTHM_START = 6; // 6..11 -> C1..C6, 12..17 -> A1..A6
 	private static final int[][] INGAME_SET_RIGHT_GRID = {
-		{  5, 11 },
 		{  6, 12 },
 		{  7, 13 },
 		{  8, 14 },
 		{  9, 15 },
-		{ 10, 16 }
+		{ 10, 16 },
+		{ 11, 17 }
 	};
 
 	private Group _uiSettingsGroup;
@@ -203,6 +217,7 @@ public class ROTNScene extends Scene {
 	private Textlabel _uiSetSfxLbl;
 	private Button _uiSetSfxBarFill;
 	private Button _uiSetMuteBtn;
+	private Button _uiSetUnfocusMuteBtn;
 	private Button _uiSetResetBtn;
 	private Button _uiSetBackBtn;
 	private final Button[] _uiSetRhythmBtns = new Button[LANE_COUNT];
@@ -295,6 +310,11 @@ public class ROTNScene extends Scene {
 		GameState.init();
 		Audio.pausePersistentBGM();
 		super.setup();
+
+		_dbBestChecked = false;
+		_hasDbBest = false;
+		_dbMaxScore = 0;
+		_dbMaxCombo = 0;
 
 		if (_customSong == null && _chartVariant == null && _manifestChartNode == null && _xmlScene == null) {
 			return;
@@ -601,7 +621,8 @@ public class ROTNScene extends Scene {
 		ControlFont fontSmall = makeFont(6.5f, false);
 		ControlFont fontMed = makeFont(8.0f, false);
 		ControlFont fontBig = makeFont(10.5f, true);
-		ControlFont fontModalTitle = makeFont(14.0f, true);
+		ControlFont fontModalPoints = makeFont(10.0f, true);
+		ControlFont fontModalTitle = makeFont(18.0f, true);
 
 		// 1. Arriba-Izquierda: Corazón + Vida del Jugador + Estado del Escudo
 		PImage heartImg = createPixelHeartIcon();
@@ -647,25 +668,38 @@ public class ROTNScene extends Scene {
 		_uiItemLbl = addUILabel("ui_rotn_item_lbl", null, "Cura: Optimo", 352, 238, app.color(235, 240, 255), fontSmall);
 
 		// 6. Modal ControlP5 para Pausa / Victoria / Derrota
-		_uiModalGroup = addUIGroup("ui_rotn_modal_group", (BASE_W - 260) * 0.5f, (BASE_H - 156) * 0.5f, 260, 156);
-		addUIBox("ui_rotn_modal_bg", _uiModalGroup, 0, 0, 260, 156, app.color(12, 14, 24, 238));
-		_uiModalTitle = addUILabel("ui_rotn_modal_title", _uiModalGroup, "PAUSA", 20, 14, app.color(255), fontModalTitle);
+		_uiModalGroup = addUIGroup("ui_rotn_modal_group", (BASE_W - 180) * 0.5f, (BASE_H - 164) * 0.5f, 180, 164);
+		_uiModalBg = addUIBox("ui_rotn_modal_bg", _uiModalGroup, 0, 0, 180, 164, app.color(12, 14, 24, 238));
+		_uiModalTitle = addUILabel("ui_rotn_modal_title", _uiModalGroup, "PAUSA", 20, 12, app.color(255), fontModalTitle);
 		_uiModalDesc = addUITextarea("ui_rotn_modal_desc", _uiModalGroup, "", 20, 42, 220, 52, app.color(230, 238, 250), app.color(18, 22, 34), fontMed);
+		_uiModalDesc.hide();
+
+		_uiModalDivider = addUIBox("ui_rotn_modal_divider", _uiModalGroup, 138, 46, 1, 40, app.color(75, 100, 155, 200));
+		_uiModalLeftScoreLbl = addUILabel("ui_rotn_modal_l_score", _uiModalGroup, "", 18, 48, app.color(140, 230, 255), fontMed);
+		_uiModalLeftComboLbl = addUILabel("ui_rotn_modal_l_combo", _uiModalGroup, "", 18, 66, app.color(200, 225, 255), fontMed);
+		_uiModalRightScoreLbl = addUILabel("ui_rotn_modal_r_score", _uiModalGroup, "", 148, 48, app.color(255, 215, 110), fontMed);
+		_uiModalRightComboLbl = addUILabel("ui_rotn_modal_r_combo", _uiModalGroup, "", 148, 66, app.color(255, 215, 110), fontMed);
+		_uiModalPointsLbl = addUILabel("ui_rotn_modal_pts", _uiModalGroup, "", 18, 92, app.color(255, 215, 110), fontModalPoints);
 
 		_uiModalBtn1 = addUIButton(
-			"ui_rotn_modal_btn1", _uiModalGroup, "Reanudar", 20, 102, 104, 20,
+			"ui_rotn_modal_btn1", _uiModalGroup, "Reanudar", 20, 44, 140, 22,
 			app.color(35, 90, 155), app.color(60, 130, 215), fontSmall,
-			() -> { _modalFocusIdx = 0; onModalPrimaryClick(); }
+			() -> onModalButtonClick(0)
 		);
 		_uiModalBtn2 = addUIButton(
-			"ui_rotn_modal_btn2", _uiModalGroup, "Configuracion", 136, 102, 104, 20,
-			app.color(45, 72, 118), app.color(75, 115, 185), fontSmall,
-			() -> { _modalFocusIdx = 1; onModalSecondaryClick(); }
+			"ui_rotn_modal_btn2", _uiModalGroup, "Reiniciar", 20, 72, 140, 22,
+			app.color(35, 90, 155), app.color(60, 130, 215), fontSmall,
+			() -> onModalButtonClick(1)
 		);
 		_uiModalBtn3 = addUIButton(
-			"ui_rotn_modal_btn3", _uiModalGroup, "Salir", 20, 127, 220, 20,
+			"ui_rotn_modal_btn3", _uiModalGroup, "Configuracion", 20, 100, 140, 22,
+			app.color(45, 72, 118), app.color(75, 115, 185), fontSmall,
+			() -> onModalButtonClick(2)
+		);
+		_uiModalBtn4 = addUIButton(
+			"ui_rotn_modal_btn4", _uiModalGroup, "Salir", 20, 128, 140, 22,
 			app.color(95, 38, 52), app.color(145, 55, 75), fontSmall,
-			() -> { _modalFocusIdx = 2; returnToWorld(); }
+			() -> onModalButtonClick(3)
 		);
 
 		_uiModalGroup.hide();
@@ -679,7 +713,7 @@ public class ROTNScene extends Scene {
 		addUIBox("ui_rotn_set_bg", _uiSettingsGroup, 0, 0, 420, 218, app.color(12, 14, 24, 245));
 		addUILabel("ui_rotn_set_hdr", _uiSettingsGroup, "CONFIGURACION EN PARTIDA", 14, 12, app.color(255, 225, 130), fontSmall);
 
-		// Columna izquierda: Volumen inmediato BGM/SFX, Mute, Modo teclas y Volver
+		// Columna izquierda: Volumen inmediato BGM/SFX, Mute, Mute sin foco, Modo teclas y Volver
 		_uiSetBgmLbl = addUILabel("ui_rotn_set_bgm_lbl", _uiSettingsGroup, "BGM: 50%", 14, 34, app.color(220, 235, 255), fontSmall);
 		addUIButton("ui_rotn_set_bgm_minus", _uiSettingsGroup, "-", 14, 46, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
 			() -> { _inGameSettingsFocus = INGAME_SET_BGM; adjustInGameBgmVolume(-0.1f); });
@@ -696,12 +730,17 @@ public class ROTNScene extends Scene {
 		addUIButton("ui_rotn_set_sfx_plus", _uiSettingsGroup, "+", 182, 82, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
 			() -> { _inGameSettingsFocus = INGAME_SET_SFX; adjustInGameSfxVolume(0.1f); });
 
-		_uiSetMuteBtn = addUIButton("ui_rotn_set_mute", _uiSettingsGroup, "MUTE GENERAL: OFF", 14, 108, 190, 20,
+		_uiSetMuteBtn = addUIButton("ui_rotn_set_mute", _uiSettingsGroup, "MUTE GENERAL: OFF", 14, 106, 190, 18,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_inGameSettingsFocus = INGAME_SET_MUTE;
 				toggleInGameMute();
 			});
-		_uiSetResetBtn = addUIButton("ui_rotn_set_reset", _uiSettingsGroup, "RESTAURAR TECLAS", 14, 138, 190, 20,
+		_uiSetUnfocusMuteBtn = addUIButton("ui_rotn_set_unfocus_mute", _uiSettingsGroup, "MUTE SIN FOCO: OFF", 14, 128, 190, 18,
+			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
+				_inGameSettingsFocus = INGAME_SET_UNFOCUS_MUTE;
+				toggleInGameMuteOnUnfocus();
+			});
+		_uiSetResetBtn = addUIButton("ui_rotn_set_reset", _uiSettingsGroup, "RESTAURAR TECLAS", 14, 154, 190, 18,
 			app.color(65, 52, 32), app.color(110, 88, 52), fontSmall, () -> {
 				_inGameSettingsFocus = INGAME_SET_RESET;
 				_rebindTarget = -1;
@@ -709,7 +748,7 @@ public class ROTNScene extends Scene {
 				Config.saveConfig(".config");
 				syncInGameSettingsUI(app);
 			});
-		_uiSetBackBtn = addUIButton("ui_rotn_set_back", _uiSettingsGroup, "LISTO / VOLVER", 14, 168, 190, 22,
+		_uiSetBackBtn = addUIButton("ui_rotn_set_back", _uiSettingsGroup, "LISTO / VOLVER", 14, 182, 190, 22,
 			app.color(35, 115, 78), app.color(55, 160, 110), fontSmall, this::closeInGameSettings);
 
 		// Columna derecha: Rebinding rápido de los 6 carriles (Primarios C1..C6 y Alternativos A1..A6)
@@ -739,15 +778,24 @@ public class ROTNScene extends Scene {
 		_uiSettingsGroup.hide();
 	}
 
-	private void onModalPrimaryClick() {
+	private void onModalButtonClick(int slot) {
 		if (_rhythmCore == null) return;
 		ROTNCore.BattleState state = _rhythmCore.getBattleState();
-		if (state == ROTNCore.BattleState.VICTORY) {
-			returnToWorld();
-		} else if (state == ROTNCore.BattleState.DEFEAT) {
-			restartBattleScene();
+		if (state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT) {
+			_modalFocusIdx = (slot == 0) ? 0 : 1;
+			if (slot == 0) {
+				restartBattleScene();
+			} else if (slot == 1) {
+				returnToWorld();
+			}
 		} else if (_rhythmCore.isPaused()) {
-			unpauseBattle();
+			_modalFocusIdx = PApplet.constrain(slot, 0, 3);
+			switch (slot) {
+				case 0 -> unpauseBattle();
+				case 1 -> restartBattleScene();
+				case 2 -> openInGameSettings();
+				case 3 -> returnToWorld();
+			}
 		}
 	}
 
@@ -890,16 +938,6 @@ public class ROTNScene extends Scene {
 			&& _resumeCountdown <= 0.0f;
 	}
 
-	private void onModalSecondaryClick() {
-		if (_rhythmCore == null) return;
-		ROTNCore.BattleState state = _rhythmCore.getBattleState();
-		if (state == ROTNCore.BattleState.DEFEAT) {
-			returnToWorld();
-		} else if (_rhythmCore.isPaused()) {
-			openInGameSettings();
-		}
-	}
-
 	private void openInGameSettings() {
 		_inGameSettingsOpen = true;
 		_inGameSettingsFocus = INGAME_SET_BGM;
@@ -938,6 +976,13 @@ public class ROTNScene extends Scene {
 		Config.isMuted = !Config.isMuted;
 		Config.applyAudioConfig();
 		Audio.syncTrackVolume(_bgm);
+		Config.saveConfig(".config");
+		syncInGameSettingsUI(Engine.getApp());
+	}
+
+	private void toggleInGameMuteOnUnfocus() {
+		Config.muteOnUnfocus = !Config.muteOnUnfocus;
+		Config.applyAudioConfig();
 		Config.saveConfig(".config");
 		syncInGameSettingsUI(Engine.getApp());
 	}
@@ -1044,53 +1089,171 @@ public class ROTNScene extends Scene {
 
 		ROTNCore.BattleState state = _rhythmCore.getBattleState();
 		if (state == ROTNCore.BattleState.VICTORY) {
+			float modalW = 276.0f;
+			float modalH = 166.0f;
+			_uiModalGroup.setPosition(scaleW(102.0f), scaleH(52.0f));
+			_uiModalGroup.setWidth(Math.max(1, (int) scaleW(modalW)));
+			_uiModalGroup.setHeight(Math.max(1, (int) scaleH(modalH)));
+			_uiModalBg.setPosition(0, 0);
+			_uiModalBg.setSize(Math.max(1, (int) scaleW(modalW)), Math.max(1, (int) scaleH(modalH)));
 			_uiModalGroup.show();
-			_uiModalTitle.setText(_customSong != null ? "CANCION COMPLETADA!" : "VICTORIA!");
-			_uiModalTitle.setColorValue(app.color(110, 255, 155));
-			_uiModalDesc.setText(
-				"Rango: " + _rhythmCore.getDivaGrade() + (_rhythmCore.isFullCombo() ? " [FULL COMBO!]" : "") +
-				"\nScore: " + _rhythmCore.getScore() + " | Combo: " + _rhythmCore.getMaxCombo() + "x" +
-				"\nPERFECTs: " + _rhythmCore.getPerfectCount() + " (" + String.format("%.1f%%", _rhythmCore.getAccuracyPercent()) + ")" +
-				"\nPuntos: +" + _earnedShopPoints + " (Total: " + GameState.getShopPoints() + ")"
-			);
-			_uiModalBtn1.setLabel("> Volver a Canciones");
-			_uiModalBtn1.setColorBackground(app.color(55, 130, 215));
-			_uiModalBtn2.hide();
-			if (_uiModalBtn3 != null) _uiModalBtn3.hide();
-		} else if (state == ROTNCore.BattleState.DEFEAT) {
-			_uiModalGroup.show();
-			_uiModalTitle.setText("DERROTA");
-			_uiModalTitle.setColorValue(app.color(255, 100, 110));
-			_uiModalDesc.setText(
-				"Rango: " + _rhythmCore.getDivaGrade() + (_rhythmCore.isFullCombo() ? " [FULL COMBO!]" : "") +
-				"\nScore: " + _rhythmCore.getScore() + " | Combo: " + _rhythmCore.getMaxCombo() + "x" +
-				"\nPERFECTs: " + _rhythmCore.getPerfectCount() + " (" + String.format("%.1f%%", _rhythmCore.getAccuracyPercent()) + ")" +
-				"\nPuntos: +" + _earnedShopPoints + " (Total: " + GameState.getShopPoints() + ")"
-			);
-			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reintentar");
+
+			String titleText = "VICTORIA";
+			float titleW = measurePhysicalTextWidth(app, titleText, Math.max(8, (int) scaleH(18.0f)));
+			_uiModalTitle.setText(titleText);
+			_uiModalTitle.setColorValue(app.color(90, 245, 140));
+			_uiModalTitle.setPosition(Math.max(4.0f, (scaleW(modalW) - titleW) * 0.5f), scaleH(12.0f));
+
+			_uiModalDesc.hide();
+			_uiModalLeftScoreLbl.setPosition(scaleW(18.0f), scaleH(46.0f));
+			_uiModalLeftScoreLbl.setText("Score: " + _rhythmCore.getScore());
+			_uiModalLeftScoreLbl.show();
+			_uiModalLeftComboLbl.setPosition(scaleW(18.0f), scaleH(64.0f));
+			_uiModalLeftComboLbl.setText("Best Combo: " + _rhythmCore.getMaxCombo() + "x");
+			_uiModalLeftComboLbl.show();
+
+			if (_hasDbBest) {
+				_uiModalDivider.setPosition(scaleW(138.0f), scaleH(44.0f));
+				_uiModalDivider.setSize(Math.max(1, (int) scaleW(1.0f)), Math.max(1, (int) scaleH(38.0f)));
+				_uiModalDivider.show();
+				_uiModalRightScoreLbl.setPosition(scaleW(148.0f), scaleH(46.0f));
+				_uiModalRightScoreLbl.setText("Max Score: " + _dbMaxScore);
+				_uiModalRightScoreLbl.show();
+				_uiModalRightComboLbl.setPosition(scaleW(148.0f), scaleH(64.0f));
+				_uiModalRightComboLbl.setText("Max Combo: " + _dbMaxCombo + "x");
+				_uiModalRightComboLbl.show();
+			} else {
+				_uiModalDivider.hide();
+				_uiModalRightScoreLbl.hide();
+				_uiModalRightComboLbl.hide();
+			}
+
+			String ptsText = "Puntos ganados: +" + _earnedShopPoints;
+			float ptsW = measurePhysicalTextWidth(app, ptsText, Math.max(8, (int) scaleH(10.0f)));
+			_uiModalPointsLbl.setText(ptsText);
+			_uiModalPointsLbl.setColorValue(app.color(255, 215, 110));
+			_uiModalPointsLbl.setPosition(Math.max(4.0f, (scaleW(modalW) - ptsW) * 0.5f), scaleH(92.0f));
+			_uiModalPointsLbl.show();
+
+			_uiModalBtn1.setPosition(scaleW(18.0f), scaleH(128.0f));
+			_uiModalBtn1.setSize(Math.max(1, (int) scaleW(114.0f)), Math.max(1, (int) scaleH(24.0f)));
+			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reiniciar");
 			_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
-			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Volver a Canciones");
+			_uiModalBtn1.show();
+
+			_uiModalBtn2.setPosition(scaleW(144.0f), scaleH(128.0f));
+			_uiModalBtn2.setSize(Math.max(1, (int) scaleW(114.0f)), Math.max(1, (int) scaleH(24.0f)));
+			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Salir");
+			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(55, 165, 110) : app.color(35, 115, 78));
+			_uiModalBtn2.show();
+
+			if (_uiModalBtn3 != null) _uiModalBtn3.hide();
+			if (_uiModalBtn4 != null) _uiModalBtn4.hide();
+		} else if (state == ROTNCore.BattleState.DEFEAT) {
+			float modalW = 276.0f;
+			float modalH = 152.0f;
+			_uiModalGroup.setPosition(scaleW(102.0f), scaleH(59.0f));
+			_uiModalGroup.setWidth(Math.max(1, (int) scaleW(modalW)));
+			_uiModalGroup.setHeight(Math.max(1, (int) scaleH(modalH)));
+			_uiModalBg.setPosition(0, 0);
+			_uiModalBg.setSize(Math.max(1, (int) scaleW(modalW)), Math.max(1, (int) scaleH(modalH)));
+			_uiModalGroup.show();
+
+			String titleText = "DROP OUT";
+			float titleW = measurePhysicalTextWidth(app, titleText, Math.max(8, (int) scaleH(18.0f)));
+			_uiModalTitle.setText(titleText);
+			_uiModalTitle.setColorValue(app.color(195, 110, 255));
+			_uiModalTitle.setPosition(Math.max(4.0f, (scaleW(modalW) - titleW) * 0.5f), scaleH(12.0f));
+
+			_uiModalDesc.hide();
+			_uiModalLeftScoreLbl.setPosition(scaleW(18.0f), scaleH(48.0f));
+			_uiModalLeftScoreLbl.setText("Score: " + _rhythmCore.getScore());
+			_uiModalLeftScoreLbl.show();
+			_uiModalLeftComboLbl.setPosition(scaleW(18.0f), scaleH(66.0f));
+			_uiModalLeftComboLbl.setText("Best Combo: " + _rhythmCore.getMaxCombo() + "x");
+			_uiModalLeftComboLbl.show();
+
+			if (_hasDbBest) {
+				_uiModalDivider.setPosition(scaleW(138.0f), scaleH(46.0f));
+				_uiModalDivider.setSize(Math.max(1, (int) scaleW(1.0f)), Math.max(1, (int) scaleH(38.0f)));
+				_uiModalDivider.show();
+				_uiModalRightScoreLbl.setPosition(scaleW(148.0f), scaleH(48.0f));
+				_uiModalRightScoreLbl.setText("Max Score: " + _dbMaxScore);
+				_uiModalRightScoreLbl.show();
+				_uiModalRightComboLbl.setPosition(scaleW(148.0f), scaleH(66.0f));
+				_uiModalRightComboLbl.setText("Max Combo: " + _dbMaxCombo + "x");
+				_uiModalRightComboLbl.show();
+			} else {
+				_uiModalDivider.hide();
+				_uiModalRightScoreLbl.hide();
+				_uiModalRightComboLbl.hide();
+			}
+
+			_uiModalPointsLbl.hide();
+
+			_uiModalBtn1.setPosition(scaleW(18.0f), scaleH(114.0f));
+			_uiModalBtn1.setSize(Math.max(1, (int) scaleW(114.0f)), Math.max(1, (int) scaleH(24.0f)));
+			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reiniciar");
+			_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
+			_uiModalBtn1.show();
+
+			_uiModalBtn2.setPosition(scaleW(144.0f), scaleH(114.0f));
+			_uiModalBtn2.setSize(Math.max(1, (int) scaleW(114.0f)), Math.max(1, (int) scaleH(24.0f)));
+			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Salir");
 			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
 			_uiModalBtn2.show();
+
 			if (_uiModalBtn3 != null) _uiModalBtn3.hide();
+			if (_uiModalBtn4 != null) _uiModalBtn4.hide();
 		} else if (_rhythmCore.isPaused()) {
+			float modalW = 180.0f;
+			float modalH = 164.0f;
+			_uiModalGroup.setPosition(scaleW((BASE_W - modalW) * 0.5f), scaleH((BASE_H - modalH) * 0.5f));
+			_uiModalGroup.setWidth(Math.max(1, (int) scaleW(modalW)));
+			_uiModalGroup.setHeight(Math.max(1, (int) scaleH(modalH)));
+			_uiModalBg.setPosition(0, 0);
+			_uiModalBg.setSize(Math.max(1, (int) scaleW(modalW)), Math.max(1, (int) scaleH(modalH)));
 			_uiModalGroup.show();
-			_uiModalTitle.setText("PAUSA");
+
+			String titleText = "PAUSA";
+			float titleW = measurePhysicalTextWidth(app, titleText, Math.max(8, (int) scaleH(18.0f)));
+			_uiModalTitle.setText(titleText);
 			_uiModalTitle.setColorValue(app.color(255));
-			_uiModalDesc.setText(
-				"Score: " + _rhythmCore.getScore() +
-				" | Ventanas: " + (int) _rhythmCore.getPerfectWindowMs() + "/" +
-				(int) _rhythmCore.getGoodWindowMs() + "/" + (int) _rhythmCore.getSafeWindowMs() + "ms"
-			);
+			_uiModalTitle.setPosition(Math.max(4.0f, (scaleW(modalW) - titleW) * 0.5f), scaleH(12.0f));
+
+			_uiModalDesc.hide();
+			_uiModalDivider.hide();
+			_uiModalLeftScoreLbl.hide();
+			_uiModalLeftComboLbl.hide();
+			_uiModalRightScoreLbl.hide();
+			_uiModalRightComboLbl.hide();
+			_uiModalPointsLbl.hide();
+
+			_uiModalBtn1.setPosition(scaleW(20.0f), scaleH(44.0f));
+			_uiModalBtn1.setSize(Math.max(1, (int) scaleW(140.0f)), Math.max(1, (int) scaleH(22.0f)));
 			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reanudar");
 			_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
-			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Configuracion");
-			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(75, 118, 195) : app.color(45, 72, 118));
+			_uiModalBtn1.show();
+
+			_uiModalBtn2.setPosition(scaleW(20.0f), scaleH(72.0f));
+			_uiModalBtn2.setSize(Math.max(1, (int) scaleW(140.0f)), Math.max(1, (int) scaleH(22.0f)));
+			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Reiniciar");
+			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(55, 130, 215) : app.color(35, 90, 155));
 			_uiModalBtn2.show();
+
 			if (_uiModalBtn3 != null) {
-				_uiModalBtn3.setLabel((_modalFocusIdx == 2 ? "> " : "") + "Volver a Canciones");
-				_uiModalBtn3.setColorBackground(_modalFocusIdx == 2 ? app.color(150, 58, 80) : app.color(95, 38, 52));
+				_uiModalBtn3.setPosition(scaleW(20.0f), scaleH(100.0f));
+				_uiModalBtn3.setSize(Math.max(1, (int) scaleW(140.0f)), Math.max(1, (int) scaleH(22.0f)));
+				_uiModalBtn3.setLabel((_modalFocusIdx == 2 ? "> " : "") + "Configuracion");
+				_uiModalBtn3.setColorBackground(_modalFocusIdx == 2 ? app.color(75, 118, 195) : app.color(45, 72, 118));
 				_uiModalBtn3.show();
+			}
+			if (_uiModalBtn4 != null) {
+				_uiModalBtn4.setPosition(scaleW(20.0f), scaleH(128.0f));
+				_uiModalBtn4.setSize(Math.max(1, (int) scaleW(140.0f)), Math.max(1, (int) scaleH(22.0f)));
+				_uiModalBtn4.setLabel((_modalFocusIdx == 3 ? "> " : "") + "Salir");
+				_uiModalBtn4.setColorBackground(_modalFocusIdx == 3 ? app.color(150, 58, 80) : app.color(95, 38, 52));
+				_uiModalBtn4.show();
 			}
 		} else {
 			_uiModalGroup.hide();
@@ -1128,6 +1291,14 @@ public class ROTNScene extends Scene {
 			_uiSetMuteBtn.setColorBackground(
 				f ? (Config.isMuted ? app.color(190, 65, 80) : app.color(55, 110, 195))
 				  : (Config.isMuted ? app.color(145, 45, 58) : app.color(32, 42, 66))
+			);
+		}
+		if (_uiSetUnfocusMuteBtn != null) {
+			boolean f = (_inGameSettingsFocus == INGAME_SET_UNFOCUS_MUTE);
+			_uiSetUnfocusMuteBtn.setLabel((f ? "> " : "") + "MUTE SIN FOCO: " + (Config.muteOnUnfocus ? "ON" : "OFF"));
+			_uiSetUnfocusMuteBtn.setColorBackground(
+				f ? (Config.muteOnUnfocus ? app.color(190, 65, 80) : app.color(55, 110, 195))
+				  : (Config.muteOnUnfocus ? app.color(145, 45, 58) : app.color(32, 42, 66))
 			);
 		}
 		if (_uiSetResetBtn != null) {
@@ -1312,7 +1483,7 @@ public class ROTNScene extends Scene {
 		}
 
 		if (!_modalWasOpen) {
-			_modalFocusIdx = 0;
+			_modalFocusIdx = (state == ROTNCore.BattleState.VICTORY) ? 1 : 0;
 			_modalWasOpen = true;
 		}
 		handleEndBattleInput(state);
@@ -1471,18 +1642,16 @@ public class ROTNScene extends Scene {
 	}
 
 	private void handlePauseModalInput() {
-		if (Config.wasUIKeyJustPressed(Config.LEFT) || Config.wasUIKeyJustPressed(Config.RIGHT)) {
-			if (_modalFocusIdx == 0) _modalFocusIdx = 1;
-			else if (_modalFocusIdx == 1) _modalFocusIdx = 0;
-		} else if (Config.wasUIKeyJustPressed(Config.UP)) {
-			_modalFocusIdx = (_modalFocusIdx == 2) ? 0 : 2;
+		if (Config.wasUIKeyJustPressed(Config.UP)) {
+			_modalFocusIdx = (_modalFocusIdx - 1 + 4) % 4;
 		} else if (Config.wasUIKeyJustPressed(Config.DOWN)) {
-			_modalFocusIdx = (_modalFocusIdx == 2) ? 0 : 2;
+			_modalFocusIdx = (_modalFocusIdx + 1) % 4;
 		} else if (Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT)) {
 			switch (_modalFocusIdx) {
 				case 0 -> unpauseBattle();
-				case 1 -> openInGameSettings();
-				case 2 -> returnToWorld();
+				case 1 -> restartBattleScene();
+				case 2 -> openInGameSettings();
+				case 3 -> returnToWorld();
 			}
 		}
 	}
@@ -1506,12 +1675,12 @@ public class ROTNScene extends Scene {
 			return;
 		}
 
-		// Columna izquierda (0..4): BGM, SFX, Mute, Restaurar, Volver
+		// Columna izquierda (0..5): BGM, SFX, Mute, Mute sin foco, Restaurar, Volver
 		if (_inGameSettingsFocus <= INGAME_SET_BACK) {
 			if (up) {
-				_inGameSettingsFocus = (_inGameSettingsFocus - 1 + 5) % 5;
+				_inGameSettingsFocus = (_inGameSettingsFocus - 1 + 6) % 6;
 			} else if (down) {
-				_inGameSettingsFocus = (_inGameSettingsFocus + 1) % 5;
+				_inGameSettingsFocus = (_inGameSettingsFocus + 1) % 6;
 			} else {
 				switch (_inGameSettingsFocus) {
 					case INGAME_SET_BGM -> {
@@ -1526,15 +1695,19 @@ public class ROTNScene extends Scene {
 						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
 						else if (accept) toggleInGameMute();
 					}
+					case INGAME_SET_UNFOCUS_MUTE -> {
+						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 3;
+						else if (accept) toggleInGameMuteOnUnfocus();
+					}
 					case INGAME_SET_RESET -> {
-						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
+						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 4;
 						else if (accept) {
 							Config.resetDefaultControls();
 							Config.saveConfig(".config");
 						}
 					}
 					case INGAME_SET_BACK -> {
-						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
+						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 5;
 						else if (accept) closeInGameSettings();
 					}
 				}
@@ -1542,7 +1715,7 @@ public class ROTNScene extends Scene {
 			return;
 		}
 
-		// Columna derecha (5..16): Carriles 6K (Primarios + Alternativos) en grilla 6x2
+		// Columna derecha (6..17): Carriles 6K (Primarios + Alternativos) en grilla 6x2
 		int row = 0, col = 0;
 		for (int r = 0; r < INGAME_SET_RIGHT_GRID.length; r++) {
 			for (int c = 0; c < 2; c++) {
@@ -1556,7 +1729,7 @@ public class ROTNScene extends Scene {
 		if (accept) {
 			_rebindTarget = _inGameSettingsFocus - INGAME_SET_RHYTHM_START;
 		} else if (left) {
-			_inGameSettingsFocus = (col == 1) ? INGAME_SET_RIGHT_GRID[row][0] : INGAME_SET_BGM;
+			_inGameSettingsFocus = (col == 1) ? INGAME_SET_RIGHT_GRID[row][0] : row;
 		} else if (right && col == 0) {
 			_inGameSettingsFocus = INGAME_SET_RIGHT_GRID[row][1];
 		} else if (up) {
@@ -1640,8 +1813,27 @@ public class ROTNScene extends Scene {
 			}
 		}
 
+		if ((state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT) && !_dbBestChecked) {
+			_dbBestChecked = true;
+			if (_customSong != null) {
+				CustomSongRepository.CustomSongSummary fresh = CustomSongRepository.getById(_customSong.idCancion);
+				if (fresh != null && (fresh.vecesJugada > 0 || fresh.puntajeMasAlto > 0 || fresh.comboMasAlto > 0)) {
+					_hasDbBest = true;
+					_dbMaxScore = fresh.puntajeMasAlto;
+					_dbMaxCombo = fresh.comboMasAlto;
+				}
+			} else {
+				int[] rec = SaveRepository.getBestSongRecord(GameState.activeSaveSlot, _trackId, _trackTitle);
+				if (rec != null) {
+					_hasDbBest = true;
+					_dbMaxScore = rec[0];
+					_dbMaxCombo = rec[1];
+				}
+			}
+		}
+
 		if (
-			state == ROTNCore.BattleState.DEFEAT && (
+			(state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT) && (
 				Config.wasUIKeyJustPressed(Config.LEFT) ||
 				Config.wasUIKeyJustPressed(Config.RIGHT) ||
 				Config.wasUIKeyJustPressed(Config.UP) ||
@@ -1655,11 +1847,7 @@ public class ROTNScene extends Scene {
 		boolean retry = KBInput.wasKeyJustPressed('R');
 		boolean back = Config.wasUIKeyJustPressed(Config.CANCEL);
 
-		if (state == ROTNCore.BattleState.VICTORY) {
-			if (accept || back) {
-				returnToWorld();
-			}
-		} else if (state == ROTNCore.BattleState.DEFEAT) {
+		if (state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT) {
 			if (retry || (accept && _modalFocusIdx == 0)) {
 				restartBattleScene();
 			} else if (back || (accept && _modalFocusIdx == 1)) {

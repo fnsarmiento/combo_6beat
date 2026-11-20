@@ -169,6 +169,37 @@ public class SaveRepository {
 	}
 
 	/**
+	 * Busca el mejor puntaje y combo registrados en SQLite para una pista/encuentro dentro del slot.
+	 * Retorna {@code { puntajeMaximo, maxCombo }} o {@code null} si no existe registro en BD.
+	 */
+	public static int[] getBestSongRecord(int zeroBasedSlot, String trackId, String trackTitle) {
+		int dbSlot = toDbSlot(zeroBasedSlot);
+		String sql =
+			"SELECT bv.puntaje_maximo, bv.max_combo " +
+			"FROM BATALLAS_VENCIDAS bv " +
+			"INNER JOIN PARTIDAS p ON p.id_partida = bv.id_partida " +
+			"INNER JOIN CATALOGO_BATALLAS cb ON cb.id_batalla = bv.id_batalla " +
+			"WHERE p.slot = ? AND (cb.boss_id = ? OR cb.boss_nombre = ?) " +
+			"ORDER BY bv.puntaje_maximo DESC " +
+			"LIMIT 1";
+
+		try (Connection conn = DatabaseManager.getConnection();
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, dbSlot);
+			ps.setString(2, trackId != null ? trackId : "");
+			ps.setString(3, trackTitle != null ? trackTitle : "");
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return new int[] { rs.getInt("puntaje_maximo"), rs.getInt("max_combo") };
+				}
+			}
+		} catch (SQLException e) {
+			System.err.println("Error leyendo mejor puntaje de pista en BATALLAS_VENCIDAS: " + e.getMessage());
+		}
+		return null;
+	}
+
+	/**
 	 * Obtiene los últimos eventos de auditoría de inventario del slot desde la vista {@code v_historial_objetos}
 	 * (alimentada automáticamente por los triggers {@code trg_objetos_audit_insert} y {@code trg_objetos_audit_update}).
 	 */
