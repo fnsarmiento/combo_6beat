@@ -99,6 +99,7 @@ public class ROTNCore {
 	// Notas empaquetadas (NotePacker) y estado de retención (Hold Notes) por carril
 	private long[] notes;
 	private boolean[] processedNotes;
+	private boolean[] missedNotes;
 	private final boolean[] isHoldingLane = new boolean[LANE_COUNT];
 	private final int[] holdingNoteIndex = new int[LANE_COUNT];
 	private long firstNoteStartTimeMs = Long.MAX_VALUE;
@@ -207,6 +208,7 @@ public class ROTNCore {
 		this.notes = notes;
 		int count = (notes != null) ? notes.length : 0;
 		this.processedNotes = new boolean[count];
+		this.missedNotes = new boolean[count];
 		this.firstNoteStartTimeMs = Long.MAX_VALUE;
 		this.lastNoteEndTimeMs = 0;
 
@@ -436,6 +438,7 @@ public class ROTNCore {
 
 			if (songTimeMs > startTime + safeWin) {
 				processedNotes[i] = true;
+				missedNotes[i] = true;
 				registerHit(laneIdx, HitRating.MISS);
 			}
 		}
@@ -510,6 +513,9 @@ public class ROTNCore {
 			HitRating rating = evaluateRating((float) bestDiff);
 
 			processedNotes[bestIdx] = true;
+			if (rating == HitRating.MISS) {
+				missedNotes[bestIdx] = true;
+			}
 
 			if (duration > 0 && rating != HitRating.MISS) {
 				isHoldingLane[laneIdx] = true;
@@ -551,8 +557,12 @@ public class ROTNCore {
 	 * </ul>
 	 */
 	private void releaseKey(int laneIdx, int songTimeMs, long endTime) {
+		int noteIdx = holdingNoteIndex[laneIdx];
 		long releaseDiff = Math.abs(endTime - songTimeMs);
 		if (songTimeMs < endTime - getSafeWindowMs()) {
+			if (missedNotes != null && noteIdx >= 0 && noteIdx < missedNotes.length) {
+				missedNotes[noteIdx] = true;
+			}
 			registerHit(laneIdx, HitRating.MISS);
 		} else {
 			registerHit(laneIdx, evaluateRating((float) releaseDiff));
@@ -685,6 +695,7 @@ public class ROTNCore {
 
 	public long[] getNotes() { return notes; }
 	public boolean isNoteProcessed(int index) { return processedNotes[index]; }
+	public boolean isNoteMissed(int index) { return missedNotes != null && index >= 0 && index < missedNotes.length && missedNotes[index]; }
 	public boolean isHoldingLane(int lane) { return isHoldingLane[lane]; }
 	public int getHoldingNoteIndex(int lane) { return holdingNoteIndex[lane]; }
 	public boolean isPaused() { return isPaused; }

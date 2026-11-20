@@ -78,7 +78,6 @@ public class InitScene extends Scene {
 	private static final int RIGHT_FOCUS_M3 = 3;   // Modificador 3: Estrategia de Cura
 	private static final int RIGHT_FOCUS_M4 = 4;   // Modificador 4: Multiplicador de Velocidad
 	private static final int RIGHT_FOCUS_PLAY = 5; // Botón PLAY
-	private static final int RIGHT_FOCUS_BACK = 6; // Botón VOLVER
 
 	private static final String[] CHIP_IDS = {
 		"none",
@@ -185,7 +184,6 @@ public class InitScene extends Scene {
 	private Button _songHealBtn;
 	private Button _songSpeedBtn;
 	private Button _songPlayBtn;
-	private Button _songBackBtn;
 
 	// --- Vista: Configuración ---
 	private int _settingsFocusIdx = 0;
@@ -635,14 +633,14 @@ public class InitScene extends Scene {
 		_songBadgeArea = addUITextarea("ui_song_badge_area", _songsGroup, "", 390, 98, 68, 30,
 			app.color(140, 225, 255), app.color(20, 24, 38), fontSmall);
 
-		_songDiffBtn = addUIButton("ui_song_diff_btn", _songsGroup, "Dificultad: Normal", 220, 132, 238, 18,
+		_songDiffBtn = addUIButton("ui_song_diff_btn", _songsGroup, "Dificultad: Normal", 220, 134, 238, 20,
 			app.color(42, 62, 108), app.color(65, 110, 195), fontSmall, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_DIFF;
 				cycleSelectedDifficulty(1);
 			});
 
-		_songChipBtn = addUIButton("ui_song_chip_btn", _songsGroup, "Chip: Ninguno", 220, 154, 116, 18,
+		_songChipBtn = addUIButton("ui_song_chip_btn", _songsGroup, "Chip: Ninguno", 220, 160, 116, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_M1;
@@ -650,7 +648,7 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			});
 
-		_songInvincibleBtn = addUIButton("ui_song_invincible_btn", _songsGroup, "Jefe: Invencible", 342, 154, 116, 18,
+		_songInvincibleBtn = addUIButton("ui_song_invincible_btn", _songsGroup, "Jefe: Invencible", 342, 160, 116, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_M2;
@@ -658,7 +656,7 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			});
 
-		_songHealBtn = addUIButton("ui_song_heal_btn", _songsGroup, "Cura: Optimo", 220, 176, 116, 18,
+		_songHealBtn = addUIButton("ui_song_heal_btn", _songsGroup, "Cura: Optimo", 220, 186, 116, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_M3;
@@ -666,7 +664,7 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			});
 
-		_songSpeedBtn = addUIButton("ui_song_speed_btn", _songsGroup, "Velocidad: 1.00x", 342, 176, 116, 18,
+		_songSpeedBtn = addUIButton("ui_song_speed_btn", _songsGroup, "Velocidad: 1.00x", 342, 186, 116, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_M4;
@@ -674,22 +672,11 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			});
 
-		_songPlayBtn = addUIButton("ui_song_play_btn", _songsGroup, "PLAY", 220, 202, 238, 24,
+		_songPlayBtn = addUIButton("ui_song_play_btn", _songsGroup, "PLAY", 220, 222, 238, 28,
 			app.color(35, 125, 85), app.color(55, 170, 115), fontMed, () -> {
 				_songFocusCol = SONG_COL_OPTIONS;
 				_songRightIdx = RIGHT_FOCUS_PLAY;
 				launchSelectedSong();
-			});
-
-		_songBackBtn = addUIButton("ui_song_back_btn", _songsGroup, "VOLVER", 220, 231, 238, 19,
-			app.color(85, 36, 48), app.color(130, 52, 70), fontSmall, () -> {
-				if (_songOptionsOpen) {
-					_songOptionsOpen = false;
-					_songFocusCol = SONG_COL_LIST;
-					syncSongSelectUI();
-				} else {
-					switchView(ViewMode.MAIN);
-				}
 			});
 	}
 
@@ -783,10 +770,10 @@ public class InitScene extends Scene {
 			if (!_songStatusMsg.isEmpty()) {
 				_songListFooterLbl.setText(_songStatusMsg);
 			} else if (activeList.isEmpty()) {
-				_songListFooterLbl.setText(isCustomTab ? "0 custom | TAB: Base" : "0 base | TAB: Custom");
+				_songListFooterLbl.setText(isCustomTab ? "0 custom | TAB / ESC" : "0 base | TAB / ESC");
 			} else {
 				_songListFooterLbl.setText(
-					(isCustomTab ? "Custom " : "Base ") + (selIdx + 1) + "/" + activeList.size() + " | TAB: Cambiar"
+					(isCustomTab ? "Custom " : "Base ") + (selIdx + 1) + "/" + activeList.size() + " | TAB/ESC"
 				);
 			}
 		}
@@ -794,39 +781,47 @@ public class InitScene extends Scene {
 		syncSongOptionsPanel(app, activePack, activeVar, isCustomTab);
 	}
 
-	/** Actualiza el cuadro de metadatos, récord y miniatura de portada de la canción seleccionada. */
+	/** Actualiza el cuadro de metadatos, dificultad calculada, récord y miniatura de portada. */
 	private void syncSongInfoAndCover(SongPackLoader.ChartVariant activeVar, boolean isCustomTab) {
+		float speedMult = SPEED_OPTIONS[_songSpeedIdx];
 		if (_songInfoArea != null) {
 			_songInfoArea.setSize(Math.max(1, (int) scaleW(164)), Math.max(1, (int) scaleH(88)));
 			if (activeVar == null) {
 				_songInfoArea.setText(isCustomTab
 					? "No hay canciones custom.\nUsa '+ IMPORTAR .OSU' o agrega carpetas en resources/songs/custom/"
 					: "No hay canciones base.\nAgrega carpetas .osu en resources/songs/base/");
-			} else if (isCustomTab && activeVar.customDbSummary != null) {
-				CustomSongRepository.CustomSongSummary c = activeVar.customDbSummary;
-				_songInfoArea.setText(
-					"Cancion: " + c.titulo + "\n" +
-					"Artista: " + (c.artista.isEmpty() ? "-" : c.artista) + "\n" +
-					"Notas: " + c.cantidadNotas + " | Jugadas: " + c.vecesJugada + "\n" +
-					"Record: " + c.puntajeMasAlto + " pts (" + c.comboMasAlto + "x, " + String.format("%.1f%%", c.precisionMasAlta) + ")\n" +
-					"Ultimo: " + c.puntajeUltimoIntento + " pts"
-				);
 			} else {
-				String sp = activeVar.bossSpecies.isEmpty() ? "" : " (" + activeVar.bossSpecies + ")";
-				_songInfoArea.setText(
-					"Cancion: " + activeVar.title + "\n" +
-					"Artista: " + (activeVar.artist.isEmpty() ? "-" : activeVar.artist) + "\n" +
-					"Notas: " + activeVar.noteCount + " | Vel: " + String.format("%.2f", activeVar.scrollSpeed) + "\n" +
-					"Jefe: " + activeVar.bossName + sp + "\n" +
-					"HP: " + activeVar.bossHp + " | Danio: " + activeVar.attackDamage
-				);
+				float effStars = SongPackLoader.computeDifficultyRating(activeVar.noteCount, activeVar.bpm, activeVar.durationSec, speedMult);
+				float effNps = SongPackLoader.computeNotesPerSecond(activeVar.noteCount, activeVar.durationSec, speedMult);
+				String tier = SongPackLoader.getDifficultyTierLabel(effStars);
+				String diffLine = String.format("Nivel: %.1f* (%s) | %.1f n/s", effStars, tier, effNps);
+
+				if (isCustomTab && activeVar.customDbSummary != null) {
+					CustomSongRepository.CustomSongSummary c = activeVar.customDbSummary;
+					_songInfoArea.setText(
+						"Cancion: " + c.titulo + "\n" +
+						"Artista: " + (c.artista.isEmpty() ? "-" : c.artista) + "\n" +
+						diffLine + "\n" +
+						"Notas: " + c.cantidadNotas + " | Jugadas: " + c.vecesJugada + "\n" +
+						"Record: " + c.puntajeMasAlto + " pts (" + c.comboMasAlto + "x, " + String.format("%.1f%%", c.precisionMasAlta) + ")"
+					);
+				} else {
+					String sp = activeVar.bossSpecies.isEmpty() ? "" : " (" + activeVar.bossSpecies + ")";
+					_songInfoArea.setText(
+						"Cancion: " + activeVar.title + "\n" +
+						"Artista: " + (activeVar.artist.isEmpty() ? "-" : activeVar.artist) + "\n" +
+						diffLine + "\n" +
+						"Notas: " + activeVar.noteCount + " | Vel: " + String.format("%.2f", activeVar.scrollSpeed) + "\n" +
+						"Jefe: " + activeVar.bossName + sp
+					);
+				}
 			}
 		}
 
-		refreshSelectedCover(activeVar);
+		refreshSelectedCover(activeVar, speedMult);
 	}
 
-	/** Sincroniza los botones de dificultad, modificadores, PLAY y VOLVER del panel derecho. */
+	/** Sincroniza los botones de dificultad, modificadores y PLAY del panel derecho. */
 	private void syncSongOptionsPanel(
 		PApplet app,
 		SongPackLoader.SongPack activePack,
@@ -835,16 +830,19 @@ public class InitScene extends Scene {
 	) {
 		boolean showOpts = _songOptionsOpen && activeVar != null && activePack != null;
 		boolean rightActive = showOpts && (_songFocusCol == SONG_COL_OPTIONS);
+		float speedMult = SPEED_OPTIONS[_songSpeedIdx];
 
 		if (_songDiffBtn != null) {
 			if (showOpts) {
 				boolean f = rightActive && (_songRightIdx == RIGHT_FOCUS_DIFF);
+				float effStars = SongPackLoader.computeDifficultyRating(activeVar.noteCount, activeVar.bpm, activeVar.durationSec, speedMult);
+				String starTag = String.format(" [%.1f*]", effStars);
 				String diffLabel;
 				if (activePack.difficulties.size() > 1) {
 					int dIdx = isCustomTab ? _selectedCustomDiffIdx : _selectedBaseDiffIdx;
-					diffLabel = "Dificultad: < " + activeVar.difficulty + " > (" + (dIdx + 1) + "/" + activePack.difficulties.size() + ")";
+					diffLabel = "Dificultad: < " + activeVar.difficulty + " >" + starTag + " (" + (dIdx + 1) + "/" + activePack.difficulties.size() + ")";
 				} else {
-					diffLabel = "Dificultad: " + activeVar.difficulty;
+					diffLabel = "Dificultad: " + activeVar.difficulty + starTag;
 				}
 				_songDiffBtn.setLabel((f ? "> " : "") + diffLabel);
 				_songDiffBtn.setColorBackground(f ? app.color(65, 118, 210) : app.color(42, 62, 108));
@@ -888,7 +886,7 @@ public class InitScene extends Scene {
 		if (_songSpeedBtn != null) {
 			if (showOpts) {
 				boolean f = rightActive && (_songRightIdx == RIGHT_FOCUS_M4);
-				_songSpeedBtn.setLabel((f ? "> " : "") + "Velocidad: " + String.format("%.2fx", SPEED_OPTIONS[_songSpeedIdx]));
+				_songSpeedBtn.setLabel((f ? "> " : "") + "Velocidad: " + String.format("%.2fx", speedMult));
 				_songSpeedBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
 				_songSpeedBtn.show();
 			} else {
@@ -904,11 +902,6 @@ public class InitScene extends Scene {
 			} else {
 				_songPlayBtn.hide();
 			}
-		}
-		if (_songBackBtn != null) {
-			boolean f = rightActive && (_songRightIdx == RIGHT_FOCUS_BACK);
-			_songBackBtn.setLabel((f ? "> " : "") + (showOpts ? "VOLVER A CANCIONES" : "VOLVER AL MENU"));
-			_songBackBtn.setColorBackground(f ? app.color(145, 58, 78) : app.color(85, 36, 48));
 		}
 	}
 
@@ -1317,12 +1310,11 @@ public class InitScene extends Scene {
 	) {
 		if (up) {
 			_songRightIdx = switch (_songRightIdx) {
-				case RIGHT_FOCUS_DIFF -> RIGHT_FOCUS_BACK;
+				case RIGHT_FOCUS_DIFF -> RIGHT_FOCUS_PLAY;
 				case RIGHT_FOCUS_M1, RIGHT_FOCUS_M2 -> RIGHT_FOCUS_DIFF;
 				case RIGHT_FOCUS_M3 -> RIGHT_FOCUS_M1;
 				case RIGHT_FOCUS_M4 -> RIGHT_FOCUS_M2;
-				case RIGHT_FOCUS_PLAY -> RIGHT_FOCUS_M3;
-				default -> RIGHT_FOCUS_PLAY;
+				default -> RIGHT_FOCUS_M3;
 			};
 			syncSongSelectUI();
 		} else if (down) {
@@ -1331,7 +1323,6 @@ public class InitScene extends Scene {
 				case RIGHT_FOCUS_M1 -> RIGHT_FOCUS_M3;
 				case RIGHT_FOCUS_M2 -> RIGHT_FOCUS_M4;
 				case RIGHT_FOCUS_M3, RIGHT_FOCUS_M4 -> RIGHT_FOCUS_PLAY;
-				case RIGHT_FOCUS_PLAY -> RIGHT_FOCUS_BACK;
 				default -> RIGHT_FOCUS_DIFF;
 			};
 			syncSongSelectUI();
@@ -1377,11 +1368,6 @@ public class InitScene extends Scene {
 				syncSongSelectUI();
 			}
 			case RIGHT_FOCUS_PLAY -> launchSelectedSong();
-			case RIGHT_FOCUS_BACK -> {
-				_songOptionsOpen = false;
-				_songFocusCol = SONG_COL_LIST;
-				syncSongSelectUI();
-			}
 		}
 	}
 
@@ -1595,8 +1581,8 @@ public class InitScene extends Scene {
 		}
 	}
 
-	/** Actualiza la miniatura de portada y el badge de BPM/Notas de la canción activa. */
-	private void refreshSelectedCover(SongPackLoader.ChartVariant activeVar) {
+	/** Actualiza la miniatura de portada y el badge de BPM/Dificultad de la canción activa. */
+	private void refreshSelectedCover(SongPackLoader.ChartVariant activeVar, float speedMult) {
 		if (_songCoverBox == null || _songBadgeArea == null) return;
 		if (activeVar == null) {
 			PImage fallback = getScaledCoverImage("");
@@ -1604,10 +1590,12 @@ public class InitScene extends Scene {
 			_songBadgeArea.setText("BPM: -").show();
 		} else {
 			PImage cover = getScaledCoverImage(activeVar.coverRelPath);
+			float effBpm = activeVar.bpm * Math.max(0.5f, speedMult);
+			float effStars = SongPackLoader.computeDifficultyRating(activeVar.noteCount, activeVar.bpm, activeVar.durationSec, speedMult);
 			_songCoverBox.setSize(cover.width, cover.height).setImage(cover).show();
 			_songBadgeArea.setText(
-				"BPM: " + String.format("%.0f", activeVar.bpm) + "\n" +
-				"Notas: " + activeVar.noteCount
+				"BPM: " + String.format("%.0f", effBpm) + "\n" +
+				"Dif: " + String.format("%.1f*", effStars)
 			).show();
 		}
 	}

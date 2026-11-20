@@ -148,7 +148,6 @@ public class ROTNScene extends Scene {
 	private Textlabel _uiShieldLbl;
 
 	private Button _uiBossHpFill;
-	private Textlabel _uiAlertLbl;
 
 	private Textlabel _uiScoreLbl;
 	private Textlabel _uiComboLbl;
@@ -589,7 +588,6 @@ public class ROTNScene extends Scene {
 		// 2. Arriba-Centro: Barra de HP del Jefe y Avisos de bloqueo de carril
 		addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
 		_uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
-		_uiAlertLbl = addUILabel("ui_rotn_alert_lbl", null, "", 170, 80, app.color(255, 190, 60), fontMed);
 
 		// 3. Arriba-Derecha: Score y Combo
 		_uiScoreLbl = addUILabel("ui_rotn_score_lbl", null, "SCORE: 0", 356, 8, app.color(255), fontMed);
@@ -691,19 +689,6 @@ public class ROTNScene extends Scene {
 					? app.color(175, 110, 255, 245)
 					: app.color(235, 65, 85, 245)
 			);
-		}
-		if (_uiAlertLbl != null) {
-			int lockedLane = _rhythmCore.getLockedLane();
-			int warningLane = _rhythmCore.getWarningLane();
-			if (lockedLane >= 0) {
-				_uiAlertLbl.setText("CARRIL " + (lockedLane + 1) + " BLOQUEADO!");
-				_uiAlertLbl.setColorValue(app.color(255, 95, 110));
-			} else if (warningLane >= 0) {
-				_uiAlertLbl.setText("ALERTA CARRIL " + (warningLane + 1));
-				_uiAlertLbl.setColorValue(app.color(255, 190, 60));
-			} else {
-				_uiAlertLbl.setText("");
-			}
 		}
 
 		// 3. Score y Combo
@@ -1609,7 +1594,8 @@ public class ROTNScene extends Scene {
 			long duration = NotePacker.getDuration(packed);
 
 			boolean isBeingHeld = _rhythmCore.isHoldingLane(lane) && _rhythmCore.getHoldingNoteIndex(lane) == i;
-			if (_rhythmCore.isNoteProcessed(i) && !isBeingHeld) continue;
+			boolean isMissedHold = duration > 0 && _rhythmCore.isNoteMissed(i);
+			if (_rhythmCore.isNoteProcessed(i) && !isBeingHeld && !isMissedHold) continue;
 
 			float tHead = 1.0f - ((startTime - songTimeMs) / approachTimeMs);
 			float tTail = 1.0f - (((startTime + duration) - songTimeMs) / approachTimeMs);
@@ -1634,13 +1620,13 @@ public class ROTNScene extends Scene {
 				drawXi = originXi + (targetXi - originXi) * shiftProg;
 			}
 
-			// 1. Cinta en perspectiva para Hold Notes (azul translúcida)
+			// 1. Cinta en perspectiva para Hold Notes (azul translúcida o gris/rojiza si falló)
 			if (duration > 0) {
-				drawHoldNoteRibbon(g, targetXi, tHead, tTail, isBeingHeld, keyDown);
+				drawHoldNoteRibbon(g, targetXi, tHead, tTail, isBeingHeld, isMissedHold, keyDown);
 			}
 
 			// 2. Cabeza elíptica 3D de la nota
-			if (!isBeingHeld && tHead >= 0.0f && tHead <= 1.12f) {
+			if (!isBeingHeld && !isMissedHold && tHead >= 0.0f && tHead <= 1.12f) {
 				drawNoteHead(g, noteType, duration, targetXi, drawXi, tHead, keyDown);
 			}
 		}
@@ -1652,17 +1638,22 @@ public class ROTNScene extends Scene {
 		float tHead,
 		float tTail,
 		boolean isBeingHeld,
+		boolean isMissedHold,
 		boolean keyDown
 	) {
 		float segStart = Math.max(0.0f, tTail);
 		float segEnd = isBeingHeld ? 1.0f : Math.min(1.12f, tHead);
-		boolean sinkTail = isBeingHeld || (keyDown && segEnd >= 0.98f);
+		boolean sinkTail = isBeingHeld || (!isMissedHold && keyDown && segEnd >= 0.98f);
 		if (segEnd <= segStart) return;
 
 		final int slices = 8;
 		final float halfLaneXi = 0.075f;
 		g.noStroke();
-		g.fill(45, 165, 255, 115);
+		if (isMissedHold) {
+			g.fill(125, 72, 85, 85);
+		} else {
+			g.fill(45, 165, 255, 115);
+		}
 		for (int sIdx = 0; sIdx < slices; sIdx++) {
 			float ta = segStart + (segEnd - segStart) * (sIdx / (float) slices);
 			float tb = segStart + (segEnd - segStart) * ((sIdx + 1) / (float) slices);

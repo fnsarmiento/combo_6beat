@@ -50,6 +50,10 @@ public class SongPackLoader {
 		public String coverRelPath = "";
 		public int noteCount = 0;
 		public float bpm = 120.0f;
+		public float durationSec = 1.0f;
+		public float nps = 0.0f;
+		public float difficultyRating = 1.0f;
+		public String difficultyTier = "Facil";
 		public float scrollSpeed = 0.22f;
 
 		// Metadatos opcionales de jefe (sobrescribibles desde songs.xml)
@@ -161,7 +165,8 @@ public class SongPackLoader {
 
 		List<SongPack> result = new ArrayList<>(packMap.values());
 		for (SongPack p : result) {
-			p.difficulties.sort(Comparator.comparingInt((ChartVariant c) -> c.noteCount)
+			p.difficulties.sort(Comparator.comparingDouble((ChartVariant c) -> c.difficultyRating)
+				.thenComparingInt(c -> c.noteCount)
 				.thenComparing(c -> c.difficulty, String.CASE_INSENSITIVE_ORDER));
 		}
 		result.sort(Comparator.comparing(p -> p.title, String.CASE_INSENSITIVE_ORDER));
@@ -195,6 +200,7 @@ public class SongPackLoader {
 			v.coverRelPath = row.rutaPortada;
 			v.noteCount = row.cantidadNotas;
 			v.bpm = row.bpm;
+			populateDurationAndDifficulty(v, new File(v.osuAbsPath));
 			v.bossId = v.id;
 			v.bossName = row.titulo;
 			v.bossSpecies = row.dificultad + " | " + Math.round(row.bpm) + " BPM";
@@ -218,7 +224,8 @@ public class SongPackLoader {
 
 		List<SongPack> result = new ArrayList<>(packMap.values());
 		for (SongPack p : result) {
-			p.difficulties.sort(Comparator.comparingInt((ChartVariant c) -> c.noteCount)
+			p.difficulties.sort(Comparator.comparingDouble((ChartVariant c) -> c.difficultyRating)
+				.thenComparingInt(c -> c.noteCount)
 				.thenComparing(c -> c.difficulty, String.CASE_INSENSITIVE_ORDER));
 		}
 		return result;
@@ -296,6 +303,8 @@ public class SongPackLoader {
 			String line;
 			String section = "";
 			int notes = 0;
+			long firstNoteMs = -1;
+			long lastNoteMs = -1;
 			boolean foundBpm = false;
 			while ((line = br.readLine()) != null) {
 				line = line.trim();
@@ -328,13 +337,103 @@ public class SongPackLoader {
 					}
 				} else if ("[HitObjects]".equals(section)) {
 					notes++;
+					String[] parts = line.split(",");
+					if (parts.length >= 3) {
+						try {
+							long t = Long.parseLong(parts[2].trim());
+							if (firstNoteMs < 0 || t < firstNoteMs) firstNoteMs = t;
+							if (t > lastNoteMs) lastNoteMs = t;
+						} catch (NumberFormatException ignored) {}
+					}
 				}
 			}
 			v.noteCount = notes;
+			v.durationSec = computeEffectiveDurationSec(notes, v.bpm, firstNoteMs, lastNoteMs);
+			applyCalculatedDifficulty(v);
 			return v;
 		} catch (Exception e) {
 			return null;
 		}
+	}
+
+	/**
+	 * Calcula la duración activa desde las marcas temporales de {@code [HitObjects]}
+	 * para rellenar {@code durationSec}, {@code nps}, {@code difficultyRating} y {@code difficultyTier}.
+	 */
+	private static void populateDurationAndDifficulty(ChartVariant v, File osuFile) {
+		long firstNoteMs = -1;
+		long lastNoteMs = -1;
+		if (osuFile != null && osuFile.exists() && osuFile.isFile()) {
+			try (BufferedReader br = new BufferedReader(new FileReader(osuFile))) {
+				String line;
+				String section = "";
+				while ((line = br.readLine()) != null) {
+					line = line.trim();
+					if (line.isEmpty() || line.startsWith("//")) continue;
+					if (line.startsWith("[") && line.endsWith("]")) {
+						section = line;
+						continue;
+					}
+					if ("[HitObjects]".equals(section)) {
+						String[] parts = line.split(",");
+						if (parts.length >= 3) {
+							try {
+								long t = Long.parseLong(parts[2].trim());
+								if (firstNoteMs < 0 || t < firstNoteMs) firstNoteMs = t;
+								if (t > lastNoteMs) lastNoteMs = t;
+							} catch (NumberFormatException ignored) {}
+						}
+					}
+				}
+			} catch (IOException ignored) {}
+		}
+		v.durationSec = computeEffectiveDurationSec(v.noteCount, v.bpm, firstNoteMs, lastNoteMs);
+		applyCalculatedDifficulty(v);
+	}
+
+	private static float computeEffectiveDurationSec(int notes, float bpm, long firstNoteMs, long lastNoteMs) {
+		if (firstNoteMs >= 0 && lastNoteMs > firstNoteMs) {
+			return Math.max(1.0f, (lastNoteMs - firstNoteMs) / 1000.0f);
+		}
+		// Respaldo estimado si no hay rango temporal válido
+		float beatsPerSec = Math.max(1.0f, bpm / 60.0f);
+		return Math.max(1.0f, notes / Math.max(1.0f, beatsPerSec * 1.5f));
+	}
+
+	private static void applyCalculatedDifficulty(ChartVariant v) {
+		v.nps = computeNotesPerSecond(v.noteCount, v.durationSec, 1.0f);
+		v.difficultyRating = computeDifficultyRating(v.noteCount, v.bpm, v.durationSec, 1.0f);
+		v.difficultyTier = getDifficultyTierLabel(v.difficultyRating);
+	}
+
+	/** Calcula las notas por segundo efectivas aplicando el multiplicador de velocidad. */
+	public static float computeNotesPerSecond(int noteCount, float durationSec, float speedMultiplier) {
+		float speed = Math.max(0.5f, speedMultiplier);
+		float effDur = Math.max(1.0f, durationSec / speed);
+		return noteCount / effDur;
+	}
+
+	/**
+	 * Calcula una calificación de dificultad combinando densidad temporal (NPS),
+	 * notas por pulso ({@code nps / (bpm / 60)}) y velocidad base ({@code bpm}) con factor de velocidad.
+	 */
+	public static float computeDifficultyRating(int noteCount, float bpm, float durationSec, float speedMultiplier) {
+		if (noteCount <= 0) return 0.0f;
+		float speed = Math.max(0.5f, speedMultiplier);
+		float effBpm = Math.max(1.0f, bpm * speed);
+		float nps = computeNotesPerSecond(noteCount, durationSec, speed);
+		float notesPerBeat = nps / Math.max(0.5f, effBpm / 60.0f);
+		float raw = 0.52f * nps + 0.60f * notesPerBeat + 0.30f * (effBpm / 100.0f);
+		return Math.max(0.5f, Math.round(raw * 10.0f) / 10.0f);
+	}
+
+	/** Devuelve la etiqueta textual correspondiente al puntaje de dificultad calculado. */
+	public static String getDifficultyTierLabel(float rating) {
+		if (rating < 2.2f) return "Muy Facil";
+		if (rating < 3.6f) return "Facil";
+		if (rating < 5.8f) return "Normal";
+		if (rating < 7.8f) return "Dificil";
+		return "Experto";
 	}
 
 	// =========================================================================
