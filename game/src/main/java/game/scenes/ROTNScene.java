@@ -29,7 +29,6 @@ import java.util.List;
 import kuusisto.tinysound.Sound;
 import processing.core.PApplet;
 import processing.core.PConstants;
-import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.data.XML;
@@ -139,12 +138,11 @@ public class ROTNScene extends Scene {
 	private int _pauseSongTimeMs = 0;
 	private float _bgmFadeOutTimer = -1.0f;
 
-	// Animación del planeta, sistema de partículas, HUD pixelado derecho y textos flotantes
+	// Animación del planeta, sistema de partículas y textos flotantes
 	private float _bgAnimTime = 0.0f;
 	private int _lastPlayerHp = 0;
 	private int _prevMultiplier = 1;
 	private float _multAnimTimer = 0.0f;
-	private static PFont _pixelHudFont;
 	private final ParticleSystem _particles = new ParticleSystem(320);
 	private final float[] _holdParticleTimers = new float[LANE_COUNT];
 	private final ArrayList<FloatingRating> _floatingRatings = new ArrayList<>();
@@ -157,6 +155,14 @@ public class ROTNScene extends Scene {
 	}
 
 	// Controladores dinámicos de ControlP5 (actualizados en syncCombatUI)
+	private static final float[] SCORE_CHUNK_BASE_SIZES = { 14.0f, 17.0f, 20.0f, 23.0f, 26.0f };
+	private final Textlabel[] _uiScoreChunkLbls = new Textlabel[SCORE_CHUNK_BASE_SIZES.length];
+	private Button _uiMultBox;
+	private Button _uiComboBox;
+	private Button _uiCountdownBox;
+	private ControlFont _multBaseFont;
+	private ControlFont _multPopFont;
+
 	private Button _uiHpFill;
 	private Textlabel _uiHpLbl;
 	private Textlabel _uiShieldLbl;
@@ -319,7 +325,6 @@ public class ROTNScene extends Scene {
 		_lastPlayerHp = _rhythmCore.getPlayerHp();
 
 		_hitSfx = ResourcesManager.loadSFX("sfx/Normal-Hitnormal.wav");
-		ensurePixelHudFont();
 
 		setupCombatUI();
 		syncCombatUI();
@@ -626,7 +631,41 @@ public class ROTNScene extends Scene {
 		// addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
 		// _uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
 
-		// 3. Arriba-Derecha: Score, Multiplicador y Combo se dibujan en el canvas pixelado
+		// 3. HUD Derecho en ControlP5 (Score multi-color por bloques de 3 cifras, Multiplicador amarillo, Combo azul)
+		for (int i = 0; i < _uiScoreChunkLbls.length; i++) {
+			ControlFont chunkFont = makeFont(SCORE_CHUNK_BASE_SIZES[i], true);
+			_uiScoreChunkLbls[i] = addUILabel("ui_rotn_score_c" + i, null, "", BASE_W - 14, 8, app.color(255), chunkFont);
+			_uiScoreChunkLbls[i].hide();
+		}
+
+		_multBaseFont = makeFont(24.0f, true);
+		_multPopFont = makeFont(34.0f, true);
+
+		_uiMultBox = addUIBox("ui_rotn_mult_box", null, 368, 86, 112, 42, app.color(0, 0));
+		_uiMultBox.setColorForeground(app.color(0, 0))
+			.setColorActive(app.color(0, 0))
+			.setColorLabel(app.color(255, 224, 58))
+			.setLabel("x1");
+		_uiMultBox.getCaptionLabel().toUpperCase(false).align(PConstants.CENTER, PConstants.CENTER);
+		if (_multBaseFont != null) _uiMultBox.setFont(_multBaseFont);
+
+		_uiComboBox = addUIBox("ui_rotn_combo_box", null, 368, 128, 112, 34, app.color(0, 0));
+		_uiComboBox.setColorForeground(app.color(0, 0))
+			.setColorActive(app.color(0, 0))
+			.setColorLabel(app.color(75, 190, 255))
+			.setLabel("0");
+		_uiComboBox.getCaptionLabel().toUpperCase(false).align(PConstants.CENTER, PConstants.CENTER);
+		if (_multBaseFont != null) _uiComboBox.setFont(_multBaseFont);
+
+		_uiCountdownBox = addUIBox("ui_rotn_countdown_box", null, CENTER_X - 40, 106, 80, 44, app.color(0, 0));
+		_uiCountdownBox.setColorForeground(app.color(0, 0))
+			.setColorActive(app.color(0, 0))
+			.setColorLabel(app.color(255, 235, 110))
+			.setLabel("");
+		_uiCountdownBox.getCaptionLabel().toUpperCase(false).align(PConstants.CENTER, PConstants.CENTER);
+		ControlFont fontCountdown = makeFont(30.0f, true);
+		if (fontCountdown != null) _uiCountdownBox.setFont(fontCountdown);
+		_uiCountdownBox.hide();
 
 		// 4. Abajo-Izquierda: Barra Vertical de Curación Dinámica
 		_uiHealRatioLbl = addUILabel("ui_rotn_heal_ratio_lbl", null, "0/2", 12, 162, app.color(230, 60, 60), fontBig);
@@ -758,6 +797,29 @@ public class ROTNScene extends Scene {
 		beginResumeCountdown();
 	}
 
+	private float measurePhysicalTextWidth(PApplet app, String text, float pxSize) {
+		if (app == null || app.g == null || text == null || text.isEmpty()) return 0.0f;
+		app.g.pushStyle();
+		if (Engine.titleFont != null) {
+			app.g.textFont(Engine.titleFont, pxSize);
+		} else {
+			app.g.textSize(pxSize);
+		}
+		float w = app.g.textWidth(text);
+		app.g.popStyle();
+		return w;
+	}
+
+	private int getScoreTierColor(PApplet app, int groupIdx) {
+		return switch (groupIdx) {
+			case 0 -> app.color(75, 190, 255);   // Unidades..Centenas: Azul
+			case 1 -> app.color(195, 110, 255);  // Miles: Morado
+			case 2 -> app.color(255, 78, 92);    // Millones: Rojo
+			case 3 -> app.color(255, 155, 55);   // Miles de millones: Naranja
+			default -> app.color(255, 224, 58);  // 13+ cifras: Amarillo
+		};
+	}
+
 	private void beginResumeCountdown() {
 		if (_rhythmCore == null) return;
 		if (_rhythmCore.getBattleState() != ROTNCore.BattleState.PLAYING || _rhythmCore.isTrackFinished(_pauseSongTimeMs)) {
@@ -786,18 +848,63 @@ public class ROTNScene extends Scene {
 		}
 	}
 
-	private static void ensurePixelHudFont() {
-		if (_pixelHudFont != null) return;
-		PApplet app = Engine.getApp();
-		if (app == null) return;
-		try {
-			String fontPath = ResourcesManager.getResourceAbsPath("fonts/born2bsporty-fs.otf");
-			if (new File(fontPath).exists()) {
-				_pixelHudFont = app.createFont(fontPath, 24, false);
+	private void syncRightHudControlP5(PApplet app) {
+		// 1. Score arriba a la derecha por bloques de 3 cifras (cada grupo con su color y tamaño en ControlP5)
+		String scoreText = String.valueOf(Math.max(0, _rhythmCore.getScore()));
+		float cursorX = scaleW(BASE_W - 10.0f);
+		int pos = scoreText.length();
+		for (int gIdx = 0; gIdx < _uiScoreChunkLbls.length; gIdx++) {
+			Textlabel lbl = _uiScoreChunkLbls[gIdx];
+			if (lbl == null) continue;
+			if (pos > 0) {
+				int start = Math.max(0, pos - 3);
+				String chunk = scoreText.substring(start, pos);
+				pos = start;
+
+				float pxSize = Math.max(8, (int) scaleH(SCORE_CHUNK_BASE_SIZES[gIdx]));
+				float chunkW = measurePhysicalTextWidth(app, chunk, pxSize);
+				cursorX -= chunkW;
+				float yPos = scaleH(Math.max(2.0f, 13.0f - SCORE_CHUNK_BASE_SIZES[gIdx] * 0.35f));
+				lbl.setPosition(cursorX, yPos);
+				lbl.setColorValue(getScoreTierColor(app, gIdx));
+				lbl.setText(chunk);
+				lbl.show();
+				cursorX -= scaleW(2.0f);
+			} else {
+				lbl.hide();
 			}
-		} catch (Exception ignored) {}
-		if (_pixelHudFont == null) {
-			_pixelHudFont = Engine.titleFont;
+		}
+
+		// 2. Multiplicador a la derecha en amarillo (con animación de salto y tamaño al subir)
+		if (_uiMultBox != null) {
+			_uiMultBox.setLabel("x" + _rhythmCore.getScoreMultiplier());
+			if (_multAnimTimer > 0.0f) {
+				float p = 1.0f - (_multAnimTimer / 0.42f);
+				float jumpY = (float) (-Math.sin(p * Math.PI) * 9.0f);
+				float shakeX = (float) (Math.sin(p * Math.PI * 6.0f) * (1.0f - p) * 5.0f);
+				_uiMultBox.setPosition(scaleW(368.0f + shakeX), scaleH(86.0f + jumpY));
+				if (_multPopFont != null) _uiMultBox.setFont(_multPopFont);
+			} else {
+				_uiMultBox.setPosition(scaleW(368.0f), scaleH(86.0f));
+				if (_multBaseFont != null) _uiMultBox.setFont(_multBaseFont);
+			}
+		}
+
+		// 3. Combo debajo en azul (sin etiqueta "COMBO")
+		if (_uiComboBox != null) {
+			_uiComboBox.setLabel(String.valueOf(_rhythmCore.getCombo()));
+		}
+
+		// 4. Contador regresivo 3..2..1 en ControlP5
+		if (_uiCountdownBox != null) {
+			float activeCountdown = Math.max(_introCountdown, _resumeCountdown);
+			if (activeCountdown > 0.0f) {
+				int sec = PApplet.constrain((int) Math.ceil(activeCountdown), 1, 3);
+				_uiCountdownBox.setLabel(String.valueOf(sec));
+				_uiCountdownBox.show();
+			} else {
+				_uiCountdownBox.hide();
+			}
 		}
 	}
 
@@ -908,7 +1015,10 @@ public class ROTNScene extends Scene {
 		// 	);
 		// }
 
-		// 3. Barra vertical de Curación Dinámica (abajo-izquierda)
+		// 3. HUD Derecho y contador regresivo en ControlP5
+		syncRightHudControlP5(app);
+
+		// 4. Barra vertical de Curación Dinámica (abajo-izquierda)
 		int threshold = _rhythmCore.getEffectiveHealThreshold();
 		float healRatio = _rhythmCore.isHealBarActive()
 			? (_rhythmCore.getHealBarTimer() / Math.max(0.1f, _rhythmCore.getHealActiveDuration()))
@@ -1704,8 +1814,6 @@ public class ROTNScene extends Scene {
 			drawPerspectiveNotes(g, songTimeMs);
 			_particles.draw(g);
 			drawFloatingRatings(g);
-			drawRightHudStats(g);
-			drawIntroCountdownOverlay(g);
 		}
 
 		g.popStyle();
@@ -2362,124 +2470,6 @@ public class ROTNScene extends Scene {
 			g.fill((alpha << 24) | rgb);
 			g.text(fr.text, fr.x, fr.y);
 		}
-		g.popStyle();
-	}
-
-	/**
-	 * Dibuja con fuente pixelada sin antialiasing:
-	 * <ul>
-	 *   <li>Arriba a la derecha: solo el puntaje numérico (sin cartel), escalando en tamaño y color
-	 *       cada 3 cifras (azul -> morado -> rojo -> naranja -> amarillo).</li>
-	 *   <li>A la derecha: el multiplicador amarillo (con salto/agrandamiento animado al subir)
-	 *       y debajo el combo en azul con el mismo tamaño base, ambos sin etiquetas de texto.</li>
-	 * </ul>
-	 */
-	private void drawRightHudStats(PGraphics g) {
-		if (_rhythmCore == null) return;
-
-		int score = Math.max(0, _rhythmCore.getScore());
-		int mult = _rhythmCore.getScoreMultiplier();
-		int combo = _rhythmCore.getCombo();
-
-		g.pushStyle();
-		if (_pixelHudFont != null) {
-			g.textFont(_pixelHudFont, 24);
-		} else {
-			g.textSize(24);
-		}
-
-		// 1. Score arriba a la derecha (sin cartel, cada bloque de 3 cifras cambia color y tamaño de derecha a izquierda)
-		String scoreText = String.valueOf(Math.max(0, _rhythmCore.getScore()));
-		g.textAlign(PConstants.RIGHT, PConstants.TOP);
-		float cursorX = BASE_W - 10.0f;
-		for (int endIdx = scoreText.length(), groupIdx = 0; endIdx > 0; endIdx -= 3, groupIdx++) {
-			int startIdx = Math.max(0, endIdx - 3);
-			String chunk = scoreText.substring(startIdx, endIdx);
-			int groupColor = switch (groupIdx) {
-				case 0 -> g.color(75, 190, 255);   // Unidades..Centenas: Azul
-				case 1 -> g.color(195, 110, 255);  // Miles: Morado
-				case 2 -> g.color(255, 78, 92);    // Millones: Rojo
-				case 3 -> g.color(255, 155, 55);   // Miles de millones: Naranja
-				default -> g.color(255, 224, 58);  // 13+ cifras: Amarillo
-			};
-			float groupScale = Math.min(1.45f, 0.75f + groupIdx * 0.16f);
-
-			g.pushMatrix();
-			g.translate(Math.round(cursorX), 8.0f);
-			g.scale(groupScale);
-			g.fill(0, 0, 0, 225);
-			g.text(chunk, 2.0f, 2.0f);
-			g.fill(groupColor);
-			g.text(chunk, 0.0f, 0.0f);
-			g.popMatrix();
-
-			cursorX -= (g.textWidth(chunk) * groupScale + 2.0f);
-		}
-
-		// 2. Multiplicador a la derecha en amarillo (más grande y con pop animado al subir)
-		float rightX = 424.0f;
-		float multY = 104.0f;
-		float comboY = 144.0f;
-		float baseScale = 1.12f;
-
-		float multJumpY = 0.0f;
-		float multShakeX = 0.0f;
-		float multScale = baseScale;
-		if (_multAnimTimer > 0.0f) {
-			float p = 1.0f - (_multAnimTimer / 0.42f);
-			multJumpY = (float) (-Math.sin(p * Math.PI) * 9.0f);
-			multShakeX = (float) (Math.sin(p * Math.PI * 6.0f) * (1.0f - p) * 5.0f);
-			multScale = baseScale + (1.0f - p) * 0.55f;
-		}
-
-		g.textAlign(PConstants.CENTER, PConstants.CENTER);
-
-		String multText = "x" + mult;
-		g.pushMatrix();
-		g.translate(Math.round(rightX + multShakeX), Math.round(multY + multJumpY));
-		g.scale(multScale);
-		g.fill(0, 0, 0, 225);
-		g.text(multText, 2.0f, 2.0f);
-		g.fill(255, 224, 58, 255);
-		g.text(multText, 0.0f, 0.0f);
-		g.popMatrix();
-
-		// 3. Combo debajo en azul con el mismo tamaño base (sin cartel)
-		String comboText = String.valueOf(combo);
-		g.pushMatrix();
-		g.translate(Math.round(rightX), Math.round(comboY));
-		g.scale(baseScale);
-		g.fill(0, 0, 0, 225);
-		g.text(comboText, 2.0f, 2.0f);
-		g.fill(75, 190, 255, 255);
-		g.text(comboText, 0.0f, 0.0f);
-		g.popMatrix();
-
-		g.popStyle();
-	}
-
-	/**
-	 * Renderiza el contador numérico grande (3, 2, 1) en el centro de la arena durante el pre-inicio
-	 * o durante la espera de 3 segundos al reanudar tras pausa.
-	 */
-	private void drawIntroCountdownOverlay(PGraphics g) {
-		float activeCountdown = Math.max(_introCountdown, _resumeCountdown);
-		if (activeCountdown <= 0.0f) return;
-
-		int sec = PApplet.constrain((int) Math.ceil(activeCountdown), 1, 3);
-		g.pushStyle();
-		g.textAlign(PConstants.CENTER, PConstants.CENTER);
-		if (Engine.titleFont != null) {
-			g.textFont(Engine.titleFont, 28);
-		} else {
-			g.textSize(28);
-		}
-		String label = String.valueOf(sec);
-		float cy = 128.0f;
-		g.fill(0, 0, 0, 210);
-		g.text(label, CENTER_X + 2.0f, cy + 2.0f);
-		g.fill(255, 235, 110, 255);
-		g.text(label, CENTER_X, cy);
 		g.popStyle();
 	}
 }

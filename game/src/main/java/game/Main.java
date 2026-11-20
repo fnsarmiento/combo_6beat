@@ -88,10 +88,17 @@ public class Main extends PApplet {
 	}
 
 	/**
-	 * Configura la tipografia monoespaciada compartida en {@link Engine},
-	 * priorizando `0xProto Nerd Font Mono` si esta instalada en el sistema.
+	 * Configura la tipografia pixel-art oficial del juego ({@code resources/fonts/born2bsporty-fs.otf})
+	 * en {@link Engine} sin antialiasing, con respaldo a {@code Monospaced} si faltara el archivo.
 	 */
 	private void setFonts() {
+		String customFontAbs = engine.ResourcesManager.getResourceAbsPath("fonts/born2bsporty-fs.otf");
+		if (new java.io.File(customFontAbs).exists()) {
+			Engine.descriptionFont = createFont(customFontAbs, 32, false);
+			Engine.titleFont = createFont(customFontAbs, 64, false);
+			return;
+		}
+
 		String fontName = "Monospaced";
 		for (String available : PFont.list()) {
 			if ("0xProto Nerd Font Mono".equals(available)) {
@@ -100,7 +107,7 @@ public class Main extends PApplet {
 			}
 		}
 
-		Engine.descriptionFont = createFont(fontName, 48, true);
-		Engine.titleFont = createFont(fontName, 96, true);
+		Engine.descriptionFont = createFont(fontName, 48, false);
+		Engine.titleFont = createFont(fontName, 96, false);
 	}
 }

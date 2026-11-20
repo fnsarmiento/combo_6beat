@@ -176,6 +176,13 @@ public class InitScene extends Scene {
 	private Button _songSpeedBtn;
 	private Button _songPlayBtn;
 
+	// Controles de la tarjeta de presentación en la pestaña TIENDA (ControlP5)
+	private Button _shopCardBg;
+	private Textarea _shopNameArea;
+	private Textarea _shopPriceArea;
+	private Button _shopDividerBox;
+	private Textarea _shopDescArea;
+
 	// Controles de la lista desplegable de amuletos
 	private Textlabel _amuletDropHeaderLbl;
 	private final Button[] _amuletDropBtns = new Button[AMULET_DROP_VISIBLE_ROWS];
@@ -349,107 +356,7 @@ public class InitScene extends Scene {
 	}
 
 	private void drawSongSelectOverlay(PGraphics g) {
-		// Fondo del panel principal dibujado en _virtualScreen (debajo de los controles ControlP5)
-		g.noStroke();
-		g.fill(14, 16, 28, 225);
-		g.rect(12.0f, 10.0f, BASE_W - 24.0f, BASE_H - 20.0f);
-
-		if (_songTab != SONG_TAB_SHOP) return;
-
-		float cardX = 220.0f;
-		float cardY = 40.0f;
-		float cardW = 238.0f;
-		float cardH = 176.0f; // Desde el margen bajo los tabs (y=40) hasta justo arriba del botón COMPRAR/EQUIPAR (y=222)
-
-		g.fill(22, 27, 46, 245);
-		g.stroke(82, 116, 178, 235);
-		g.strokeWeight(1.0f);
-		g.rect(cardX, cardY, cardW, cardH);
-
-		List<GameState.ItemDef> shopList = GameState.getShopAmulets();
-		if (shopList.isEmpty() || _shopSelectedIdx < 0 || _shopSelectedIdx >= shopList.size()) {
-			g.noStroke();
-			g.fill(200, 210, 230);
-			if (Engine.descriptionFont != null) g.textFont(Engine.descriptionFont, 9);
-			else g.textSize(9);
-			g.textAlign(PConstants.LEFT, PConstants.TOP);
-			g.text("No hay amuletos disponibles.", cardX + 12, cardY + 14);
-			return;
-		}
-
-		GameState.ItemDef def = shopList.get(_shopSelectedIdx);
-		boolean owned = GameState.hasItem(def.id);
-		boolean canAfford = GameState.getShopPoints() >= def.shopPrice;
-
-		int nameCol = owned
-			? g.color(80, 235, 135)    // Verde si ya se compró
-			: (canAfford ? g.color(255, 224, 65) : g.color(255, 85, 95)); // Amarillo si alcanza, Rojo si no
-
-		float padX = 12.0f;
-		float textMaxW = cardW - padX * 2.0f;
-		float cursorY = cardY + 14.0f;
-
-		g.noStroke();
-		g.textAlign(PConstants.LEFT, PConstants.TOP);
-
-		// 1. Nombre en grande
-		if (Engine.titleFont != null) g.textFont(Engine.titleFont, 14);
-		else g.textSize(14);
-		List<String> nameLines = wrapTextLines(g, def.name, textMaxW);
-		g.fill(nameCol);
-		for (String line : nameLines) {
-			g.text(line, cardX + padX, cursorY);
-			cursorY += 16.0f;
-		}
-
-		cursorY += 4.0f;
-
-		// 2. Precio en amarillo más chico que el nombre (ej. "1800 pts.")
-		if (Engine.descriptionFont != null) g.textFont(Engine.descriptionFont, 10);
-		else g.textSize(10);
-		g.fill(255, 224, 65);
-		g.text(def.shopPrice + " pts.", cardX + padX, cursorY);
-		cursorY += 15.0f;
-
-		// Separación visual entre precio y descripción
-		g.stroke(65, 86, 132, 185);
-		g.line(cardX + padX, cursorY, cardX + cardW - padX, cursorY);
-		cursorY += 10.0f;
-
-		// 3. Descripción en blanco (ligeramente más chica que el precio)
-		g.noStroke();
-		if (Engine.descriptionFont != null) g.textFont(Engine.descriptionFont, 9);
-		else g.textSize(9);
-		List<String> descLines = wrapTextLines(g, def.description, textMaxW);
-		g.fill(245, 248, 255);
-		for (String line : descLines) {
-			if (cursorY + 11.0f > cardY + cardH - 6.0f) break;
-			g.text(line, cardX + padX, cursorY);
-			cursorY += 12.0f;
-		}
-	}
-
-	/** Divide un texto en líneas ajustadas a {@code maxWidth} en coordenadas virtuales. */
-	private List<String> wrapTextLines(PGraphics g, String text, float maxWidth) {
-		List<String> lines = new ArrayList<>();
-		if (text == null || text.isEmpty()) return lines;
-		String[] words = text.split("\\s+");
-		StringBuilder current = new StringBuilder();
-		for (String word : words) {
-			String candidate = (current.length() == 0) ? word : (current + " " + word);
-			if (g.textWidth(candidate) <= maxWidth || current.length() == 0) {
-				current.setLength(0);
-				current.append(candidate);
-			} else {
-				lines.add(current.toString());
-				current.setLength(0);
-				current.append(word);
-			}
-		}
-		if (current.length() > 0) {
-			lines.add(current.toString());
-		}
-		return lines;
+		// Todos los paneles, listas y tarjetas de Canciones/Tienda se renderizan con ControlP5 (_songsGroup)
 	}
 
 	private void drawSettingsOverlay(PGraphics g) {
@@ -698,6 +605,7 @@ public class InitScene extends Scene {
 		ControlFont fontSmall = makeFont(6.5f, false);
 
 		_songsGroup = addUIGroup("ui_songs_group", 0, 0, BASE_W, BASE_H);
+		addUIBox("ui_songs_panel_bg", _songsGroup, 12, 10, BASE_W - 24, BASE_H - 20, app.color(14, 16, 28, 225));
 		_songsHeaderLbl = addUILabel("ui_songs_header", _songsGroup, "PARTIDA 1  |  PUNTOS: 0", 22, 16, app.color(255, 225, 130), fontTitle);
 
 		_songTabCustomBtn = addUIButton("ui_song_tab_custom", _songsGroup, "CANCIONES", 220, 14, 116, 18,
@@ -778,6 +686,19 @@ public class InitScene extends Scene {
 					launchSelectedSong();
 				}
 			});
+
+		// Tarjeta de presentación completa en ControlP5 para la pestaña TIENDA (cubre todo de y=40 a y=216)
+		ControlFont fontShopName = makeFont(13.5f, true);
+		ControlFont fontShopPrice = makeFont(9.5f, false);
+		ControlFont fontShopDesc = makeFont(8.5f, false);
+		_shopCardBg = addUIBox("ui_shop_card_bg", _songsGroup, 220, 40, 238, 176, app.color(20, 24, 40, 238));
+		_shopNameArea = addUITextarea("ui_shop_name_area", _songsGroup, "", 228, 48, 222, 42,
+			app.color(255, 224, 65), app.color(0, 0), fontShopName);
+		_shopPriceArea = addUITextarea("ui_shop_price_area", _songsGroup, "", 228, 94, 222, 22,
+			app.color(255, 224, 65), app.color(0, 0), fontShopPrice);
+		_shopDividerBox = addUIBox("ui_shop_divider", _songsGroup, 230, 118, 218, 1, app.color(72, 96, 150, 210));
+		_shopDescArea = addUITextarea("ui_shop_desc_area", _songsGroup, "", 228, 128, 222, 82,
+			app.color(245, 248, 255), app.color(0, 0), fontShopDesc);
 
 		// Controles de la lista desplegable de amuletos (ocultos por defecto)
 		_amuletDropHeaderLbl = addUILabel("ui_amulet_drop_hdr", _songsGroup, "AMULETOS EQUIPADOS", 220, 40,
@@ -905,6 +826,7 @@ public class InitScene extends Scene {
 
 	/** Sincroniza la pestaña CANCIONES (lista unificada Base + Custom, metadatos, opciones y desplegable de amuletos). */
 	private void syncSongsTabUI(PApplet app) {
+		hideShopCardControls();
 		if (_songImportBtn != null) _songImportBtn.show();
 		if (_songRescanBtn != null) _songRescanBtn.show();
 
@@ -1047,6 +969,14 @@ public class InitScene extends Scene {
 		}
 	}
 
+	private void hideShopCardControls() {
+		if (_shopCardBg != null) _shopCardBg.hide();
+		if (_shopNameArea != null) _shopNameArea.hide();
+		if (_shopPriceArea != null) _shopPriceArea.hide();
+		if (_shopDividerBox != null) _shopDividerBox.hide();
+		if (_shopDescArea != null) _shopDescArea.hide();
+	}
+
 	private void hideAmuletDropdownControls() {
 		if (_amuletDropHeaderLbl != null) _amuletDropHeaderLbl.hide();
 		for (Button btn : _amuletDropBtns) {
@@ -1123,6 +1053,36 @@ public class InitScene extends Scene {
 
 		if (_songInfoArea != null) {
 			_songInfoArea.hide();
+		}
+
+		if (selectedDef == null) {
+			if (_shopCardBg != null) _shopCardBg.show();
+			if (_shopNameArea != null) {
+				_shopNameArea.setColorValue(app.color(200, 210, 230)).setText("Sin amuletos").show();
+			}
+			if (_shopPriceArea != null) _shopPriceArea.hide();
+			if (_shopDividerBox != null) _shopDividerBox.hide();
+			if (_shopDescArea != null) {
+				_shopDescArea.setColorValue(app.color(200, 210, 230)).setText("No hay amuletos disponibles.").show();
+			}
+		} else {
+			boolean owned = GameState.hasItem(selectedDef.id);
+			boolean canAfford = GameState.getShopPoints() >= selectedDef.shopPrice;
+			int nameCol = owned
+				? app.color(80, 235, 135)
+				: (canAfford ? app.color(255, 224, 65) : app.color(255, 85, 95));
+
+			if (_shopCardBg != null) _shopCardBg.show();
+			if (_shopNameArea != null) {
+				_shopNameArea.setColorValue(nameCol).setText(selectedDef.name).show();
+			}
+			if (_shopPriceArea != null) {
+				_shopPriceArea.setColorValue(app.color(255, 224, 65)).setText(selectedDef.shopPrice + " pts.").show();
+			}
+			if (_shopDividerBox != null) _shopDividerBox.show();
+			if (_shopDescArea != null) {
+				_shopDescArea.setColorValue(app.color(245, 248, 255)).setText(selectedDef.description).show();
+			}
 		}
 
 		if (_songPlayBtn != null) {
