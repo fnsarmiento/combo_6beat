@@ -615,7 +615,7 @@ public class ROTNScene extends Scene {
 		}
 
 		int currentSongTimeMs;
-		if (_bgm != null) {
+		if (_bgm != null && _bgm.isLoaded()) {
 			if (_rhythmCore.isPaused()) {
 				if (_bgm.isPlaying()) {
 					Audio.pauseBGM();
@@ -1038,7 +1038,7 @@ public class ROTNScene extends Scene {
 			if (_introCountdown > 0.0f) {
 				songTimeMs = -Math.round(_introCountdown * 1000.0f);
 			} else {
-				songTimeMs = (_bgm != null) ? _bgm.getPositionMs() : _songFallbackTimerMs;
+				songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
 			}
 			drawPerspectiveHighway(g, songTimeMs);
 			drawPerspectiveReceptors(g);

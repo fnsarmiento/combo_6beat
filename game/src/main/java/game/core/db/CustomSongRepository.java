@@ -77,6 +77,35 @@ public class CustomSongRepository {
 		for (Path osuPath : osuFiles) {
 			registerOrUpdateOsuFile(osuPath.toFile());
 		}
+
+		// Eliminar de la BD canciones custom cuyos archivos .osu ya no existen en disco
+		pruneMissingCustomSongs();
+	}
+
+	private static void pruneMissingCustomSongs() {
+		List<Long> toDelete = new ArrayList<>();
+		try (Connection conn = DatabaseManager.getConnection();
+			 PreparedStatement ps = conn.prepareStatement("SELECT id_cancion, ruta_chart FROM CANCIONES_PERSONALIZADAS");
+			 ResultSet rs = ps.executeQuery()) {
+			while (rs.next()) {
+				long id = rs.getLong("id_cancion");
+				String ruta = rs.getString("ruta_chart");
+				if (ruta == null || ruta.isEmpty() || !new File(ResourcesManager.getAbsPathFromProject(ruta)).exists()) {
+					toDelete.add(id);
+				}
+			}
+			if (!toDelete.isEmpty()) {
+				try (PreparedStatement del = conn.prepareStatement("DELETE FROM CANCIONES_PERSONALIZADAS WHERE id_cancion = ?")) {
+					for (long id : toDelete) {
+						del.setLong(1, id);
+						del.addBatch();
+					}
+					del.executeBatch();
+				}
+			}
+		} catch (SQLException e) {
+			System.err.println("Error limpiando canciones custom faltantes: " + e.getMessage());
+		}
 	}
 
 	public static CustomSongSummary registerOrUpdateOsuFile(File osuFile) {

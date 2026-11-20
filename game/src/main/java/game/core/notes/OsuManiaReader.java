@@ -131,9 +131,24 @@ public class OsuManiaReader {
 
 		if (key.equals("AudioFilename")) {
 			audioFilename = val;
+			String wavCandidate = val;
+			int dotIdx = val.lastIndexOf('.');
+			if (dotIdx > 0 && !val.toLowerCase().endsWith(".wav")) {
+				wavCandidate = val.substring(0, dotIdx) + ".wav";
+			}
+
 			Path osuPath = Path.of(filepath).toAbsolutePath().normalize();
 			Path parentDir = osuPath.getParent();
 			if (parentDir != null) {
+				// Priorizar .wav compatible con javax.sound.sampled sobre .mp3
+				File localWav = parentDir.resolve(wavCandidate).normalize().toFile();
+				if (localWav.exists()) {
+					audioAbsPath = localWav.getAbsolutePath();
+					if (loadMedia) {
+						song = Audio.loadBGM(audioAbsPath);
+					}
+					return;
+				}
 				File localAudio = parentDir.resolve(val).normalize().toFile();
 				if (localAudio.exists()) {
 					audioAbsPath = localAudio.getAbsolutePath();
@@ -142,6 +157,14 @@ public class OsuManiaReader {
 					}
 					return;
 				}
+			}
+			String resWavAbs = ResourcesManager.getResourceAbsPath(wavCandidate);
+			if (new File(resWavAbs).exists()) {
+				audioAbsPath = resWavAbs;
+				if (loadMedia) {
+					song = ResourcesManager.loadBGM(wavCandidate);
+				}
+				return;
 			}
 			String resAbs = ResourcesManager.getResourceAbsPath(val);
 			if (new File(resAbs).exists()) {

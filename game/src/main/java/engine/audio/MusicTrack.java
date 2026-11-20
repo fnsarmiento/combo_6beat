@@ -77,6 +77,8 @@ public class MusicTrack {
 		}
 	}
 
+	public boolean isLoaded() { return _clip != null; }
+
 	public boolean isPlaying() { return _clip != null && _clip.isRunning(); }
 
 	public void setVolume(float volume) {
