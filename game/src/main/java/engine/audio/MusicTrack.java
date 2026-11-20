@@ -22,6 +22,8 @@ public class MusicTrack {
 	private BooleanControl _muteControl;
 	private long _pausedMicros = 0;
 	private boolean _looping = false;
+	private float _currentVolume = 1.0f;
+	private boolean _isMuted = false;
 
 	// =========================================================================
 	// Carga y Control de Reproducción
@@ -65,6 +67,7 @@ public class MusicTrack {
 			_clip.setMicrosecondPosition(targetMicros);
 		}
 
+		applyAudioState();
 		if (_looping) {
 			_clip.loop(Clip.LOOP_CONTINUOUSLY);
 		} else {
@@ -82,6 +85,7 @@ public class MusicTrack {
 	public void resume() {
 		if (_clip != null && !_clip.isRunning()) {
 			_clip.setMicrosecondPosition(_pausedMicros);
+			applyAudioState();
 			if (_looping) {
 				_clip.loop(Clip.LOOP_CONTINUOUSLY);
 			} else {
@@ -111,19 +115,29 @@ public class MusicTrack {
 	}
 
 	public void setVolume(float volume) {
-		if (_volumeControl != null) {
-			volume = Math.max(0.0001f, Math.min(1.0f, volume));
-			float db = (float) (Math.log10(volume) * 20.0);
-			db = Math.max(_volumeControl.getMinimum(), Math.min(_volumeControl.getMaximum(), db));
-			_volumeControl.setValue(db);
-		}
+		_currentVolume = Math.max(0.0f, Math.min(1.0f, volume));
+		applyAudioState();
 	}
 
 	public void setMute(boolean muted) {
+		_isMuted = muted;
+		applyAudioState();
+	}
+
+	private void applyAudioState() {
+		boolean effectiveMute = _isMuted || _currentVolume <= 0.0001f;
 		if (_muteControl != null) {
-			_muteControl.setValue(muted);
-		} else {
-			setVolume(muted ? 0.0f : Audio.getBGMVolume());
+			_muteControl.setValue(effectiveMute);
+		}
+		if (_volumeControl != null) {
+			if (effectiveMute) {
+				_volumeControl.setValue(_volumeControl.getMinimum());
+			} else {
+				float clamped = Math.max(0.0001f, Math.min(1.0f, _currentVolume));
+				float db = (float) (Math.log10(clamped) * 20.0);
+				db = Math.max(_volumeControl.getMinimum(), Math.min(_volumeControl.getMaximum(), db));
+				_volumeControl.setValue(db);
+			}
 		}
 	}
 

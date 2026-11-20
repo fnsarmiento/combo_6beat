@@ -32,6 +32,7 @@ import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.data.XML;
+import processing.event.KeyEvent;
 
 /**
  * Escena de combate rítmico de 6 carriles en perspectiva 3D (inspirada en Rift of the NecroDancer).
@@ -163,8 +164,39 @@ public class ROTNScene extends Scene {
 	private Textarea _uiModalDesc;
 	private Button _uiModalBtn1;
 	private Button _uiModalBtn2;
+	private Button _uiModalBtn3;
 	private int _modalFocusIdx = 0;
 	private boolean _modalWasOpen = false;
+
+	// Sub-modal de Configuración en Partida (Audio inmediato + Rebinding 6K)
+	private static final int INGAME_SET_BGM = 0;
+	private static final int INGAME_SET_SFX = 1;
+	private static final int INGAME_SET_MUTE = 2;
+	private static final int INGAME_SET_ALT_MODE = 3;
+	private static final int INGAME_SET_RESET = 4;
+	private static final int INGAME_SET_BACK = 5;
+	private static final int INGAME_SET_RHYTHM_START = 6; // 6..11 -> C1..C6
+	private static final int[][] INGAME_SET_RIGHT_GRID = {
+		{ 6,  9 },
+		{ 7, 10 },
+		{ 8, 11 }
+	};
+
+	private Group _uiSettingsGroup;
+	private Textlabel _uiSetBgmLbl;
+	private Button _uiSetBgmBarFill;
+	private Textlabel _uiSetSfxLbl;
+	private Button _uiSetSfxBarFill;
+	private Button _uiSetMuteBtn;
+	private Button _uiSetAltModeBtn;
+	private Button _uiSetResetBtn;
+	private Button _uiSetBackBtn;
+	private final Button[] _uiSetRhythmBtns = new Button[LANE_COUNT];
+	private boolean _inGameSettingsOpen = false;
+	private int _inGameSettingsFocus = INGAME_SET_BGM;
+	private int _rebindLane = -1;
+	private boolean _editingAltControls = false;
+	private boolean _ignoreSettingsNavOnce = false;
 
 	// =========================================================================
 	// 3. Constructores y ciclo de vida (setup, inicialización de canción, close)
@@ -611,23 +643,97 @@ public class ROTNScene extends Scene {
 		_uiItemLbl = addUILabel("ui_rotn_item_lbl", null, "Cura: Optimo", 352, 238, app.color(235, 240, 255), fontSmall);
 
 		// 6. Modal ControlP5 para Pausa / Victoria / Derrota
-		_uiModalGroup = addUIGroup("ui_rotn_modal_group", (BASE_W - 260) * 0.5f, (BASE_H - 150) * 0.5f, 260, 150);
-		addUIBox("ui_rotn_modal_bg", _uiModalGroup, 0, 0, 260, 150, app.color(12, 14, 24, 238));
-		_uiModalTitle = addUILabel("ui_rotn_modal_title", _uiModalGroup, "PAUSA", 20, 16, app.color(255), fontModalTitle);
-		_uiModalDesc = addUITextarea("ui_rotn_modal_desc", _uiModalGroup, "", 20, 44, 220, 56, app.color(230, 238, 250), app.color(18, 22, 34), fontMed);
+		_uiModalGroup = addUIGroup("ui_rotn_modal_group", (BASE_W - 260) * 0.5f, (BASE_H - 156) * 0.5f, 260, 156);
+		addUIBox("ui_rotn_modal_bg", _uiModalGroup, 0, 0, 260, 156, app.color(12, 14, 24, 238));
+		_uiModalTitle = addUILabel("ui_rotn_modal_title", _uiModalGroup, "PAUSA", 20, 14, app.color(255), fontModalTitle);
+		_uiModalDesc = addUITextarea("ui_rotn_modal_desc", _uiModalGroup, "", 20, 42, 220, 52, app.color(230, 238, 250), app.color(18, 22, 34), fontMed);
 
 		_uiModalBtn1 = addUIButton(
-			"ui_rotn_modal_btn1", _uiModalGroup, "Reanudar", 20, 110, 104, 24,
+			"ui_rotn_modal_btn1", _uiModalGroup, "Reanudar", 20, 102, 104, 20,
 			app.color(35, 90, 155), app.color(60, 130, 215), fontSmall,
 			() -> { _modalFocusIdx = 0; onModalPrimaryClick(); }
 		);
 		_uiModalBtn2 = addUIButton(
-			"ui_rotn_modal_btn2", _uiModalGroup, "Volver al Mapa", 136, 110, 104, 24,
+			"ui_rotn_modal_btn2", _uiModalGroup, "Configuracion", 136, 102, 104, 20,
+			app.color(45, 72, 118), app.color(75, 115, 185), fontSmall,
+			() -> { _modalFocusIdx = 1; onModalSecondaryClick(); }
+		);
+		_uiModalBtn3 = addUIButton(
+			"ui_rotn_modal_btn3", _uiModalGroup, "Salir", 20, 127, 220, 20,
 			app.color(95, 38, 52), app.color(145, 55, 75), fontSmall,
-			() -> { _modalFocusIdx = 1; returnToWorld(); }
+			() -> { _modalFocusIdx = 2; returnToWorld(); }
 		);
 
 		_uiModalGroup.hide();
+
+		// 7. Sub-modal de Configuración en Partida
+		buildInGameSettingsUI(app, fontSmall);
+	}
+
+	private void buildInGameSettingsUI(PApplet app, ControlFont fontSmall) {
+		_uiSettingsGroup = addUIGroup("ui_rotn_set_group", 30, 26, 420, 218);
+		addUIBox("ui_rotn_set_bg", _uiSettingsGroup, 0, 0, 420, 218, app.color(12, 14, 24, 245));
+		addUILabel("ui_rotn_set_hdr", _uiSettingsGroup, "CONFIGURACION EN PARTIDA", 14, 12, app.color(255, 225, 130), fontSmall);
+
+		// Columna izquierda: Volumen inmediato BGM/SFX, Mute, Modo teclas y Volver
+		_uiSetBgmLbl = addUILabel("ui_rotn_set_bgm_lbl", _uiSettingsGroup, "BGM: 50%", 14, 34, app.color(220, 235, 255), fontSmall);
+		addUIButton("ui_rotn_set_bgm_minus", _uiSettingsGroup, "-", 14, 46, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
+			() -> { _inGameSettingsFocus = INGAME_SET_BGM; adjustInGameBgmVolume(-0.1f); });
+		addUIBox("ui_rotn_set_bgm_bar_bg", _uiSettingsGroup, 40, 48, 138, 12, app.color(26, 30, 42));
+		_uiSetBgmBarFill = addUIBox("ui_rotn_set_bgm_bar_fill", _uiSettingsGroup, 40, 48, 69, 12, app.color(80, 195, 255));
+		addUIButton("ui_rotn_set_bgm_plus", _uiSettingsGroup, "+", 182, 46, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
+			() -> { _inGameSettingsFocus = INGAME_SET_BGM; adjustInGameBgmVolume(0.1f); });
+
+		_uiSetSfxLbl = addUILabel("ui_rotn_set_sfx_lbl", _uiSettingsGroup, "SFX: 50%", 14, 70, app.color(220, 235, 255), fontSmall);
+		addUIButton("ui_rotn_set_sfx_minus", _uiSettingsGroup, "-", 14, 82, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
+			() -> { _inGameSettingsFocus = INGAME_SET_SFX; adjustInGameSfxVolume(-0.1f); });
+		addUIBox("ui_rotn_set_sfx_bar_bg", _uiSettingsGroup, 40, 84, 138, 12, app.color(26, 30, 42));
+		_uiSetSfxBarFill = addUIBox("ui_rotn_set_sfx_bar_fill", _uiSettingsGroup, 40, 84, 69, 12, app.color(95, 235, 165));
+		addUIButton("ui_rotn_set_sfx_plus", _uiSettingsGroup, "+", 182, 82, 22, 16, app.color(35, 45, 70), app.color(55, 85, 140), fontSmall,
+			() -> { _inGameSettingsFocus = INGAME_SET_SFX; adjustInGameSfxVolume(0.1f); });
+
+		_uiSetMuteBtn = addUIButton("ui_rotn_set_mute", _uiSettingsGroup, "MUTE GENERAL: OFF", 14, 108, 190, 20,
+			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
+				_inGameSettingsFocus = INGAME_SET_MUTE;
+				toggleInGameMute();
+			});
+		_uiSetAltModeBtn = addUIButton("ui_rotn_set_alt", _uiSettingsGroup, "TECLAS: PRINCIPALES", 14, 134, 190, 20,
+			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
+				_inGameSettingsFocus = INGAME_SET_ALT_MODE;
+				_rebindLane = -1;
+				_editingAltControls = !_editingAltControls;
+				syncInGameSettingsUI(app);
+			});
+		_uiSetResetBtn = addUIButton("ui_rotn_set_reset", _uiSettingsGroup, "RESTAURAR TECLAS", 14, 160, 190, 20,
+			app.color(65, 52, 32), app.color(110, 88, 52), fontSmall, () -> {
+				_inGameSettingsFocus = INGAME_SET_RESET;
+				_rebindLane = -1;
+				Config.resetDefaultControls();
+				Config.saveConfig(".config");
+				syncInGameSettingsUI(app);
+			});
+		_uiSetBackBtn = addUIButton("ui_rotn_set_back", _uiSettingsGroup, "LISTO / VOLVER", 14, 186, 190, 22,
+			app.color(35, 115, 78), app.color(55, 160, 110), fontSmall, this::closeInGameSettings);
+
+		// Columna derecha: Rebinding rápido de los 6 carriles (C1..C3, C4..C6)
+		addUILabel("ui_rotn_set_keys_hdr", _uiSettingsGroup, "CARRILES RITMO 6K", 218, 34, app.color(140, 215, 255), fontSmall);
+		for (int i = 0; i < LANE_COUNT; i++) {
+			final int lane = i;
+			int col = i / 3;
+			int row = i % 3;
+			_uiSetRhythmBtns[i] = addUIButton("ui_rotn_set_k_" + i, _uiSettingsGroup, "",
+				218 + col * 96, 48 + row * 28, 92, 22,
+				app.color(28, 34, 52), app.color(50, 95, 165), fontSmall, () -> {
+					_inGameSettingsFocus = INGAME_SET_RHYTHM_START + lane;
+					_rebindLane = lane;
+					syncInGameSettingsUI(app);
+				});
+		}
+		addUITextarea("ui_rotn_set_hint", _uiSettingsGroup,
+			"Click o Enter: reasignar tecla\nIzq / Der: ajustar volumen\nESC: volver a Pausa",
+			218, 140, 188, 66, app.color(175, 205, 240), app.color(18, 22, 36), fontSmall);
+
+		_uiSettingsGroup.hide();
 	}
 
 	private void onModalPrimaryClick() {
@@ -640,6 +746,54 @@ public class ROTNScene extends Scene {
 		} else if (_rhythmCore.isPaused()) {
 			_rhythmCore.togglePause();
 		}
+	}
+
+	private void onModalSecondaryClick() {
+		if (_rhythmCore == null) return;
+		ROTNCore.BattleState state = _rhythmCore.getBattleState();
+		if (state == ROTNCore.BattleState.DEFEAT) {
+			returnToWorld();
+		} else if (_rhythmCore.isPaused()) {
+			openInGameSettings();
+		}
+	}
+
+	private void openInGameSettings() {
+		_inGameSettingsOpen = true;
+		_inGameSettingsFocus = INGAME_SET_BGM;
+		_rebindLane = -1;
+		_ignoreSettingsNavOnce = true;
+	}
+
+	private void closeInGameSettings() {
+		_rebindLane = -1;
+		_inGameSettingsOpen = false;
+		Config.saveConfig(".config");
+		if (_uiSettingsGroup != null) _uiSettingsGroup.hide();
+	}
+
+	private void adjustInGameBgmVolume(float delta) {
+		Config.BGMVolume = PApplet.constrain(Math.round((Config.BGMVolume + delta) * 10.0f) / 10.0f, 0.0f, 1.0f);
+		Config.applyAudioConfig();
+		Audio.syncTrackVolume(_bgm);
+		Config.saveConfig(".config");
+		syncInGameSettingsUI(Engine.getApp());
+	}
+
+	private void adjustInGameSfxVolume(float delta) {
+		Config.SFXVolume = PApplet.constrain(Math.round((Config.SFXVolume + delta) * 10.0f) / 10.0f, 0.0f, 1.0f);
+		Config.applyAudioConfig();
+		Audio.playSFX(_hitSfx);
+		Config.saveConfig(".config");
+		syncInGameSettingsUI(Engine.getApp());
+	}
+
+	private void toggleInGameMute() {
+		Config.isMuted = !Config.isMuted;
+		Config.applyAudioConfig();
+		Audio.syncTrackVolume(_bgm);
+		Config.saveConfig(".config");
+		syncInGameSettingsUI(Engine.getApp());
 	}
 
 	/**
@@ -751,6 +905,18 @@ public class ROTNScene extends Scene {
 	private void syncModalUI(PApplet app) {
 		if (_uiModalGroup == null) return;
 
+		if (_rhythmCore.isPaused() && _inGameSettingsOpen) {
+			_uiModalGroup.hide();
+			if (_uiSettingsGroup != null) {
+				_uiSettingsGroup.show();
+				syncInGameSettingsUI(app);
+			}
+			return;
+		}
+		if (_uiSettingsGroup != null) {
+			_uiSettingsGroup.hide();
+		}
+
 		ROTNCore.BattleState state = _rhythmCore.getBattleState();
 		if (state == ROTNCore.BattleState.VICTORY) {
 			_uiModalGroup.show();
@@ -771,6 +937,7 @@ public class ROTNScene extends Scene {
 			_uiModalBtn1.setLabel(GameState.launchedFromMenu ? "> Volver al Selector" : "> Volver al Mapa");
 			_uiModalBtn1.setColorBackground(app.color(55, 130, 215));
 			_uiModalBtn2.hide();
+			if (_uiModalBtn3 != null) _uiModalBtn3.hide();
 		} else if (state == ROTNCore.BattleState.DEFEAT) {
 			_uiModalGroup.show();
 			_uiModalTitle.setText("DERROTA");
@@ -784,6 +951,7 @@ public class ROTNScene extends Scene {
 			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Volver");
 			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
 			_uiModalBtn2.show();
+			if (_uiModalBtn3 != null) _uiModalBtn3.hide();
 		} else if (_rhythmCore.isPaused()) {
 			_uiModalGroup.show();
 			_uiModalTitle.setText("PAUSA");
@@ -795,11 +963,81 @@ public class ROTNScene extends Scene {
 			);
 			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reanudar");
 			_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
-			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Salir al Mapa");
-			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
+			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Configuracion");
+			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(75, 118, 195) : app.color(45, 72, 118));
 			_uiModalBtn2.show();
+			if (_uiModalBtn3 != null) {
+				_uiModalBtn3.setLabel((_modalFocusIdx == 2 ? "> " : "") + (GameState.launchedFromMenu ? "Salir al Selector" : "Salir al Mapa"));
+				_uiModalBtn3.setColorBackground(_modalFocusIdx == 2 ? app.color(150, 58, 80) : app.color(95, 38, 52));
+				_uiModalBtn3.show();
+			}
 		} else {
 			_uiModalGroup.hide();
+		}
+	}
+
+	private void syncInGameSettingsUI(PApplet app) {
+		if (_uiSettingsGroup == null || app == null) return;
+
+		if (_uiSetBgmLbl != null) {
+			boolean f = (_inGameSettingsFocus == INGAME_SET_BGM);
+			_uiSetBgmLbl.setText((f ? "> " : "") + "BGM: " + Math.round(Config.BGMVolume * 100.0f) + "%" + (f ? "  [< / >]" : ""));
+			_uiSetBgmLbl.setColorValue(f ? app.color(255, 225, 110) : app.color(220, 235, 255));
+		}
+		if (_uiSetBgmBarFill != null) {
+			int w = Math.max(1, Math.round(scaleW(138) * Config.BGMVolume));
+			_uiSetBgmBarFill.setSize(w, Math.max(1, (int) scaleH(12)));
+			_uiSetBgmBarFill.setColorBackground((_inGameSettingsFocus == INGAME_SET_BGM) ? app.color(130, 225, 255) : app.color(80, 195, 255));
+		}
+
+		if (_uiSetSfxLbl != null) {
+			boolean f = (_inGameSettingsFocus == INGAME_SET_SFX);
+			_uiSetSfxLbl.setText((f ? "> " : "") + "SFX: " + Math.round(Config.SFXVolume * 100.0f) + "%" + (f ? "  [< / >]" : ""));
+			_uiSetSfxLbl.setColorValue(f ? app.color(255, 225, 110) : app.color(220, 235, 255));
+		}
+		if (_uiSetSfxBarFill != null) {
+			int w = Math.max(1, Math.round(scaleW(138) * Config.SFXVolume));
+			_uiSetSfxBarFill.setSize(w, Math.max(1, (int) scaleH(12)));
+			_uiSetSfxBarFill.setColorBackground((_inGameSettingsFocus == INGAME_SET_SFX) ? app.color(145, 255, 195) : app.color(95, 235, 165));
+		}
+
+		if (_uiSetMuteBtn != null) {
+			boolean f = (_inGameSettingsFocus == INGAME_SET_MUTE);
+			_uiSetMuteBtn.setLabel((f ? "> " : "") + "MUTE GENERAL: " + (Config.isMuted ? "ON" : "OFF"));
+			_uiSetMuteBtn.setColorBackground(
+				f ? (Config.isMuted ? app.color(190, 65, 80) : app.color(55, 110, 195))
+				  : (Config.isMuted ? app.color(145, 45, 58) : app.color(32, 42, 66))
+			);
+		}
+		if (_uiSetAltModeBtn != null) {
+			boolean f = (_inGameSettingsFocus == INGAME_SET_ALT_MODE);
+			_uiSetAltModeBtn.setLabel((f ? "> " : "") + "TECLAS: " + (_editingAltControls ? "ALTERNATIVAS" : "PRINCIPALES"));
+			_uiSetAltModeBtn.setColorBackground(
+				f ? app.color(55, 110, 195)
+				  : (_editingAltControls ? app.color(85, 60, 130) : app.color(32, 42, 66))
+			);
+		}
+		if (_uiSetResetBtn != null) {
+			boolean f = (_inGameSettingsFocus == INGAME_SET_RESET);
+			_uiSetResetBtn.setLabel((f ? "> " : "") + "RESTAURAR TECLAS");
+			_uiSetResetBtn.setColorBackground(f ? app.color(130, 102, 55) : app.color(65, 52, 32));
+		}
+		if (_uiSetBackBtn != null) {
+			boolean f = (_inGameSettingsFocus == INGAME_SET_BACK);
+			_uiSetBackBtn.setLabel((f ? "> " : "") + "LISTO / VOLVER");
+			_uiSetBackBtn.setColorBackground(f ? app.color(55, 165, 110) : app.color(35, 115, 78));
+		}
+
+		int[] rhythmArr = _editingAltControls ? Config.RhythmAltButtons : Config.RhythmButtons;
+		for (int i = 0; i < LANE_COUNT; i++) {
+			Button b = _uiSetRhythmBtns[i];
+			if (b == null) continue;
+			boolean listening = (_rebindLane == i);
+			boolean f = (_inGameSettingsFocus == INGAME_SET_RHYTHM_START + i);
+			b.setLabel((f ? "> " : "") + "C" + (i + 1) + ": " + (listening ? "[ ? ]" : Config.getKeyLabel(rhythmArr[i])));
+			b.setColorBackground(
+				listening ? app.color(175, 115, 25) : (f ? app.color(55, 110, 195) : app.color(28, 34, 52))
+			);
 		}
 	}
 
@@ -834,6 +1072,14 @@ public class ROTNScene extends Scene {
 			return;
 		}
 
+		// 3b. Si está abierto el submenú de Configuración en Partida, retener ESC dentro del submenú
+		if (_rhythmCore.isPaused() && _inGameSettingsOpen) {
+			resolveCurrentSongTimeMs(dt);
+			handleInGameSettingsInput();
+			syncCombatUI();
+			return;
+		}
+
 		// 4. Sincronización del reloj de canción y actualización del núcleo rítmico
 		int currentSongTimeMs = resolveCurrentSongTimeMs(dt);
 		_rhythmCore.update(currentSongTimeMs, dt);
@@ -844,9 +1090,13 @@ public class ROTNScene extends Scene {
 				_modalFocusIdx = 0;
 				_modalWasOpen = true;
 			}
-			handlePauseModalInput();
+			if (!_inGameSettingsOpen) {
+				handlePauseModalInput();
+			}
 		} else {
 			_modalWasOpen = false;
+			_inGameSettingsOpen = false;
+			_rebindLane = -1;
 			updateActiveGameplayEffects(dt);
 		}
 
@@ -887,6 +1137,11 @@ public class ROTNScene extends Scene {
 	 * Actualiza la cuenta regresiva inicial de 3 segundos (permitiendo pausar antes de que inicie el audio).
 	 */
 	private void updateIntroCountdown(float dt) {
+		if (_rhythmCore.isPaused() && _inGameSettingsOpen) {
+			handleInGameSettingsInput();
+			return;
+		}
+
 		if (
 			KBInput.wasKeyJustPressed(Config.UIButtons[Config.CANCEL]) ||
 			KBInput.wasKeyJustPressed(Config.UIAltButtons[Config.CANCEL])
@@ -899,9 +1154,13 @@ public class ROTNScene extends Scene {
 				_modalFocusIdx = 0;
 				_modalWasOpen = true;
 			}
-			handlePauseModalInput();
+			if (!_inGameSettingsOpen) {
+				handlePauseModalInput();
+			}
 		} else {
 			_modalWasOpen = false;
+			_inGameSettingsOpen = false;
+			_rebindLane = -1;
 			_introCountdown -= dt;
 			if (_introCountdown <= 0.0f) {
 				_introCountdown = 0.0f;
@@ -1000,20 +1259,127 @@ public class ROTNScene extends Scene {
 		}
 	}
 
-	private void handlePauseModalInput() {
-		if (
-			Config.wasUIKeyJustPressed(Config.LEFT) ||
-			Config.wasUIKeyJustPressed(Config.RIGHT) ||
-			Config.wasUIKeyJustPressed(Config.UP) ||
-			Config.wasUIKeyJustPressed(Config.DOWN)
-		) {
-			_modalFocusIdx = (_modalFocusIdx == 0) ? 1 : 0;
-		} else if (Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT)) {
-			if (_modalFocusIdx == 0) {
-				_rhythmCore.togglePause();
-			} else {
-				returnToWorld();
+	@Override
+	public void keyEvent(KeyEvent e) {
+		if (_inGameSettingsOpen && _rebindLane >= 0 && e.getAction() == KeyEvent.PRESS) {
+			int code = e.getKeyCode();
+			if (code == 27) { // ESC cancela la captura de tecla sin cerrar el submenú
+				_rebindLane = -1;
+				_ignoreSettingsNavOnce = true;
+				return;
 			}
+			int normalized = KBInput.normalizeKey(code);
+			if (normalized > 0 && normalized < 256) {
+				int[] rhythmArr = _editingAltControls ? Config.RhythmAltButtons : Config.RhythmButtons;
+				if (_rebindLane < rhythmArr.length) {
+					rhythmArr[_rebindLane] = normalized;
+				}
+				Config.saveConfig(".config");
+				_rebindLane = -1;
+				_ignoreSettingsNavOnce = true;
+			}
+		}
+	}
+
+	private void handlePauseModalInput() {
+		if (Config.wasUIKeyJustPressed(Config.LEFT) || Config.wasUIKeyJustPressed(Config.RIGHT)) {
+			if (_modalFocusIdx == 0) _modalFocusIdx = 1;
+			else if (_modalFocusIdx == 1) _modalFocusIdx = 0;
+		} else if (Config.wasUIKeyJustPressed(Config.UP)) {
+			_modalFocusIdx = (_modalFocusIdx == 2) ? 0 : 2;
+		} else if (Config.wasUIKeyJustPressed(Config.DOWN)) {
+			_modalFocusIdx = (_modalFocusIdx == 2) ? 0 : 2;
+		} else if (Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT)) {
+			switch (_modalFocusIdx) {
+				case 0 -> _rhythmCore.togglePause();
+				case 1 -> openInGameSettings();
+				case 2 -> returnToWorld();
+			}
+		}
+	}
+
+	private void handleInGameSettingsInput() {
+		if (_ignoreSettingsNavOnce) {
+			_ignoreSettingsNavOnce = false;
+			return;
+		}
+		if (_rebindLane >= 0) return;
+
+		boolean up = Config.wasUIKeyJustPressed(Config.UP);
+		boolean down = Config.wasUIKeyJustPressed(Config.DOWN);
+		boolean left = Config.wasUIKeyJustPressed(Config.LEFT);
+		boolean right = Config.wasUIKeyJustPressed(Config.RIGHT);
+		boolean accept = Config.wasUIKeyJustPressed(Config.INTERACT) || Config.wasRPGKeyJustPressed(Config.INTERACT);
+		boolean back = Config.wasUIKeyJustPressed(Config.CANCEL);
+
+		if (back) {
+			closeInGameSettings();
+			return;
+		}
+
+		// Columna izquierda (0..5): BGM, SFX, Mute, Principales/Alt, Restaurar, Volver
+		if (_inGameSettingsFocus <= INGAME_SET_BACK) {
+			if (up) {
+				_inGameSettingsFocus = (_inGameSettingsFocus - 1 + 6) % 6;
+			} else if (down) {
+				_inGameSettingsFocus = (_inGameSettingsFocus + 1) % 6;
+			} else {
+				switch (_inGameSettingsFocus) {
+					case INGAME_SET_BGM -> {
+						if (left) adjustInGameBgmVolume(-0.1f);
+						else if (right || accept) adjustInGameBgmVolume(0.1f);
+					}
+					case INGAME_SET_SFX -> {
+						if (left) adjustInGameSfxVolume(-0.1f);
+						else if (right || accept) adjustInGameSfxVolume(0.1f);
+					}
+					case INGAME_SET_MUTE -> {
+						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
+						else if (accept) toggleInGameMute();
+					}
+					case INGAME_SET_ALT_MODE -> {
+						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
+						else if (accept) {
+							_editingAltControls = !_editingAltControls;
+						}
+					}
+					case INGAME_SET_RESET -> {
+						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
+						else if (accept) {
+							Config.resetDefaultControls();
+							Config.saveConfig(".config");
+						}
+					}
+					case INGAME_SET_BACK -> {
+						if (right) _inGameSettingsFocus = INGAME_SET_RHYTHM_START + 2;
+						else if (accept) closeInGameSettings();
+					}
+				}
+			}
+			return;
+		}
+
+		// Columna derecha (6..11): Carriles 6K en grilla 3x2
+		int row = 0, col = 0;
+		for (int r = 0; r < INGAME_SET_RIGHT_GRID.length; r++) {
+			for (int c = 0; c < 2; c++) {
+				if (INGAME_SET_RIGHT_GRID[r][c] == _inGameSettingsFocus) {
+					row = r;
+					col = c;
+				}
+			}
+		}
+
+		if (accept) {
+			_rebindLane = _inGameSettingsFocus - INGAME_SET_RHYTHM_START;
+		} else if (left) {
+			_inGameSettingsFocus = (col == 1) ? INGAME_SET_RIGHT_GRID[row][0] : INGAME_SET_BGM;
+		} else if (right && col == 0) {
+			_inGameSettingsFocus = INGAME_SET_RIGHT_GRID[row][1];
+		} else if (up) {
+			_inGameSettingsFocus = INGAME_SET_RIGHT_GRID[(row - 1 + INGAME_SET_RIGHT_GRID.length) % INGAME_SET_RIGHT_GRID.length][col];
+		} else if (down) {
+			_inGameSettingsFocus = INGAME_SET_RIGHT_GRID[(row + 1) % INGAME_SET_RIGHT_GRID.length][col];
 		}
 	}
 

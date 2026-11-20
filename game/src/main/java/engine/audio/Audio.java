@@ -54,11 +54,15 @@ public class Audio {
 		return _isMuted ? 0.0f : _BGMVolume;
 	}
 
+	public static boolean isMuted() {
+		return _isMuted;
+	}
+
 	public static void setBGMVolume(float volume) {
 		_BGMVolume = PApplet.constrain(volume, 0.0f, 1.0f);
-
-		if (_actualBGM != null && !_isMuted) {
-			_actualBGM.setVolume(_BGMVolume);
+		syncTrackVolume(_actualBGM);
+		if (_persistentBGM != null && _persistentBGM != _actualBGM) {
+			syncTrackVolume(_persistentBGM);
 		}
 	}
 
@@ -68,18 +72,23 @@ public class Audio {
 
 	public static void setSFXVolume(float volume) {
 		_SFXVolume = PApplet.constrain(volume, 0.0f, 1.0f);
-
-		if (!_isMuted) {
-			TinySound.setGlobalVolume(_SFXVolume);
-		}
+		TinySound.setGlobalVolume(_isMuted ? 0.0f : _SFXVolume);
 	}
 
 	public static void setMute(boolean mute) {
 		_isMuted = mute;
-		if (_actualBGM != null) {
-			_actualBGM.setMute(_isMuted);
+		syncTrackVolume(_actualBGM);
+		if (_persistentBGM != null && _persistentBGM != _actualBGM) {
+			syncTrackVolume(_persistentBGM);
 		}
 		TinySound.setGlobalVolume(_isMuted ? 0.0f : _SFXVolume);
+	}
+
+	/** Aplica de inmediato el volumen y estado de silencio globales sobre una pista {@link MusicTrack}. */
+	public static void syncTrackVolume(MusicTrack track) {
+		if (track == null) return;
+		track.setVolume(_BGMVolume);
+		track.setMute(_isMuted);
 	}
 
 	public static void toggleMute() {

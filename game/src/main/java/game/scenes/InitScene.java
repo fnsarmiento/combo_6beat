@@ -1091,6 +1091,7 @@ public class InitScene extends Scene {
 	private void adjustSfxVolume(float delta) {
 		Config.SFXVolume = PApplet.constrain(Math.round((Config.SFXVolume + delta) * 10.0f) / 10.0f, 0.0f, 1.0f);
 		Config.applyAudioConfig();
+		Audio.playSFX(ResourcesManager.loadSFX("sfx/Normal-Hitnormal.wav"));
 		Config.saveConfig(".config");
 		syncSettingsUI();
 	}
