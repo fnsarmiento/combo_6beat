@@ -8,6 +8,7 @@ import static processing.core.PApplet.split;
 import engine.Engine;
 import engine.ResourcesManager;
 import engine.audio.Audio;
+import engine.audio.AudioConverter;
 import engine.audio.MusicTrack;
 import engine.draw.Sprite2D;
 import java.io.File;
@@ -151,7 +152,8 @@ public class OsuManiaReader {
 				}
 				File localAudio = parentDir.resolve(val).normalize().toFile();
 				if (localAudio.exists()) {
-					audioAbsPath = localAudio.getAbsolutePath();
+					File playable = loadMedia ? AudioConverter.ensureWav(localAudio) : localAudio;
+					audioAbsPath = playable.getAbsolutePath();
 					if (loadMedia) {
 						song = Audio.loadBGM(audioAbsPath);
 					}
