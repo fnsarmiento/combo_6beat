@@ -50,7 +50,7 @@ public class InitScene extends Scene {
 
 	// --- Menú Principal ---
 	private static final String[] MAIN_LABELS = {
-		"JUGAR (HUB)",
+		"JUGAR",
 		"SELECTOR DE CANCIONES",
 		"CONFIGURACION",
 		"SALIR"
@@ -1148,7 +1148,6 @@ public class InitScene extends Scene {
 				} else if (_rebindCategory == REBIND_RPG && _rebindIndex >= 0 && _rebindIndex < rpgArr.length) {
 					rpgArr[_rebindIndex] = normalized;
 				}
-				Config.syncDialogKeys();
 				Config.saveConfig(".config");
 				_rebindCategory = REBIND_NONE;
 				_rebindIndex = -1;

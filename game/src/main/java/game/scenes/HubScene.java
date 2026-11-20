@@ -7,7 +7,6 @@ import engine.Engine;
 import engine.ResourcesManager;
 import engine.Scene;
 import engine.audio.Audio;
-import engine.dialogs.DialogManager;
 import engine.draw.Sprite2D;
 import game.Config;
 import game.Global;
@@ -293,8 +292,6 @@ public class HubScene extends Scene {
 
 		super.setup();
 		Audio.ensurePersistentBGM(ResourcesManager.getAbsPathFromProject(Global.MENU_HUB_BGM));
-		DialogManager.setOnLoadRequest(this::onHubDialogLoadRequest);
-		DialogManager.loadDialogFile("dialogs/draft_hub.json");
 
 		initSprites();
 		initStations();
@@ -317,11 +314,6 @@ public class HubScene extends Scene {
 
 		updateSpriteAnimations(dt);
 		updateHopInterpolation(dt);
-
-		if (DialogManager.isActive()) {
-			DialogManager.update(dt);
-			return;
-		}
 
 		handleGridMovementInput();
 		handleTileInteractionInput();
@@ -434,7 +426,7 @@ public class HubScene extends Scene {
 		switch (st.type) {
 			case SONG_PORTAL -> launchSongFromHub(st.targetPath);
 			case ARCADE_PORTAL -> openArcadeSongSelect();
-			case NPC_DIALOG -> startHubNpcDialog(st.targetPath);
+			case NPC_DIALOG -> showHubNpcHint();
 			case CHIP_ALTAR -> cycleChip();
 			case SAVE_ALTAR -> saveProgressAtAltar();
 			case MENU_EXIT -> exitToMainMenu();
@@ -530,20 +522,16 @@ public class HubScene extends Scene {
 	}
 
 	// =========================================================================
-	// DIALOGOS Y LANZADORES DE BATALLAS
+	// GUIA DEL NPC Y LANZADORES DE BATALLAS
 	// =========================================================================
 
-	/** Inicia el grafo de dialogo narrativo del NPC guia del Hub. */
-	private void startHubNpcDialog(String startNodeId) {
-		DialogManager.loadDialogFile("dialogs/draft_hub.json");
-		DialogManager.start(startNodeId);
-	}
-
-	/** Callback invocado cuando un nodo de dialogo solicita cargar una escena de combate. */
-	private void onHubDialogLoadRequest(String targetPath) {
-		if (targetPath == null || targetPath.isEmpty()) return;
-		if (targetPath.endsWith(".scene")) {
-			launchSongFromHub(targetPath);
+	/** Muestra un consejo rapido de estado/progreso al interactuar con La Gata en el Hub. */
+	private void showHubNpcHint() {
+		int defeated = countDefeatedHubBosses();
+		if (defeated >= 4) {
+			showToast("LA GATA: Miau! Dominaste los 4 portales! Prueba el portal OSU o mejora tus puntajes.");
+		} else {
+			showToast("LA GATA: Miau! Portales vencidos: " + defeated + "/4. Equipa un chip en CHIP antes de entrar.");
 		}
 	}
 

@@ -3,7 +3,6 @@ package game;
 import engine.Engine;
 import engine.KBInput;
 import engine.audio.Audio;
-import engine.dialogs.GameDialog;
 import java.io.File;
 import java.nio.file.Files;
 import processing.data.JSONObject;
@@ -158,25 +157,6 @@ public class Config {
 		System.arraycopy(DEFAULT_RPG_ALT, 0, RPGAltButtons, 0, DEFAULT_RPG_ALT.length);
 		System.arraycopy(DEFAULT_UI, 0, UIButtons, 0, DEFAULT_UI.length);
 		System.arraycopy(DEFAULT_UI_ALT, 0, UIAltButtons, 0, DEFAULT_UI_ALT.length);
-		syncDialogKeys();
-	}
-
-	/** Sincroniza las teclas de avance y seleccion de opciones con el motor de dialogos (`GameDialog`). */
-	public static void syncDialogKeys() {
-		GameDialog.KEYS_INTERACT = new int[] {
-			UIButtons[INTERACT],
-			UIAltButtons[INTERACT],
-			RPGButtons[INTERACT],
-			RPGAltButtons[INTERACT]
-		};
-		GameDialog.KEYS_LEFT = new int[] {
-			UIButtons[LEFT],
-			UIAltButtons[LEFT]
-		};
-		GameDialog.KEYS_RIGHT = new int[] {
-			UIButtons[RIGHT],
-			UIAltButtons[RIGHT]
-		};
 	}
 
 	/** Convierte un codigo de tecla (`keyCode`) en una etiqueta corta legible para el HUD y menu de controles. */

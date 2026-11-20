@@ -1,6 +1,5 @@
 package game.core;
 
-import engine.dialogs.DialogManager;
 import game.core.db.DatabaseManager;
 import game.core.db.SaveRepository;
 import java.util.ArrayList;
@@ -144,7 +143,6 @@ public class GameState {
 		}
 		// Inventario inicial minimo para disponer de curacion base en los primeros combates
 		_inventory.put("potion_small", 2);
-		bindDialogHooks();
 	}
 
 	/** Asegura que el catalogo en memoria contenga todas las definiciones base del juego. */
@@ -533,21 +531,8 @@ public class GameState {
 	}
 
 	// =========================================================================
-	// PROGRESO DE BATALLAS, HISTORIA, FLAGS DE DIALOGO Y TRANSICIONES
+	// PROGRESO DE BATALLAS, HISTORIA, FLAGS Y TRANSICIONES
 	// =========================================================================
-
-	/** Conecta los callbacks de `DialogManager` con el sistema de banderas e inventario. */
-	public static void bindDialogHooks() {
-		DialogManager.setOnDefineFlag(flag -> {
-			defineFlag(flag);
-			autoSaveIfStory();
-		});
-		DialogManager.setOnCheckFlag(GameState::hasFlag);
-		DialogManager.setOnGiveItemRequest((itemId, count) -> {
-			addItem(itemId, count);
-			autoSaveIfStory();
-		});
-	}
 
 	/** Activa una bandera de evento narrativo o de jefe derrotado. */
 	public static void defineFlag(String flag) {
@@ -556,11 +541,10 @@ public class GameState {
 		}
 	}
 
-	/** Elimina una bandera de estado tanto globalmente como del contexto local de dialogos. */
+	/** Elimina una bandera de estado global. */
 	public static void clearFlag(String flag) {
 		if (flag != null && !flag.isEmpty()) {
 			_flags.remove(flag);
-			DialogManager.clearLocalFlag(flag);
 		}
 	}
 

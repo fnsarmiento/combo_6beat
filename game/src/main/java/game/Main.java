@@ -3,7 +3,6 @@ package game;
 import static game.Global.*;
 
 import engine.Engine;
-import engine.dialogs.GameDialog;
 import game.core.GameState;
 import game.core.db.CustomSongRepository;
 import game.core.db.DatabaseManager;
@@ -49,7 +48,7 @@ public class Main extends PApplet {
 
 	/**
 	 * Inicializa el motor (`Engine`), la configuracion de audio/video/controles, las fuentes
-	 * monoespaciadas de dialogos, la base de datos SQLite y la escena de titulo.
+	 * monoespaciadas compartidas, la base de datos SQLite y la escena de titulo.
 	 */
 	public void setup() {
 		surface.setTitle("Combo 6Beat");
@@ -65,8 +64,6 @@ public class Main extends PApplet {
 		Config.applyVideoConfig();
 
 		setFonts();
-
-		Config.syncDialogKeys();
 
 		DatabaseManager.init();
 		CustomSongRepository.syncCustomSongsFolder();
@@ -91,7 +88,7 @@ public class Main extends PApplet {
 	}
 
 	/**
-	 * Configura la tipografia monoespaciada para los cuadros de dialogo (`GameDialog`),
+	 * Configura la tipografia monoespaciada compartida en {@link Engine},
 	 * priorizando `0xProto Nerd Font Mono` si esta instalada en el sistema.
 	 */
 	private void setFonts() {
@@ -103,9 +100,7 @@ public class Main extends PApplet {
 			}
 		}
 
-		GameDialog.descriptionFont = createFont(fontName, 48, true);
-		GameDialog.descriptionSize = 10;
-		GameDialog.titleFont = createFont(fontName, 96, true);
-		GameDialog.titleSize = 15;
+		Engine.descriptionFont = createFont(fontName, 48, true);
+		Engine.titleFont = createFont(fontName, 96, true);
 	}
 }

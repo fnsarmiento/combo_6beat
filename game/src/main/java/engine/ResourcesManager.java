@@ -4,7 +4,6 @@ import engine.audio.Audio;
 import engine.audio.MusicTrack;
 import engine.draw.Sprite2D;
 import engine.objects.GameObject;
-import engine.physics.Box;
 import java.io.File;
 import java.lang.reflect.Array;
 import java.nio.file.Files;
@@ -149,24 +148,6 @@ public class ResourcesManager {
 			sprites[i] = loadSprite(children[i]);
 		}
 		return sprites;
-	}
-
-	public static Box loadBox(XML xml) {
-		Box box = new Box(0, 0, 0, 0);
-		box.fromXML(xml);
-		return box;
-	}
-
-	public static Box[] loadBoxes(XML mapXml) {
-		if (mapXml == null) return new Box[0];
-		ArrayList<Box> boxes = new ArrayList<>();
-		for (XML child : mapXml.getChildren()) {
-			String name = child.getName();
-			if ("Box".equals(name) || "box".equals(name) || "Rect".equals(name)) {
-				boxes.add(loadBox(child));
-			}
-		}
-		return boxes.toArray(new Box[0]);
 	}
 
 	/**

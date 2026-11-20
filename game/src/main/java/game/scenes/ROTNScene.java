@@ -14,8 +14,6 @@ import engine.ResourcesManager;
 import engine.Scene;
 import engine.audio.Audio;
 import engine.audio.MusicTrack;
-import engine.dialogs.DialogManager;
-import engine.dialogs.GameDialog;
 import engine.draw.ParticleSystem;
 import game.Config;
 import game.Global;
@@ -249,7 +247,6 @@ public class ROTNScene extends Scene {
 	public void setup() {
 		Engine.ensureVirtualScreenSize((int) BASE_W, (int) BASE_H);
 		GameState.init();
-		GameState.bindDialogHooks();
 		Audio.pausePersistentBGM();
 		super.setup();
 
@@ -481,7 +478,6 @@ public class ROTNScene extends Scene {
 			return;
 		}
 		boolean won = (_rhythmCore != null && _rhythmCore.getBattleState() == ROTNCore.BattleState.VICTORY);
-		DialogManager.resolveBattleOutcome(won);
 		if (won) {
 			GameState.defineFlag("LAST_BATTLE_WON");
 			GameState.clearFlag("LAST_BATTLE_LOST");
@@ -491,12 +487,6 @@ public class ROTNScene extends Scene {
 		}
 		GameState.autoSaveIfStory();
 		Engine.changeScene(new HubScene());
-	}
-
-	@Override
-	protected void onDialogLoadRequest(String scenePath) {
-		String absPath = ResourcesManager.getAbsPathFromProject(scenePath);
-		Engine.changeScene(new ROTNScene(absPath));
 	}
 
 	@Override
@@ -835,16 +825,6 @@ public class ROTNScene extends Scene {
 	public void update(float dt) {
 		super.update(dt);
 		GameState.updateNotification(dt);
-
-		// 1. Si hay un diálogo activo superpuesto, pausar temporalmente la música
-		if (DialogManager.isActive()) {
-			if (_bgm != null && _bgm.isPlaying()) {
-				Audio.pauseBGM();
-				_bgmPausedByScene = true;
-			}
-			syncCombatUI();
-			return;
-		}
 
 		if (_rhythmCore == null) return;
 
@@ -1798,8 +1778,8 @@ public class ROTNScene extends Scene {
 		if (_floatingRatings.isEmpty()) return;
 		g.pushStyle();
 		g.textAlign(PConstants.CENTER, PConstants.CENTER);
-		if (GameDialog.descriptionFont != null) {
-			g.textFont(GameDialog.descriptionFont, 9);
+		if (Engine.descriptionFont != null) {
+			g.textFont(Engine.descriptionFont, 9);
 		} else {
 			g.textSize(9);
 		}
@@ -1827,8 +1807,8 @@ public class ROTNScene extends Scene {
 		int sec = PApplet.constrain((int) Math.ceil(_introCountdown), 1, 3);
 		g.pushStyle();
 		g.textAlign(PConstants.CENTER, PConstants.CENTER);
-		if (GameDialog.titleFont != null) {
-			g.textFont(GameDialog.titleFont, 28);
+		if (Engine.titleFont != null) {
+			g.textFont(Engine.titleFont, 28);
 		} else {
 			g.textSize(28);
 		}

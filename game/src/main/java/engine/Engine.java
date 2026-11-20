@@ -6,6 +6,7 @@ import java.awt.DisplayMode;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import processing.core.PApplet;
+import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PVector;
 import processing.event.KeyEvent;
@@ -39,6 +40,10 @@ public class Engine {
 	private static int _lastTime;
 	private static PGraphics _virtualScreen;
 	private static boolean _pixelPerfect = true;
+
+	/** Tipografías compartidas para encabezados y textos de HUD en escenas y overlays. */
+	public static PFont titleFont;
+	public static PFont descriptionFont;
 
 	// =========================================================================
 	// Inicialización y Acceso Global

@@ -7,13 +7,10 @@ import controlP5.ControllerInterface;
 import controlP5.Group;
 import controlP5.Textarea;
 import controlP5.Textlabel;
-import engine.dialogs.DialogManager;
-import engine.dialogs.GameDialog;
 import engine.draw.Sprite2D;
 import engine.objects.GameObject;
 import engine.objects.IDraw;
 import engine.objects.IUpdate;
-import engine.physics.Box;
 import java.util.ArrayList;
 import java.util.List;
 import processing.core.PApplet;
@@ -25,8 +22,7 @@ import processing.event.KeyEvent;
  * Clase base para todas las escenas del motor.
  *
  * <p>Gestiona la lista de {@link GameObject} activos, la carga declarativa desde archivos XML
- * de escena, la integración con {@link DialogManager} y el registro de controles {@link ControlP5}
- * para su destrucción automática al cerrar la escena.
+ * de escena y el registro de controles {@link ControlP5} para su destrucción automática al cerrar la escena.
  */
 public class Scene {
 
@@ -124,8 +120,8 @@ public class Scene {
 
 	protected ControlFont makeFont(float baseSize, boolean useTitle) {
 		var pfont = useTitle
-			? (GameDialog.titleFont != null ? GameDialog.titleFont : GameDialog.descriptionFont)
-			: GameDialog.descriptionFont;
+			? (Engine.titleFont != null ? Engine.titleFont : Engine.descriptionFont)
+			: Engine.descriptionFont;
 		if (pfont == null) return null;
 		return new ControlFont(pfont, Math.max(8, (int) scaleH(baseSize)));
 	}
@@ -219,8 +215,6 @@ public class Scene {
 	// =========================================================================
 
 	public void setup() {
-		DialogManager.setOnLoadRequest(this::onDialogLoadRequest);
-
 		if (_xmlScene != null) {
 			float sx = _xmlScene.getFloat("spawn-x", -1.0f);
 			float sy = _xmlScene.getFloat("spawn-y", -1.0f);
@@ -229,20 +223,11 @@ public class Scene {
 			}
 
 			parseBaseNodes(_xmlScene);
-
-			String dialogFile = _xmlScene.getString("dialogs", "");
-			if (!dialogFile.isEmpty()) {
-				DialogManager.loadDialogFile(dialogFile);
-				String startDialog = _xmlScene.getString("start-dialog", "");
-				if (!startDialog.isEmpty()) {
-					DialogManager.start(startDialog);
-				}
-			}
 		}
 	}
 
 	/**
-	 * Parsea los nodos base del XML ({@code Box}/{@code box}/{@code Rect} y {@code Sprite}/{@code Sprite2D})
+	 * Parsea los nodos base del XML ({@code Sprite}/{@code Sprite2D})
 	 * y delega cualquier otra etiqueta a {@link #parseCustomNode(XML)}.
 	 */
 	protected void parseBaseNodes(XML scene_parent) {
@@ -251,10 +236,6 @@ public class Scene {
 			if (tag == null || tag.startsWith("#")) continue;
 
 			switch (tag) {
-				case "Box", "box", "Rect" -> {
-					Box b = ResourcesManager.loadBox(child);
-					_gameObjects.add(b);
-				}
 				case "Sprite", "Sprite2D" -> {
 					Sprite2D spr = ResourcesManager.loadSprite(child);
 					_gameObjects.add(spr);
@@ -270,15 +251,9 @@ public class Scene {
 	protected void parseCustomNode(XML node) {}
 
 	/**
-	 * Actualiza el diálogo activo (pausando los objetos de la escena mientras esté abierto)
-	 * o todos los {@link GameObject} registrados que implementen {@link IUpdate} / {@link IDraw}.
+	 * Actualiza todos los {@link GameObject} registrados que implementen {@link IUpdate} / {@link IDraw}.
 	 */
 	public void update(float deltaTime) {
-		if (DialogManager.isActive()) {
-			DialogManager.update(deltaTime);
-			return;
-		}
-
 		for (GameObject obj : _gameObjects) {
 			if (obj instanceof IUpdate) {
 				((IUpdate) obj).update(deltaTime);
@@ -299,18 +274,10 @@ public class Scene {
 
 	public void keyEvent(KeyEvent e) {}
 
-	protected void onDialogLoadRequest(String scenePath) {
-		String absPath = ResourcesManager.getAbsPathFromProject(scenePath);
-		Engine.changeScene(new Scene(absPath));
-	}
-
 	/**
-	 * Libera callbacks de diálogo, remueve todos los controladores {@link ControlP5} registrados
-	 * por esta escena y vacía la lista de objetos.
+	 * Remueve todos los controladores {@link ControlP5} registrados por esta escena y vacía la lista de objetos.
 	 */
 	public void close() {
-		DialogManager.setOnLoadRequest(null);
-		DialogManager.close();
 		ControlP5 cp5 = Engine.getControlP5();
 
 		for (int i = _controllers.size() - 1; i >= 0; i--) {
