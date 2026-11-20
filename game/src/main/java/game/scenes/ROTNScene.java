@@ -74,6 +74,8 @@ public class ROTNScene extends Scene {
 	private boolean _bgmPausedByScene = false;
 	private float _introCountdown = 3.0f;
 	private boolean _bgmStarted = false;
+	private static final float BGM_FADE_OUT_DURATION = 3.0f;
+	private float _bgmFadeOutTimer = -1.0f;
 	private Sound _hitSfx;
 	private final ParticleSystem _particles = new ParticleSystem(320);
 	private final float[] _holdParticleTimers = new float[6];
@@ -251,6 +253,13 @@ public class ROTNScene extends Scene {
 			bossAttackDamage = _manifestChartNode.getInt("attack-damage", bossAttackDamage);
 			bossHitDamage = _manifestChartNode.getInt("hit-damage", bossHitDamage);
 			bossSpritePath = _manifestChartNode.getString("boss-sprite", bossSpritePath);
+			int defaultRows = bossSpritePath.endsWith("bear.png") ? 3 : bossRows;
+			int defaultCols = bossSpritePath.endsWith("bear.png") ? 3 : bossCols;
+			bossRows = _manifestChartNode.getInt("boss-rows", defaultRows);
+			bossCols = _manifestChartNode.getInt("boss-cols", defaultCols);
+			bossDelay = _manifestChartNode.getFloat("boss-delay", bossDelay);
+			bossScaleX = _manifestChartNode.getFloat("boss-scale-x", bossScaleX);
+			bossScaleY = _manifestChartNode.getFloat("boss-scale-y", bossScaleY);
 			_defeatFlag = _manifestChartNode.getString("defeat-flag", _defeatFlag);
 			_rewardItem = _manifestChartNode.getString("reward-item", _rewardItem);
 		} else {
@@ -572,7 +581,20 @@ public class ROTNScene extends Scene {
 
 		ROTNCore.BattleState state = _rhythmCore.getBattleState();
 		if (state != ROTNCore.BattleState.PLAYING) {
-			if (_bgm != null && _bgm.isPlaying()) {
+			if (state == ROTNCore.BattleState.VICTORY) {
+				if (_bgm != null && _bgm.isLoaded() && _bgm.isPlaying()) {
+					if (_bgmFadeOutTimer < 0.0f) {
+						_bgmFadeOutTimer = BGM_FADE_OUT_DURATION;
+					}
+					_bgmFadeOutTimer = Math.max(0.0f, _bgmFadeOutTimer - dt);
+					float fade = _bgmFadeOutTimer / BGM_FADE_OUT_DURATION;
+					_bgm.setVolume(Audio.getBGMVolume() * fade);
+					if (_bgmFadeOutTimer <= 0.0f) {
+						Audio.pauseBGM();
+						_bgmPausedByScene = true;
+					}
+				}
+			} else if (_bgm != null && _bgm.isPlaying()) {
 				Audio.pauseBGM();
 				_bgmPausedByScene = true;
 			}

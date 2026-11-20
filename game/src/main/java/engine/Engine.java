@@ -159,11 +159,11 @@ public class Engine {
 		float deltaTime = (now - _lastTime) / 1000.0f;
 		_lastTime = now;
 
+		KBInput.beginFrame();
+
 		if (_currentScene != null) {
 			_currentScene.update(deltaTime);
 		}
-
-		KBInput.update();
 	}
 
 	// Draw

@@ -181,13 +181,15 @@ public class HubScene extends Scene {
 		_sprLeft = createCharSprite("sprites/player/The Female Adventurer - Free/Idle/Idle_Left_Down.png");
 		_sprRight = createCharSprite("sprites/player/The Female Adventurer - Free/Idle/Idle_Right_Down.png");
 
-		_npcCat = new Sprite2D("sprites/npcs/cat.png", 1, 1, 5);
+		_npcCat = new Sprite2D("sprites/npcs/cat.png", 2, 3, 5);
 		_npcCat.centerPosition = true;
-		_npcCat.scale.set(0.85f, 0.85f);
+		_npcCat.scale.set(1.2f, 1.2f);
+		_npcCat.delay = 0.18f;
 
-		_bossBear = new Sprite2D("sprites/bosses/bear.png", 1, 1, 5);
+		_bossBear = new Sprite2D("sprites/bosses/bear.png", 3, 3, 5);
 		_bossBear.centerPosition = true;
-		_bossBear.scale.set(0.55f, 0.55f);
+		_bossBear.scale.set(0.65f, 0.65f);
+		_bossBear.delay = 0.11f;
 	}
 
 	private Sprite2D createCharSprite(String path) {
@@ -332,6 +334,14 @@ public class HubScene extends Scene {
 		if (_moveCooldown > 0.0f) {
 			_moveCooldown = Math.max(0.0f, _moveCooldown - dt);
 		}
+
+		// Actualizar animaciones de spritesheets
+		if (_sprDown != null) _sprDown.updateDraw(dt);
+		if (_sprUp != null) _sprUp.updateDraw(dt);
+		if (_sprLeft != null) _sprLeft.updateDraw(dt);
+		if (_sprRight != null) _sprRight.updateDraw(dt);
+		if (_npcCat != null) _npcCat.updateDraw(dt);
+		if (_bossBear != null) _bossBear.updateDraw(dt);
 
 		// Animar salto (hop) entre casillas
 		if (_hopTimer < 1.0f) {
