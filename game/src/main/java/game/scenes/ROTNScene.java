@@ -161,8 +161,6 @@ public class ROTNScene extends Scene {
 
 	// private Button _uiBossHpFill;
 
-	private Textlabel _uiScoreLbl;
-
 	private Textlabel _uiHealRatioLbl;
 	private Button _uiHealFill;
 
@@ -633,8 +631,7 @@ public class ROTNScene extends Scene {
 		// addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
 		// _uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
 
-		// 3. Arriba-Derecha: solo Score (multiplicador y combo se dibujan grandes a la derecha en pixel-art)
-		_uiScoreLbl = addUILabel("ui_rotn_score_lbl", null, "SCORE: 0", 356, 8, app.color(255), fontMed);
+		// 3. Arriba-Derecha: Score, Multiplicador y Combo se dibujan en el canvas pixelado
 
 		// 4. Abajo-Izquierda: Barra Vertical de Curación Dinámica
 		_uiHealRatioLbl = addUILabel("ui_rotn_heal_ratio_lbl", null, "0/2", 12, 162, app.color(230, 60, 60), fontBig);
@@ -916,12 +913,7 @@ public class ROTNScene extends Scene {
 		// 	);
 		// }
 
-		// 3. Score arriba a la derecha (multiplicador y combo se dibujan en el canvas pixelado)
-		if (_uiScoreLbl != null) {
-			_uiScoreLbl.setText("SCORE: " + _rhythmCore.getScore());
-		}
-
-		// 4. Barra vertical de Curación Dinámica (abajo-izquierda)
+		// 3. Barra vertical de Curación Dinámica (abajo-izquierda)
 		int threshold = _rhythmCore.getEffectiveHealThreshold();
 		float healRatio = _rhythmCore.isHealBarActive()
 			? (_rhythmCore.getHealBarTimer() / Math.max(0.1f, _rhythmCore.getHealActiveDuration()))
@@ -1700,7 +1692,7 @@ public class ROTNScene extends Scene {
 			drawPerspectiveNotes(g, songTimeMs);
 			_particles.draw(g);
 			drawFloatingRatings(g);
-			drawRightMultiplierAndCombo(g);
+			drawRightHudStats(g);
 			drawIntroCountdownOverlay(g);
 		}
 
@@ -2362,59 +2354,88 @@ public class ROTNScene extends Scene {
 	}
 
 	/**
-	 * Dibuja a la derecha de la pista el multiplicador (en amarillo, con animación al aumentar)
-	 * y debajo el combo (en azul), ambos grandes y con fuente pixelada sin antialiasing.
+	 * Dibuja con fuente pixelada sin antialiasing:
+	 * <ul>
+	 *   <li>Arriba a la derecha: solo el puntaje numérico (sin cartel), escalando en tamaño y color
+	 *       cada 3 cifras (azul -> morado -> rojo -> naranja -> amarillo).</li>
+	 *   <li>A la derecha: el multiplicador amarillo (con salto/agrandamiento animado al subir)
+	 *       y debajo el combo en azul con el mismo tamaño base, ambos sin etiquetas de texto.</li>
+	 * </ul>
 	 */
-	private void drawRightMultiplierAndCombo(PGraphics g) {
+	private void drawRightHudStats(PGraphics g) {
 		if (_rhythmCore == null) return;
 
+		int score = Math.max(0, _rhythmCore.getScore());
 		int mult = _rhythmCore.getScoreMultiplier();
 		int combo = _rhythmCore.getCombo();
 
-		float rightX = 424.0f;
-		float multY = 104.0f;
-		float comboY = 142.0f;
-
-		float multJumpY = 0.0f;
-		float multShakeX = 0.0f;
-		float multSize = 24.0f;
-		if (_multAnimTimer > 0.0f) {
-			float p = 1.0f - (_multAnimTimer / 0.42f);
-			multJumpY = (float) (-Math.sin(p * Math.PI) * 8.0f);
-			multShakeX = (float) (Math.sin(p * Math.PI * 6.0f) * (1.0f - p) * 4.0f);
-			multSize = 24.0f + (1.0f - p) * 5.0f;
-		}
-
 		g.pushStyle();
-		g.textAlign(PConstants.CENTER, PConstants.CENTER);
-
-		// 1. Multiplicador en amarillo arriba (sin cartel)
-		int mx = Math.round(rightX + multShakeX);
-		int my = Math.round(multY + multJumpY);
-		String multText = "x" + mult;
-		if (_pixelHudFont != null) {
-			g.textFont(_pixelHudFont, Math.round(multSize));
-		} else {
-			g.textSize(Math.round(multSize));
-		}
-		g.fill(0, 0, 0, 225);
-		g.text(multText, mx + 2, my + 2);
-		g.fill(255, 224, 58, 255);
-		g.text(multText, mx, my);
-
-		// 2. Combo en azul debajo del multiplicador con el mismo tamaño (sin cartel)
-		int cx = Math.round(rightX);
-		int cy = Math.round(comboY);
-		String comboText = String.valueOf(combo);
 		if (_pixelHudFont != null) {
 			g.textFont(_pixelHudFont, 24);
 		} else {
 			g.textSize(24);
 		}
+
+		// 1. Score arriba a la derecha (sin cartel, cada 3 cifras cambia color y tamaño)
+		String scoreText = String.valueOf(score);
+		int tier = Math.max(0, (scoreText.length() - 1) / 3);
+		int scoreColor = switch (tier) {
+			case 0 -> g.color(75, 190, 255);   // 1..3 cifras: Azul
+			case 1 -> g.color(195, 110, 255);  // 4..6 cifras: Morado
+			case 2 -> g.color(255, 78, 92);    // 7..9 cifras: Rojo
+			case 3 -> g.color(255, 155, 55);   // 10..12 cifras: Naranja
+			default -> g.color(255, 224, 58);  // 13+ cifras: Amarillo
+		};
+		float scoreScale = Math.min(1.50f, 0.75f + tier * 0.17f);
+
+		g.textAlign(PConstants.RIGHT, PConstants.TOP);
+		g.pushMatrix();
+		g.translate(BASE_W - 10.0f, 8.0f);
+		g.scale(scoreScale);
 		g.fill(0, 0, 0, 225);
-		g.text(comboText, cx + 2, cy + 2);
+		g.text(scoreText, 2.0f, 2.0f);
+		g.fill(scoreColor);
+		g.text(scoreText, 0.0f, 0.0f);
+		g.popMatrix();
+
+		// 2. Multiplicador a la derecha en amarillo (más grande y con pop animado al subir)
+		float rightX = 424.0f;
+		float multY = 104.0f;
+		float comboY = 144.0f;
+		float baseScale = 1.12f;
+
+		float multJumpY = 0.0f;
+		float multShakeX = 0.0f;
+		float multScale = baseScale;
+		if (_multAnimTimer > 0.0f) {
+			float p = 1.0f - (_multAnimTimer / 0.42f);
+			multJumpY = (float) (-Math.sin(p * Math.PI) * 9.0f);
+			multShakeX = (float) (Math.sin(p * Math.PI * 6.0f) * (1.0f - p) * 5.0f);
+			multScale = baseScale + (1.0f - p) * 0.55f;
+		}
+
+		g.textAlign(PConstants.CENTER, PConstants.CENTER);
+
+		String multText = "x" + mult;
+		g.pushMatrix();
+		g.translate(Math.round(rightX + multShakeX), Math.round(multY + multJumpY));
+		g.scale(multScale);
+		g.fill(0, 0, 0, 225);
+		g.text(multText, 2.0f, 2.0f);
+		g.fill(255, 224, 58, 255);
+		g.text(multText, 0.0f, 0.0f);
+		g.popMatrix();
+
+		// 3. Combo debajo en azul con el mismo tamaño base (sin cartel)
+		String comboText = String.valueOf(combo);
+		g.pushMatrix();
+		g.translate(Math.round(rightX), Math.round(comboY));
+		g.scale(baseScale);
+		g.fill(0, 0, 0, 225);
+		g.text(comboText, 2.0f, 2.0f);
 		g.fill(75, 190, 255, 255);
-		g.text(comboText, cx, cy);
+		g.text(comboText, 0.0f, 0.0f);
+		g.popMatrix();
 
 		g.popStyle();
 	}
