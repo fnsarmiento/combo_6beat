@@ -21,12 +21,25 @@ import java.util.stream.Stream;
 import processing.data.XML;
 
 /**
- * Cargador dinámico de canciones base (resources/songs/base/) y custom (resources/songs/custom/).
- * Agrupa automáticamente todos los archivos .osu de una misma canción en un SongPack
- * con múltiples dificultades seleccionables, aplicando overrides opcionales desde songs.xml.
+ * Cargador y agrupador dinámico de paquetes de canciones:
+ * <ul>
+ *   <li><b>Canciones Base ({@code resources/songs/base/}):</b> escanea recursivamente archivos {@code .osu},
+ *       los agrupa por carpeta dentro de un {@link SongPack} con sus variantes de dificultad ({@link ChartVariant})
+ *       ordenadas por número de notas, y aplica overrides de jefes/sprites definidos en {@code resources/songs/songs.xml}.</li>
+ *   <li><b>Canciones Personalizadas ({@code resources/songs/custom/}):</b> sincroniza el directorio con la tabla
+ *       SQLite {@code CANCIONES_PERSONALIZADAS} mediante {@link CustomSongRepository} y agrupa las dificultades
+ *       por {@code título|artista}.</li>
+ * </ul>
  */
 public class SongPackLoader {
 
+	// =========================================================================
+	// Modelos de Datos de Paquetes y Variantes de Dificultad
+	// =========================================================================
+
+	/**
+	 * Representa una dificultad individual ({@code .osu}) dentro de un {@link SongPack}.
+	 */
 	public static class ChartVariant {
 		public String id = "";
 		public String title = "Cancion";
@@ -59,6 +72,9 @@ public class SongPackLoader {
 		public CustomSongRepository.CustomSongSummary customDbSummary = null;
 	}
 
+	/**
+	 * Agrupa múltiples dificultades ({@link ChartVariant}) que pertenecen a una misma canción.
+	 */
 	public static class SongPack {
 		public String key = "";
 		public String title = "Cancion";
@@ -74,9 +90,13 @@ public class SongPackLoader {
 		_cachedBasePacks = null;
 	}
 
+	// =========================================================================
+	// Escaneo y Agrupación de Canciones Base (resources/songs/base/)
+	// =========================================================================
+
 	/**
-	 * Escanea dinámicamente resources/songs/base/ agrupando todos los .osu por carpeta/canción
-	 * y aplicando metadatos opcionales de resources/songs/songs.xml si existen.
+	 * Escanea {@code resources/songs/base/} agrupando todos los {@code .osu} por carpeta
+	 * y aplicando metadatos opcionales de {@code resources/songs/songs.xml}.
 	 */
 	public static List<SongPack> loadBasePacks() {
 		return loadBasePacks(false);
@@ -149,9 +169,13 @@ public class SongPackLoader {
 		return result;
 	}
 
+	// =========================================================================
+	// Escaneo y Agrupación de Canciones Personalizadas (resources/songs/custom/)
+	// =========================================================================
+
 	/**
-	 * Sincroniza resources/songs/custom/ con SQLite y agrupa las canciones personalizadas
-	 * por título+artista con sus dificultades seleccionables.
+	 * Sincroniza {@code resources/songs/custom/} con SQLite y agrupa las canciones personalizadas
+	 * por {@code título|artista} con sus dificultades ordenadas por densidad de notas.
 	 */
 	public static List<SongPack> loadCustomPacks(boolean syncFolder) {
 		if (syncFolder) {
@@ -199,6 +223,10 @@ public class SongPackLoader {
 		}
 		return result;
 	}
+
+	// =========================================================================
+	// Overrides desde songs.xml y Parseo Ligero de Cabeceras .osu
+	// =========================================================================
 
 	private static Map<String, XML[]> readManifestOverrides() {
 		Map<String, XML[]> map = new HashMap<>();
@@ -254,6 +282,9 @@ public class SongPackLoader {
 		}
 	}
 
+	/**
+	 * Lectura rápida de un {@code .osu} para poblar selectores sin cargar audio ni sprites.
+	 */
 	private static ChartVariant parseOsuQuick(File osuFile) {
 		ChartVariant v = new ChartVariant();
 		v.osuAbsPath = osuFile.getAbsolutePath();
@@ -279,8 +310,8 @@ public class SongPackLoader {
 						String k = line.substring(0, idx).trim();
 						String val = line.substring(idx + 1).trim();
 						switch (k) {
-							case "Title" -> { if (!val.isEmpty()) v.title = val; }
-							case "Artist" -> v.artist = val;
+							case "Title"   -> { if (!val.isEmpty()) v.title = val; }
+							case "Artist"  -> v.artist = val;
 							case "Version" -> { if (!val.isEmpty()) v.difficulty = val; }
 						}
 					}
@@ -305,6 +336,10 @@ public class SongPackLoader {
 			return null;
 		}
 	}
+
+	// =========================================================================
+	// Utilidades de Portadas y Normalización de Rutas Relativas
+	// =========================================================================
 
 	private static String findFolderCoverRel(File folder) {
 		if (folder == null || !folder.isDirectory()) return "";

@@ -1,31 +1,40 @@
 package engine.dialogs;
 
+import static engine.dialogs.DialogManager.ResponseType;
+import static processing.core.PApplet.min;
+
+import controlP5.ControlFont;
 import controlP5.ControlP5;
 import controlP5.Group;
 import controlP5.Textarea;
-import controlP5.ControlFont;
 import engine.Engine;
 import engine.KBInput;
 import processing.core.PFont;
 import processing.core.PImage;
 
-import static engine.dialogs.DialogManager.ResponseType;
-import static processing.core.PApplet.min;
-
+/**
+ * Cuadro visual de diálogo basado en {@link ControlP5} con efecto máquina de escribir
+ * (typewriter) y soporte para hasta dos opciones seleccionables por teclado o ratón.
+ */
 public class GameDialog {
-	private static final int BG_COLOR	= Engine.getApp().color(0, 0, 0, 200);
+
+	// =========================================================================
+	// Constantes y Configuración Global de Estilo / Controles
+	// =========================================================================
+
+	private static final int BG_COLOR    = Engine.getApp().color(0, 0, 0, 200);
 	private static final int DESC_COLOR  = Engine.getApp().color(255);
 	private static final int COLOR_IDLE  = Engine.getApp().color(0, 45, 90);
 	private static final int COLOR_HOVER = Engine.getApp().color(0, 116, 217);
 
-	// Resolución base para escalar la UI dentro de engine sin depender de game.Global
+	/** Resolución base de referencia para escalar el cuadro de diálogo sin acoplarse a {@code game.Global}. */
 	public static float BASE_WIDTH = 480f;
 	public static float BASE_HEIGHT = 270f;
 
-	// Teclas configurables desde el juego (Por defecto: E/Enter, A/Izquierda, D/Derecha)
+	/** Teclas configurables para avanzar o elegir opciones en el diálogo. */
 	public static int[] KEYS_INTERACT = { 'E', 'Z', '\n' };
-	public static int[] KEYS_LEFT	 = { 'A', 37 }; // 37 = LEFT arrow
-	public static int[] KEYS_RIGHT	= { 'D', 39 }; // 39 = RIGHT arrow
+	public static int[] KEYS_LEFT     = { 'A', 37 }; // 37 = Flecha Izquierda
+	public static int[] KEYS_RIGHT    = { 'D', 39 }; // 39 = Flecha Derecha
 
 	public int titleColor = Engine.getApp().color(255);
 
@@ -34,13 +43,18 @@ public class GameDialog {
 	public static int titleSize = 16;
 	public static int descriptionSize = 14;
 
+	public static final float DELAY = 0.035f;
+
+	// =========================================================================
+	// Estado de la Instancia del Diálogo
+	// =========================================================================
+
 	public boolean visible = true;
 	public PImage background;
 	public String title, description;
 	public String option1, option2;
 
 	private int descriptionAnimationIndex = 0;
-	public static final float DELAY = 0.035f;
 	private float elapsed = 0.0f;
 
 	private Group dialogGroup;
@@ -48,15 +62,29 @@ public class GameDialog {
 	private int selectedOption = 1;
 	private ResponseType response = ResponseType.None;
 
-	public GameDialog(String title, String description, String option1, String option2) { setContent(title, description, option1, option2); }
+	// =========================================================================
+	// Constructores y Configuración de Contenido
+	// =========================================================================
 
-	public GameDialog(String title, String description, String option1) { this(title, description, option1, null); }
+	public GameDialog(String title, String description, String option1, String option2) {
+		setContent(title, description, option1, option2);
+	}
 
-	public GameDialog(String title, String description) { this(title, description, null, null); }
+	public GameDialog(String title, String description, String option1) {
+		this(title, description, option1, null);
+	}
 
-	private static float scaleW(float val) { return (val / BASE_WIDTH) * Engine.getApp().width; }
+	public GameDialog(String title, String description) {
+		this(title, description, null, null);
+	}
 
-	private static float scaleH(float val) { return (val / BASE_HEIGHT) * Engine.getApp().height; }
+	private static float scaleW(float val) {
+		return (val / BASE_WIDTH) * Engine.getApp().width;
+	}
+
+	private static float scaleH(float val) {
+		return (val / BASE_HEIGHT) * Engine.getApp().height;
+	}
 
 	private static boolean isAnyKeyJustPressed(int[] keys) {
 		for (int k : keys) {
@@ -79,11 +107,15 @@ public class GameDialog {
 		setupUI();
 	}
 
+	// =========================================================================
+	// Construcción y Destrucción de Controles ControlP5
+	// =========================================================================
+
 	private void setupUIBackground(ControlP5 cp5, int groupW, int groupH) {
 		var bgBtn = cp5.addButton("ui_dialog_bg")
-				.setPosition(0, 0)
-				.setSize(groupW, groupH)
-				.setGroup(dialogGroup);
+			.setPosition(0, 0)
+			.setSize(groupW, groupH)
+			.setGroup(dialogGroup);
 
 		if (background != null) {
 			bgBtn.setImage(background);
@@ -103,10 +135,10 @@ public class GameDialog {
 	private void setupUITitleDescription(ControlP5 cp5) {
 		if (title != null && !title.isEmpty()) {
 			var titleLabel = cp5.addTextlabel("ui_dialog_title")
-					.setText(title)
-					.setPosition((int) scaleW(5), (int) scaleH(5))
-					.setColorValue(titleColor)
-					.setGroup(dialogGroup);
+				.setText(title)
+				.setPosition((int) scaleW(5), (int) scaleH(5))
+				.setColorValue(titleColor)
+				.setGroup(dialogGroup);
 
 			if (titleFont != null) {
 				int scaledTitleSize = (int) scaleH(titleSize);
@@ -118,11 +150,11 @@ public class GameDialog {
 		int descH = (int) scaleH(60);
 
 		descArea = cp5.addTextarea("ui_dialog_desc")
-				.setPosition((int) scaleW(10), (int) scaleH(20))
-				.setSize(descW, descH)
-				.setColorValue(DESC_COLOR)
-				.setText("")
-				.setGroup(dialogGroup);
+			.setPosition((int) scaleW(10), (int) scaleH(20))
+			.setSize(descW, descH)
+			.setColorValue(DESC_COLOR)
+			.setText("")
+			.setGroup(dialogGroup);
 
 		if (descriptionFont != null) {
 			int scaledDescSize = (int) scaleH(descriptionSize);
@@ -141,42 +173,42 @@ public class GameDialog {
 
 		if (option2 != null) {
 			cp5.addButton("ui_dialog_opt1")
-					.setLabel(option1)
-					.setSize(btnW, btnH)
-					.setPosition(centerX - btnW - offset40, btnY)
-					.setGroup(dialogGroup)
-					.onRelease(e -> {
-						if (response == ResponseType.None) {
-							if (!isTypingFinished()) completeTyping();
-							else response = ResponseType.Option1;
-						}
-					});
+				.setLabel(option1)
+				.setSize(btnW, btnH)
+				.setPosition(centerX - btnW - offset40, btnY)
+				.setGroup(dialogGroup)
+				.onRelease(e -> {
+					if (response == ResponseType.None) {
+						if (!isTypingFinished()) completeTyping();
+						else response = ResponseType.Option1;
+					}
+				});
 
 			cp5.addButton("ui_dialog_opt2")
-					.setLabel(option2)
-					.setSize(btnW, btnH)
-					.setPosition(centerX + offset40, btnY)
-					.setGroup(dialogGroup)
-					.onRelease(e -> {
-						if (response == ResponseType.None) {
-							if (!isTypingFinished()) completeTyping();
-							else response = ResponseType.Option2;
-						}
-					});
+				.setLabel(option2)
+				.setSize(btnW, btnH)
+				.setPosition(centerX + offset40, btnY)
+				.setGroup(dialogGroup)
+				.onRelease(e -> {
+					if (response == ResponseType.None) {
+						if (!isTypingFinished()) completeTyping();
+						else response = ResponseType.Option2;
+					}
+				});
 
 			updateButtonVisuals();
 		} else {
 			cp5.addButton("ui_dialog_opt1")
-					.setLabel(option1)
-					.setSize(btnW, btnH)
-					.setPosition(centerX - (btnW / 2.0f), btnY)
-					.setGroup(dialogGroup)
-					.onRelease(e -> {
-						if (response == ResponseType.None) {
-							if (!isTypingFinished()) completeTyping();
-							else response = ResponseType.Option1;
-						}
-					});
+				.setLabel(option1)
+				.setSize(btnW, btnH)
+				.setPosition(centerX - (btnW / 2.0f), btnY)
+				.setGroup(dialogGroup)
+				.onRelease(e -> {
+					if (response == ResponseType.None) {
+						if (!isTypingFinished()) completeTyping();
+						else response = ResponseType.Option1;
+					}
+				});
 		}
 	}
 
@@ -190,10 +222,10 @@ public class GameDialog {
 		int startY = (int) scaleH(150);
 
 		dialogGroup = cp5.addGroup("ui_dialog_group")
-				.setPosition(startX, startY)
-				.setWidth(groupW)
-				.setHeight(groupH)
-				.hideBar();
+			.setPosition(startX, startY)
+			.setWidth(groupW)
+			.setHeight(groupH)
+			.hideBar();
 
 		setupUIBackground(cp5, groupW, groupH);
 		setupUITitleDescription(cp5);
@@ -230,7 +262,13 @@ public class GameDialog {
 		}
 	}
 
-	private boolean isTypingFinished() { return descriptionAnimationIndex >= description.length(); }
+	// =========================================================================
+	// Animación de Texto e Interacción por Teclado
+	// =========================================================================
+
+	private boolean isTypingFinished() {
+		return descriptionAnimationIndex >= description.length();
+	}
 
 	private void completeTyping() {
 		descriptionAnimationIndex = description.length();
@@ -293,7 +331,11 @@ public class GameDialog {
 		}
 	}
 
-	public boolean hasResponse() { return response != ResponseType.None; }
+	public boolean hasResponse() {
+		return response != ResponseType.None;
+	}
 
-	public ResponseType getResponse() {	return response; }
+	public ResponseType getResponse() {
+		return response;
+	}
 }

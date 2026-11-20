@@ -19,7 +19,27 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Lector y parser de archivos de beatmap {@code .osu} (formato osu!mania de 6 carriles).
+ *
+ * <p>Secciones procesadas:
+ * <ul>
+ *   <li>{@code [General]}: Resuelve {@code AudioFilename}, priorizando {@code .wav} local o
+ *       invocando {@link AudioConverter#ensureWav(File)} sobre {@code .mp3}/{@code .ogg}.</li>
+ *   <li>{@code [Metadata]}: Extrae {@code Title}, {@code Artist}, {@code Creator} y {@code Version} (dificultad).</li>
+ *   <li>{@code [TimingPoints]}: Empaqueta cambios de BPM y multiplicadores SV con {@link TimingPointPacker}.</li>
+ *   <li>{@code [HitObjects]}: Mapea la coordenada horizontal {@code X (0..512)} a 6 carriles ({@code 0..5})
+ *       y empaqueta notas tap y Hold Notes ({@code type & 128}) con {@link NotePacker}.</li>
+ *   <li>{@code [Events]}: Identifica la imagen de portada/fondo y eventos de sprites sincronizados.</li>
+ *   <li>{@code [Combo6Beat]}: Extensión opcional con metadatos de jefe (HP, sprite, daño, flags y recompensas).</li>
+ * </ul>
+ */
 public class OsuManiaReader {
+
+	// =========================================================================
+	// Datos Empaquetados del Beatmap y Pista de Audio
+	// =========================================================================
+
 	private final String filepath;
 	private final long[] notes;
 	private final long[] timingPoints;
@@ -27,7 +47,10 @@ public class OsuManiaReader {
 	private final int[] spritesTimes;
 	private MusicTrack song;
 
-	// Metadatos generales del beatmap .osu
+	// =========================================================================
+	// Metadatos Generales ([General], [Metadata], [Events])
+	// =========================================================================
+
 	private String title = "";
 	private String artist = "";
 	private String creator = "";
@@ -37,7 +60,10 @@ public class OsuManiaReader {
 	private String coverAbsPath = "";
 	private float primaryBpm = 120.0f;
 
-	// Metadatos opcionales de jefe dentro de sección [Combo6Beat] en el .osu
+	// =========================================================================
+	// Metadatos Opcionales de Jefe ([Combo6Beat])
+	// =========================================================================
+
 	private boolean hasBossSection = false;
 	private String bossName = "";
 	private String bossSpecies = "";
@@ -51,10 +77,18 @@ public class OsuManiaReader {
 	private String defeatFlag = "";
 	private String rewardItem = "";
 
+	// =========================================================================
+	// Constructores y Bucle Principal de Parseo por Secciones
+	// =========================================================================
+
 	public OsuManiaReader(String filepath) {
 		this(filepath, true);
 	}
 
+	/**
+	 * Parsea un archivo {@code .osu}. Si {@code loadMedia} es {@code false}, sólo extrae metadatos,
+	 * notas y puntos de tiempo sin abrir el {@link MusicTrack} ni convertir audio.
+	 */
 	public OsuManiaReader(String filepath, boolean loadMedia) {
 		this.filepath = filepath;
 		String[] lines = readFileLines(filepath);
@@ -110,6 +144,10 @@ public class OsuManiaReader {
 		}
 	}
 
+	// =========================================================================
+	// Parsers de Secciones [Metadata], [General] y [Combo6Beat]
+	// =========================================================================
+
 	private void processMetadata(String line) {
 		int colonIdx = line.indexOf(':');
 		if (colonIdx == -1) return;
@@ -123,6 +161,10 @@ public class OsuManiaReader {
 		}
 	}
 
+	/**
+	 * Procesa {@code [General]}, resolviendo {@code AudioFilename} en la carpeta del {@code .osu}
+	 * o en {@code resources/} y convirtiendo automáticamente a {@code .wav} cuando {@code loadMedia} es {@code true}.
+	 */
 	private void processGeneral(String line, boolean loadMedia) {
 		int colonIdx = line.indexOf(':');
 		if (colonIdx == -1) return;
@@ -141,7 +183,7 @@ public class OsuManiaReader {
 			Path osuPath = Path.of(filepath).toAbsolutePath().normalize();
 			Path parentDir = osuPath.getParent();
 			if (parentDir != null) {
-				// Priorizar .wav compatible con javax.sound.sampled sobre .mp3
+				// Priorizar .wav compatible con javax.sound.sampled sobre .mp3/.ogg
 				File localWav = parentDir.resolve(wavCandidate).normalize().toFile();
 				if (localWav.exists()) {
 					audioAbsPath = localWav.getAbsolutePath();
@@ -160,6 +202,7 @@ public class OsuManiaReader {
 					return;
 				}
 			}
+
 			String resWavAbs = ResourcesManager.getResourceAbsPath(wavCandidate);
 			if (new File(resWavAbs).exists()) {
 				audioAbsPath = resWavAbs;
@@ -200,6 +243,10 @@ public class OsuManiaReader {
 			case "RewardItem"       -> rewardItem = val;
 		}
 	}
+
+	// =========================================================================
+	// Parsers de Secciones [TimingPoints], [HitObjects] y [Events]
+	// =========================================================================
 
 	private void processTimingPoints(String line, ArrayList<Long> list) {
 		String[] data = split(line, ",");
@@ -278,6 +325,13 @@ public class OsuManiaReader {
 		}
 	}
 
+	// =========================================================================
+	// Cálculo de BPM Predominante
+	// =========================================================================
+
+	/**
+	 * Determina el BPM principal ponderando la duración temporal de cada sección no heredada.
+	 */
 	private static float computePrimaryBpm(long[] tps, long[] notes) {
 		if (tps == null || tps.length == 0) return 120.0f;
 
@@ -328,6 +382,10 @@ public class OsuManiaReader {
 		}
 		return bestCents / 100.0f;
 	}
+
+	// =========================================================================
+	// Getters Públicos
+	// =========================================================================
 
 	public long[] getNotes() { return notes; }
 	public long[] getTimingPoints() { return timingPoints; }

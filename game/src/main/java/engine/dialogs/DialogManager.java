@@ -11,8 +11,22 @@ import java.util.function.Predicate;
 import kuusisto.tinysound.Sound;
 import processing.data.JSONObject;
 
+/**
+ * Máquina de estados para grafos de diálogo narrativo cargados desde archivos JSON.
+ *
+ * <p>Soporta ramificaciones por opciones ({@code default}, {@code option1}, {@code option2}),
+ * redirecciones condicionales por flags ({@code __ifdef__}/{@code __next_ifdef__},
+ * {@code __ifndef__}/{@code __next_ifndef__}) y directivas de transición o efectos laterales
+ * ({@code __define__}, {@code __playsfx__}, {@code __give_item__}, {@code __save_next__},
+ * {@code __save_next_lose__}, {@code __load__}/{@code __loadr__}/{@code __loads__}).
+ */
 public class DialogManager {
+
 	public enum ResponseType { None, Neutral, Option1, Option2 }
+
+	// =========================================================================
+	// Estado del Grafo de Diálogo y Contexto de Retorno Post-Combate
+	// =========================================================================
 
 	private static JSONObject _file;
 	private static String _loadedFilePath = "";
@@ -27,19 +41,34 @@ public class DialogManager {
 	private static GameDialog _activeDialog;
 	private static boolean _promotedOption2To1 = false;
 
-	// Callbacks desacoplados para la escena actual
+	// =========================================================================
+	// Callbacks Desacoplados hacia la Lógica del Juego
+	// =========================================================================
+
 	private static Consumer<String> onLoadRequest;
 	private static BiConsumer<String, Integer> onGiveItemRequest;
 	private static Consumer<String> onDefineFlag;
 	private static Predicate<String> onCheckFlag;
 
-	public static void setOnLoadRequest(Consumer<String> callback) { onLoadRequest = callback; }
+	public static void setOnLoadRequest(Consumer<String> callback) {
+		onLoadRequest = callback;
+	}
 
-	public static void setOnGiveItemRequest(BiConsumer<String, Integer> callback) { onGiveItemRequest = callback; }
+	public static void setOnGiveItemRequest(BiConsumer<String, Integer> callback) {
+		onGiveItemRequest = callback;
+	}
 
-	public static void setOnDefineFlag(Consumer<String> callback) { onDefineFlag = callback; }
+	public static void setOnDefineFlag(Consumer<String> callback) {
+		onDefineFlag = callback;
+	}
 
-	public static void setOnCheckFlag(Predicate<String> callback) { onCheckFlag = callback; }
+	public static void setOnCheckFlag(Predicate<String> callback) {
+		onCheckFlag = callback;
+	}
+
+	// =========================================================================
+	// Carga, Inicio y Ciclo de Vida de Diálogos
+	// =========================================================================
 
 	public static void loadDialogFile(String path) {
 		close();
@@ -50,16 +79,24 @@ public class DialogManager {
 		_currentDialogID = null;
 	}
 
-	public static String getLoadedFilePath() { return _loadedFilePath; }
+	public static String getLoadedFilePath() {
+		return _loadedFilePath;
+	}
 
-	public static boolean start(String name) { return start(name, ""); }
+	public static boolean start(String name) {
+		return start(name, "");
+	}
 
+	/**
+	 * Inicia un diálogo en el nodo {@code name}, o bien retoma el nodo guardado por
+	 * {@code __save_next__} / {@code __save_next_lose__} para la clave de contexto dada.
+	 */
 	public static boolean start(String name, String contextKey) {
 		if (_file == null || name == null || name.isEmpty()) return false;
 
 		_currentContextKey = (contextKey != null) ? contextKey : "";
 
-		String targetID = null;
+		String targetID;
 		if (!_currentContextKey.isEmpty() && _savedNextByContext.containsKey(_currentContextKey)) {
 			targetID = _savedNextByContext.remove(_currentContextKey);
 			_savedLoseNextByContext.remove(_currentContextKey);
@@ -82,11 +119,17 @@ public class DialogManager {
 		return showNode(dialogID);
 	}
 
-	public static boolean isActive() { return _activeDialog != null; }
+	public static boolean isActive() {
+		return _activeDialog != null;
+	}
 
-	public static String getCurrentDialogID() {	return _currentDialogID; }
+	public static String getCurrentDialogID() {
+		return _currentDialogID;
+	}
 
-	public static GameDialog getActiveDialog() { return _activeDialog; }
+	public static GameDialog getActiveDialog() {
+		return _activeDialog;
+	}
 
 	public static boolean update(float dt) {
 		if (_activeDialog == null) return false;
@@ -109,6 +152,10 @@ public class DialogManager {
 		_promotedOption2To1 = false;
 	}
 
+	// =========================================================================
+	// Evaluación de Flags y Resolución de Resultado de Batalla
+	// =========================================================================
+
 	private static boolean checkFlag(String flag) {
 		if (flag == null || flag.isEmpty()) return true;
 		if (onCheckFlag != null) return onCheckFlag.test(flag);
@@ -129,6 +176,10 @@ public class DialogManager {
 		}
 	}
 
+	/**
+	 * Ajusta los flags {@code LAST_BATTLE_WON}/{@code LAST_BATTLE_LOST} y selecciona el nodo
+	 * de continuación de victoria o derrota tras regresar de un combate rítmico.
+	 */
 	public static void resolveBattleOutcome(boolean won) {
 		if (won) {
 			defineFlag("LAST_BATTLE_WON");
@@ -159,6 +210,10 @@ public class DialogManager {
 		}
 		_lastLoadedContextKey = "";
 	}
+
+	// =========================================================================
+	// Navegación Interna de Nodos y Ejecución de Directivas
+	// =========================================================================
 
 	private static boolean isBranchAllowed(JSONObject branch) {
 		if (branch == null) return true;

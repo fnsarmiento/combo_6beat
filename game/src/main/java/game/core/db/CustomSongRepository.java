@@ -21,10 +21,18 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Repositorio SQLite independiente para el modo de Canciones Personalizadas (CANCIONES_PERSONALIZADAS).
- * Separa por completo las métricas, portadas, BPMs y récords custom respecto a la historia base.
+ * Repositorio SQLite en 3FN para el módulo independiente de Canciones Personalizadas.
+ *
+ * <p>Gestiona las tablas {@code CANCIONES_PERSONALIZADAS} y {@code CANCION_OBJETOS_INTENTO}
+ * (con validación mediante {@code trg_canciones_validar_insert}/{@code trg_canciones_validar_update}
+ * y promoción automática de récords e ítems mediante {@code trg_canciones_record_after_insert} y
+ * {@code trg_canciones_record_after_update}), y consulta la vista {@code v_estadisticas_canciones_custom}.
  */
 public class CustomSongRepository {
+
+	// =========================================================================
+	// Constantes y DTO de Resumen de Canción Personalizada
+	// =========================================================================
 
 	public static final String CUSTOM_SONGS_DIR = "resources/songs/custom";
 
@@ -55,6 +63,14 @@ public class CustomSongRepository {
 		public String objetosUltimoIntento = "Ninguno";
 	}
 
+	// =========================================================================
+	// Sincronización con Carpeta resources/songs/custom/ e Importación Externa
+	// =========================================================================
+
+	/**
+	 * Escanea {@code resources/songs/custom/}, registra o actualiza cada {@code .osu} en
+	 * {@code CANCIONES_PERSONALIZADAS} y depura registros cuyos archivos fueron eliminados de disco.
+	 */
 	public static void syncCustomSongsFolder() {
 		File dir = new File(ResourcesManager.getAbsPathFromProject(CUSTOM_SONGS_DIR));
 		if (!dir.exists()) {
@@ -82,6 +98,10 @@ public class CustomSongRepository {
 		pruneMissingCustomSongs();
 	}
 
+	/**
+	 * Elimina de {@code CANCIONES_PERSONALIZADAS} las filas cuyo {@code ruta_chart} ya no existe en disco
+	 * (borrando en cascada sus filas en {@code CANCION_OBJETOS_INTENTO}).
+	 */
 	private static void pruneMissingCustomSongs() {
 		List<Long> toDelete = new ArrayList<>();
 		try (Connection conn = DatabaseManager.getConnection();
@@ -108,6 +128,12 @@ public class CustomSongRepository {
 		}
 	}
 
+	/**
+	 * Parsea las cabeceras de un archivo {@code .osu} y realiza {@code INSERT} o {@code UPDATE}
+	 * en {@code CANCIONES_PERSONALIZADAS} usando {@code clave_unica = ruta_chart} relativa.
+	 *
+	 * <p>Validado por los triggers {@code trg_canciones_validar_insert} y {@code trg_canciones_validar_update}.
+	 */
 	public static CustomSongSummary registerOrUpdateOsuFile(File osuFile) {
 		if (osuFile == null || !osuFile.exists() || !osuFile.isFile()) return null;
 
@@ -201,8 +227,8 @@ public class CustomSongRepository {
 	}
 
 	/**
-	 * Importa un archivo .osu externo copiándolo (junto con su audio/portada locales si existen)
-	 * dentro de resources/songs/custom/<slug>/ para garantizar rutas relativas portables.
+	 * Importa un archivo {@code .osu} externo copiándolo (junto con su audio y portada locales)
+	 * dentro de {@code resources/songs/custom/<slug>/} para garantizar rutas relativas portables.
 	 */
 	public static CustomSongSummary importExternalOsu(File sourceOsu) throws IOException {
 		if (sourceOsu == null || !sourceOsu.exists() || !sourceOsu.isFile()) {
@@ -260,6 +286,14 @@ public class CustomSongRepository {
 		return registerOrUpdateOsuFile(targetOsu.toFile());
 	}
 
+	// =========================================================================
+	// Consultas sobre la Vista v_estadisticas_canciones_custom y Registro de Intentos
+	// =========================================================================
+
+	/**
+	 * Lista todas las canciones personalizadas consultando la vista {@code v_estadisticas_canciones_custom}
+	 * (que consolida {@code CANCIONES_PERSONALIZADAS}, {@code CANCION_OBJETOS_INTENTO} y {@code CATALOGO_ITEMS}).
+	 */
 	public static List<CustomSongSummary> listAll() {
 		List<CustomSongSummary> list = new ArrayList<>();
 		String sql = "SELECT * FROM v_estadisticas_canciones_custom";
@@ -275,6 +309,10 @@ public class CustomSongRepository {
 		return list;
 	}
 
+	/**
+	 * Obtiene el resumen y récords de una canción personalizada por su {@code id_cancion}
+	 * consultando {@code v_estadisticas_canciones_custom}.
+	 */
 	public static CustomSongSummary getById(long idCancion) {
 		String sql = "SELECT * FROM v_estadisticas_canciones_custom WHERE id_cancion = ?";
 		try (Connection conn = DatabaseManager.getConnection();
@@ -292,9 +330,13 @@ public class CustomSongRepository {
 	}
 
 	/**
-	 * Registra el último intento en CANCIONES_PERSONALIZADAS y sus objetos en CANCION_OBJETOS_INTENTO ('ULTIMO').
-	 * Los triggers SQLite se encargan de validar integridad, actualizar puntaje_mas_alto si corresponde
-	 * y resguardar los objetos del récord ('MEJOR') frente a los del último intento.
+	 * Registra el último intento en {@code CANCIONES_PERSONALIZADAS} y sus objetos equipados en
+	 * {@code CANCION_OBJETOS_INTENTO} ({@code tipo_registro = 'ULTIMO'}).
+	 *
+	 * <p>Al ejecutar el {@code UPDATE} sobre {@code CANCIONES_PERSONALIZADAS}, el trigger SQLite
+	 * {@code trg_canciones_record_after_update} verifica si {@code puntaje_ultimo_intento > puntaje_mas_alto};
+	 * de ser así, promueve automáticamente el nuevo récord y copia los ítems de {@code 'ULTIMO'} a {@code 'MEJOR'}
+	 * en {@code CANCION_OBJETOS_INTENTO}.
 	 */
 	public static void recordAttempt(
 		long idCancion,
@@ -362,6 +404,10 @@ public class CustomSongRepository {
 			System.err.println("Error registrando intento de canción custom: " + e.getMessage());
 		}
 	}
+
+	// =========================================================================
+	// Mapeo de Filas y Utilidades Internas de Archivos
+	// =========================================================================
 
 	private static CustomSongSummary mapSummaryRow(ResultSet rs) throws SQLException {
 		CustomSongSummary s = new CustomSongSummary();

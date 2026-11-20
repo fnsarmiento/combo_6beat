@@ -17,8 +17,6 @@ import engine.audio.MusicTrack;
 import engine.dialogs.DialogManager;
 import engine.dialogs.GameDialog;
 import engine.draw.ParticleSystem;
-import engine.draw.Sprite2D;
-import kuusisto.tinysound.Sound;
 import game.Config;
 import game.Global;
 import game.core.GameState;
@@ -29,30 +27,91 @@ import game.core.notes.SongPackLoader;
 import game.core.notes.TimingPointPacker;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
+import kuusisto.tinysound.Sound;
 import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.data.XML;
 
+/**
+ * Escena de combate rítmico de 6 carriles en perspectiva 3D (inspirada en Rift of the NecroDancer).
+ * Renderiza la arena planetaria con luces de ciudad en rotación, la autopista trapezoidal de 6 carriles,
+ * las ondas de pulso tipo guitarra, los bloques rojos de carril bloqueado, las notas simples/mantenidas
+ * y el HUD de combate sobre ControlP5.
+ */
 public class ROTNScene extends Scene {
 
+	// =========================================================================
+	// 1. Constantes visuales, geometría 3D de la pista y paleta de colores
+	// =========================================================================
+
+	private static final int LANE_COUNT = 6;
+
+	// Geometría de proyección en perspectiva 3D sobre framebuffer virtual 480x270
+	private static final float CENTER_X = BASE_W * 0.5f; // 240.0f
+	private static final float Y_FAR = 92.0f;            // Horizonte superior de la pista
+	private static final float Y_HIT = 218.0f;           // Arco blanco de impacto (receptores)
+	private static final float HALF_W_HIT = 126.0f;      // Semiancho de los 6 carriles en Y_HIT
+	private static final float ARC_RISE = 16.0f;         // Curvatura parabólica hacia arriba en los extremos
+	private static final float Z_FAR = 3.2f;             // Profundidad en el horizonte (t = 0)
+	private static final float Z_HIT = 1.0f;             // Profundidad en la línea de impacto (t = 1)
+	private static final float S_FAR = 1.0f / Z_FAR;
+	private static final float PRESS_SINK_PX = 3.5f;     // Hundimiento vertical al presionar un carril
+
+	// Semiancho normalizado (xi) de las ondas horizontales de compás y del arco de impacto
+	private static final float BEAT_WAVE_ARC_MAX_XI = 1.48f;
+	private static final float HIT_LINE_ARC_MAX_XI = 1.58f;
+
+	// Velocidad de desplazamiento y tiempos de transición
+	private static final float DEFAULT_SCROLL_SPEED = 0.22f;
+	private static final float BASE_APPROACH_TIME_MS = 1400.0f;
+	private static final float INTRO_COUNTDOWN_DURATION = 3.0f;
+	private static final float BGM_FADE_OUT_DURATION = 3.0f;
+	private static final float HOLD_PARTICLE_INTERVAL_SEC = 0.025f;
+
+	// Paleta de colores ARGB para juicios flotantes y partículas
+	private static final int COLOR_RATING_PERFECT = 0xFF4FB3FF; // Azul
+	private static final int COLOR_RATING_GOOD    = 0xFF55E87A; // Verde
+	private static final int COLOR_RATING_SAFE    = 0xFFFFFFFF; // Blanco
+	private static final int COLOR_RATING_MISS    = 0xFFB86BFF; // Morado
+
+	// Clusters de luces de ciudad sobre el planeta: { xiCentro, tFase (0..1), cantidadLuces }
+	private static final float[][] CITY_LIGHT_CLUSTERS = {
+		{ -2.45f, 0.06f, 11 }, // 0: Izquierda lejano
+		{  2.35f, 0.14f, 11 }, // 1: Derecha lejano
+		{ -1.65f, 0.34f, 10 }, // 2: Izquierda medio
+		{  1.70f, 0.44f, 10 }, // 3: Derecha medio
+		{ -2.15f, 0.62f, 12 }, // 4: Izquierda otro continente
+		{  2.25f, 0.72f, 12 }, // 5: Derecha otro continente
+		{ -1.45f, 0.88f,  9 }, // 6: Izquierda cercano
+		{  1.50f, 0.94f,  9 }  // 7: Derecha cercano
+	};
+
+	// Pares de clusters distantes conectados por caminos de luces en perspectiva
+	private static final int[][] CITY_ROAD_PAIRS = {
+		{ 0, 4 }, // Gran distancia en fase (0.06 -> 0.62)
+		{ 1, 5 }  // Gran distancia en fase (0.14 -> 0.72)
+	};
+
+	// =========================================================================
+	// 2. Estado de la escena (configuración de canción/batalla, audio,
+	//    HUD ControlP5, partículas y luces de ciudad)
+	// =========================================================================
+
+	// Origen de datos del nivel (escena XML, canción personalizada, variante de pack o manifiesto)
 	private final String _sceneFilePath;
 	private final CustomSongRepository.CustomSongSummary _customSong;
 	private final SongPackLoader.ChartVariant _chartVariant;
 	private final String _manifestChartId;
 	private final XML _manifestPackNode;
 	private final XML _manifestChartNode;
-	private MusicTrack _bgm;
-	private ROTNCore _rhythmCore;
-	private long[] _timingPoints = new long[0];
 
-	// Datos del Jefe y combate cargados desde .scene XML o .osu [Combo6Beat]
+	// Metadatos del encuentro y progreso de campaña/modo libre
 	private String _bossId = "boss_generic";
 	private String _bossName = "Enemigo Rítmico";
 	private String _bossSpecies = "";
-	private Sprite2D _bossSprite;
-	private PImage _customCoverImg;
 	private String _returnScene = "";
 	private String _defeatFlag = "";
 	private String _rewardItem = "";
@@ -60,28 +119,22 @@ public class ROTNScene extends Scene {
 	private boolean _customAttemptRecorded = false;
 	private boolean _customIsNewRecord = false;
 
-	// Parámetros de perspectiva 3D de la pista de 6 carriles (resolución virtual 480x270)
-	private static final float CENTER_X = BASE_W * 0.5f; // 240.0f
-	private static final float Y_FAR = 92.0f;            // Horizonte bajo el jefe
-	private static final float Y_HIT = 218.0f;           // Arco blanco de impacto
-	private static final float HALF_W_HIT = 126.0f;      // Semiancho total de 6 carriles en Y_HIT
-	private static final float ARC_RISE = 16.0f;         // Curvatura hacia arriba en los extremos
-	private static final float Z_FAR = 3.2f;             // Profundidad en t = 0
-	private static final float Z_HIT = 1.0f;             // Profundidad en t = 1 (línea de impacto)
-	private static final float S_FAR = 1.0f / Z_FAR;
-	private static final float PRESS_SINK_PX = 3.5f;
-
-	private float _scrollSpeed = 0.22f; // px/ms equivalente para calcular approachTimeMs
+	// Audio, núcleo rítmico y temporizadores de reproducción
+	private MusicTrack _bgm;
+	private Sound _hitSfx;
+	private ROTNCore _rhythmCore;
+	private long[] _timingPoints = new long[0];
+	private float _scrollSpeed = DEFAULT_SCROLL_SPEED;
 	private int _songFallbackTimerMs = 0;
 	private boolean _bgmPausedByScene = false;
-	private float _introCountdown = 3.0f;
 	private boolean _bgmStarted = false;
-	private float _bgAnimTime = 0.0f;
-	private static final float BGM_FADE_OUT_DURATION = 3.0f;
+	private float _introCountdown = INTRO_COUNTDOWN_DURATION;
 	private float _bgmFadeOutTimer = -1.0f;
-	private Sound _hitSfx;
+
+	// Animación del planeta, sistema de partículas y textos flotantes de juicio
+	private float _bgAnimTime = 0.0f;
 	private final ParticleSystem _particles = new ParticleSystem(320);
-	private final float[] _holdParticleTimers = new float[6];
+	private final float[] _holdParticleTimers = new float[LANE_COUNT];
 	private final ArrayList<FloatingRating> _floatingRatings = new ArrayList<>();
 
 	private static class FloatingRating {
@@ -90,34 +143,21 @@ public class ROTNScene extends Scene {
 		float life, maxLife;
 		int color;
 	}
-	private String _lastRatingText = "";
-	private int _lastRatingColor = 0xFFFFFFFF;
-	private float _ratingTimer = 0.0f;
 
-	// Controladores ControlP5 (toda la UI vive en ControlP5, nunca en el framebuffer)
-	private Button _uiHeartIcon;
-	private Button _uiHpBg;
+	// Controladores dinámicos de ControlP5 (actualizados en syncCombatUI)
 	private Button _uiHpFill;
 	private Textlabel _uiHpLbl;
 	private Textlabel _uiShieldLbl;
 
-	private Textlabel _uiBossLbl;
-	private Button _uiBossHpBg;
 	private Button _uiBossHpFill;
 	private Textlabel _uiAlertLbl;
 
 	private Textlabel _uiScoreLbl;
 	private Textlabel _uiComboLbl;
-	private Textlabel _uiRatingLbl;
 
 	private Textlabel _uiHealRatioLbl;
-	private Button _uiHealBg;
 	private Button _uiHealFill;
-	private Textlabel _uiHealT1Lbl;
-	private Textlabel _uiHealT2Lbl;
 
-	private Button _uiItemIcon;
-	private Button _uiItemBadgeBg;
 	private Textlabel _uiItemLbl;
 
 	private Group _uiModalGroup;
@@ -128,6 +168,10 @@ public class ROTNScene extends Scene {
 	private int _modalFocusIdx = 0;
 	private boolean _modalWasOpen = false;
 
+	// =========================================================================
+	// 3. Constructores y ciclo de vida (setup, inicialización de canción, close)
+	// =========================================================================
+
 	public ROTNScene(String path) {
 		super(path);
 		this._customSong = null;
@@ -135,7 +179,7 @@ public class ROTNScene extends Scene {
 		this._manifestChartId = "";
 		this._manifestPackNode = null;
 		this._manifestChartNode = null;
-		this._sceneFilePath = path != null ? path : "";
+		this._sceneFilePath = (path != null) ? path : "";
 	}
 
 	public ROTNScene(CustomSongRepository.CustomSongSummary customSong) {
@@ -164,7 +208,7 @@ public class ROTNScene extends Scene {
 		super((String) null);
 		this._customSong = null;
 		this._chartVariant = null;
-		this._manifestChartId = chartId != null ? chartId : "";
+		this._manifestChartId = (chartId != null) ? chartId : "";
 		this._manifestPackNode = packNode;
 		this._manifestChartNode = chartNode;
 		this._sceneFilePath = ResourcesManager.getAbsPathFromProject(Global.SONGS_MANIFEST);
@@ -189,16 +233,8 @@ public class ROTNScene extends Scene {
 		return new ROTNScene((String) null);
 	}
 
-	@Override
-	public void setup() {
-		Engine.ensureVirtualScreenSize((int) BASE_W, (int) BASE_H);
-		GameState.init();
-		GameState.bindDialogHooks();
-		Audio.pausePersistentBGM();
-		super.setup();
-
-		if (_customSong == null && _chartVariant == null && _manifestChartNode == null && _xmlScene == null) return;
-
+	/** Parámetros de combate recolectados durante la carga del beatmap/escena. */
+	private static class CombatConfig {
 		int playerMaxHp = 200;
 		int bossMaxHp = 1500;
 		int bossAttackDamage = 12;
@@ -207,24 +243,63 @@ public class ROTNScene extends Scene {
 		float healActiveDuration = 6.0f;
 		int laneLockInterval = 10000;
 		int laneLockDuration = 2800;
+	}
 
-		String bossSpritePath = "";
-		int bossRows = 1;
-		int bossCols = 1;
-		float bossScaleX = 2.0f;
-		float bossScaleY = 2.0f;
-		float bossWidthPx = -1.0f;
-		float bossHeightPx = -1.0f;
-		float bossDelay = 0.1f;
-		float bossX = CENTER_X;
-		float bossY = 54.0f;
+	@Override
+	public void setup() {
+		Engine.ensureVirtualScreenSize((int) BASE_W, (int) BASE_H);
+		GameState.init();
+		GameState.bindDialogHooks();
+		Audio.pausePersistentBGM();
+		super.setup();
 
+		if (_customSong == null && _chartVariant == null && _manifestChartNode == null && _xmlScene == null) {
+			return;
+		}
+
+		CombatConfig cfg = new CombatConfig();
+		OsuManiaReader reader = loadSongAndCombatConfig(cfg);
+
+		long[] loadedNotes = (reader != null) ? reader.getNotes() : new long[0];
+		_timingPoints = (reader != null && reader.getTimingPoints() != null)
+			? reader.getTimingPoints()
+			: new long[0];
+
+		_rhythmCore = new ROTNCore(loadedNotes);
+		_rhythmCore.setBossInvincible(GameState.launchedFromMenu && GameState.bossInvincibleMode);
+		_rhythmCore.configureCombat(
+			cfg.playerMaxHp,
+			cfg.bossMaxHp,
+			cfg.bossAttackDamage,
+			cfg.bossHitDamage,
+			cfg.healThreshold,
+			cfg.healActiveDuration,
+			cfg.laneLockInterval,
+			cfg.laneLockDuration
+		);
+		_rhythmCore.setOnHitListener(this::onNoteHit);
+
+		_hitSfx = ResourcesManager.loadSFX("sfx/Normal-Hitnormal.wav");
+
+		setupCombatUI();
+		syncCombatUI();
+
+		_introCountdown = INTRO_COUNTDOWN_DURATION;
+		_bgmStarted = false;
+	}
+
+	/**
+	 * Carga el lector `.osu`, la pista BGM y los parámetros de combate según la fuente activa.
+	 */
+	private OsuManiaReader loadSongAndCombatConfig(CombatConfig cfg) {
+		float speedMult = Math.max(0.5f, GameState.songSpeedMultiplier);
 		OsuManiaReader reader = null;
+
 		if (_customSong != null) {
 			_bossId = "custom_" + _customSong.idCancion;
 			_bossName = _customSong.titulo;
 			_bossSpecies = _customSong.dificultad + " | " + Math.round(_customSong.bpm) + " BPM";
-			_scrollSpeed = 0.22f * Math.max(0.5f, GameState.songSpeedMultiplier);
+			_scrollSpeed = DEFAULT_SCROLL_SPEED * speedMult;
 
 			if (!_customSong.rutaChart.isEmpty()) {
 				String osuAbs = ResourcesManager.getAbsPathFromProject(_customSong.rutaChart);
@@ -237,45 +312,26 @@ public class ROTNScene extends Scene {
 					_bgm = Audio.loadBGM(audioAbs);
 				}
 			}
-			if (!_customSong.rutaPortada.isEmpty()) {
-				String coverAbs = ResourcesManager.getAbsPathFromProject(_customSong.rutaPortada);
-				if (new File(coverAbs).exists() && Engine.getApp() != null) {
-					_customCoverImg = Engine.getApp().loadImage(coverAbs);
-				}
-			}
 		} else if (_chartVariant != null) {
 			_returnScene = GameState.returnScenePath;
-			_scrollSpeed = _chartVariant.scrollSpeed * Math.max(0.5f, GameState.songSpeedMultiplier);
+			_scrollSpeed = _chartVariant.scrollSpeed * speedMult;
 
 			if (!_chartVariant.osuAbsPath.isEmpty()) {
 				reader = new OsuManiaReader(_chartVariant.osuAbsPath);
 				_bgm = reader.getSong();
 			}
 
-			if (!_chartVariant.coverRelPath.isEmpty() && Engine.getApp() != null) {
-				String coverAbs = ResourcesManager.getAbsPathFromProject(_chartVariant.coverRelPath);
-				if (new File(coverAbs).exists()) {
-					_customCoverImg = Engine.getApp().loadImage(coverAbs);
-				}
-			}
-
 			_bossId = !_chartVariant.bossId.isEmpty() ? _chartVariant.bossId : _chartVariant.id;
 			_bossName = _chartVariant.bossName;
 			_bossSpecies = _chartVariant.bossSpecies;
-			bossMaxHp = _chartVariant.bossHp;
-			bossAttackDamage = _chartVariant.attackDamage;
-			bossHitDamage = _chartVariant.hitDamage;
-			bossSpritePath = _chartVariant.bossSprite;
-			bossRows = _chartVariant.bossRows;
-			bossCols = _chartVariant.bossCols;
-			bossDelay = _chartVariant.bossDelay;
-			bossScaleX = _chartVariant.bossScaleX;
-			bossScaleY = _chartVariant.bossScaleY;
+			cfg.bossMaxHp = _chartVariant.bossHp;
+			cfg.bossAttackDamage = _chartVariant.attackDamage;
+			cfg.bossHitDamage = _chartVariant.hitDamage;
 			_defeatFlag = _chartVariant.defeatFlag;
 			_rewardItem = _chartVariant.rewardItem;
 		} else if (_manifestChartNode != null) {
 			_returnScene = GameState.returnScenePath;
-			_scrollSpeed = _manifestChartNode.getFloat("scroll-speed", 0.22f) * Math.max(0.5f, GameState.songSpeedMultiplier);
+			_scrollSpeed = _manifestChartNode.getFloat("scroll-speed", DEFAULT_SCROLL_SPEED) * speedMult;
 
 			String osuRel = _manifestChartNode.getString("file", "");
 			if (!osuRel.isEmpty()) {
@@ -284,39 +340,23 @@ public class ROTNScene extends Scene {
 				_bgm = reader.getSong();
 			}
 
-			String coverRel = (_manifestPackNode != null) ? _manifestPackNode.getString("cover", "") : "";
-			if (!coverRel.isEmpty() && Engine.getApp() != null) {
-				String coverAbs = resolveSceneRelativeOrResource(coverRel);
-				if (new File(coverAbs).exists()) {
-					_customCoverImg = Engine.getApp().loadImage(coverAbs);
-				}
-			}
-
 			_bossId = _manifestChartNode.getString("boss-id", _manifestChartId);
 			_bossName = _manifestChartNode.getString("boss-name", _bossName);
 			_bossSpecies = _manifestChartNode.getString("boss-species", "");
-			bossMaxHp = _manifestChartNode.getInt("boss-hp", bossMaxHp);
-			bossAttackDamage = _manifestChartNode.getInt("attack-damage", bossAttackDamage);
-			bossHitDamage = _manifestChartNode.getInt("hit-damage", bossHitDamage);
-			bossSpritePath = _manifestChartNode.getString("boss-sprite", bossSpritePath);
-			int defaultRows = bossSpritePath.endsWith("bear.png") ? 3 : bossRows;
-			int defaultCols = bossSpritePath.endsWith("bear.png") ? 3 : bossCols;
-			bossRows = _manifestChartNode.getInt("boss-rows", defaultRows);
-			bossCols = _manifestChartNode.getInt("boss-cols", defaultCols);
-			bossDelay = _manifestChartNode.getFloat("boss-delay", bossDelay);
-			bossScaleX = _manifestChartNode.getFloat("boss-scale-x", bossScaleX);
-			bossScaleY = _manifestChartNode.getFloat("boss-scale-y", bossScaleY);
+			cfg.bossMaxHp = _manifestChartNode.getInt("boss-hp", cfg.bossMaxHp);
+			cfg.bossAttackDamage = _manifestChartNode.getInt("attack-damage", cfg.bossAttackDamage);
+			cfg.bossHitDamage = _manifestChartNode.getInt("hit-damage", cfg.bossHitDamage);
 			_defeatFlag = _manifestChartNode.getString("defeat-flag", _defeatFlag);
 			_rewardItem = _manifestChartNode.getString("reward-item", _rewardItem);
-		} else {
+		} else if (_xmlScene != null) {
 			_returnScene = _xmlScene.getString("return-scene", GameState.returnScenePath);
 
 			XML songNode = _xmlScene.getChild("Song");
 			String osuRel = (songNode != null) ? songNode.getString("file", "") : "";
 			if (songNode != null) {
-				_scrollSpeed = songNode.getFloat("scroll-speed", 0.22f);
+				_scrollSpeed = songNode.getFloat("scroll-speed", DEFAULT_SCROLL_SPEED);
 			}
-			_scrollSpeed *= Math.max(0.5f, GameState.songSpeedMultiplier);
+			_scrollSpeed *= speedMult;
 
 			if (!osuRel.isEmpty()) {
 				String osuAbs = resolveSceneRelativeOrResource(osuRel);
@@ -327,12 +367,9 @@ public class ROTNScene extends Scene {
 			if (reader != null && reader.hasBossSection()) {
 				if (!reader.getBossName().isEmpty()) _bossName = reader.getBossName();
 				if (!reader.getBossSpecies().isEmpty()) _bossSpecies = reader.getBossSpecies();
-				bossMaxHp = reader.getBossMaxHp();
-				bossAttackDamage = reader.getBossAttackDamage();
-				bossHitDamage = reader.getBossHitDamage();
-				bossSpritePath = reader.getBossSprite();
-				bossRows = reader.getBossRows();
-				bossCols = reader.getBossCols();
+				cfg.bossMaxHp = reader.getBossMaxHp();
+				cfg.bossAttackDamage = reader.getBossAttackDamage();
+				cfg.bossHitDamage = reader.getBossHitDamage();
 				if (!reader.getReturnScene().isEmpty()) _returnScene = reader.getReturnScene();
 				if (!reader.getDefeatFlag().isEmpty()) _defeatFlag = reader.getDefeatFlag();
 				if (!reader.getRewardItem().isEmpty()) _rewardItem = reader.getRewardItem();
@@ -343,101 +380,135 @@ public class ROTNScene extends Scene {
 				_bossId = bossNode.getString("id", _bossId);
 				_bossName = bossNode.getString("name", _bossName);
 				_bossSpecies = bossNode.getString("species", _bossSpecies);
-				bossMaxHp = bossNode.getInt("max-hp", bossMaxHp);
-				bossAttackDamage = bossNode.getInt("attack-damage", bossAttackDamage);
-				bossHitDamage = bossNode.getInt("hit-damage", bossHitDamage);
-				bossSpritePath = bossNode.getString("sprite", bossSpritePath);
-				bossRows = bossNode.getInt("rows", bossRows);
-				bossCols = bossNode.getInt("cols", bossCols);
-				bossScaleX = bossNode.getFloat("scale-x", bossScaleX);
-				bossScaleY = bossNode.getFloat("scale-y", bossScaleY);
-				bossWidthPx = bossNode.getFloat("width", bossWidthPx);
-				bossHeightPx = bossNode.getFloat("height", bossHeightPx);
-				bossDelay = bossNode.getFloat("delay", bossDelay);
-				bossX = bossNode.getFloat("position-x", bossX);
-				bossY = bossNode.getFloat("position-y", bossY);
+				cfg.bossMaxHp = bossNode.getInt("max-hp", cfg.bossMaxHp);
+				cfg.bossAttackDamage = bossNode.getInt("attack-damage", cfg.bossAttackDamage);
+				cfg.bossHitDamage = bossNode.getInt("hit-damage", cfg.bossHitDamage);
 				_defeatFlag = bossNode.getString("defeat-flag", _defeatFlag);
 				_rewardItem = bossNode.getString("reward-item", _rewardItem);
 			}
 
 			XML combatNode = _xmlScene.getChild("Combat");
 			if (combatNode != null) {
-				playerMaxHp = combatNode.getInt("player-max-hp", playerMaxHp);
-				healThreshold = combatNode.getInt("heal-threshold", healThreshold);
-				healActiveDuration = combatNode.getFloat("heal-active-duration", healActiveDuration);
-				laneLockInterval = combatNode.getInt("lane-lock-interval", laneLockInterval);
-				laneLockDuration = combatNode.getInt("lane-lock-duration", laneLockDuration);
+				cfg.playerMaxHp = combatNode.getInt("player-max-hp", cfg.playerMaxHp);
+				cfg.healThreshold = combatNode.getInt("heal-threshold", cfg.healThreshold);
+				cfg.healActiveDuration = combatNode.getFloat("heal-active-duration", cfg.healActiveDuration);
+				cfg.laneLockInterval = combatNode.getInt("lane-lock-interval", cfg.laneLockInterval);
+				cfg.laneLockDuration = combatNode.getInt("lane-lock-duration", cfg.laneLockDuration);
 			}
 		}
 
-		if (bossSpritePath != null && !bossSpritePath.isEmpty()) {
-			_bossSprite = new Sprite2D(bossSpritePath, Math.max(1, bossRows), Math.max(1, bossCols), 10);
-			_bossSprite.centerPosition = true;
-			_bossSprite.position.set(bossX, bossY);
-			_bossSprite.scale.set(bossScaleX, bossScaleY);
-			if (bossWidthPx > 0.0f || bossHeightPx > 0.0f) {
-				_bossSprite.setPixelSize(bossWidthPx, bossHeightPx);
-			}
-			_bossSprite.delay = bossDelay;
-		}
-
-		long[] loadedNotes = (reader != null) ? reader.getNotes() : new long[0];
-		_timingPoints = (reader != null && reader.getTimingPoints() != null)
-			? reader.getTimingPoints()
-			: new long[0];
-		_rhythmCore = new ROTNCore(loadedNotes);
-		_rhythmCore.setBossInvincible(GameState.launchedFromMenu && GameState.bossInvincibleMode);
-		_rhythmCore.configureCombat(
-			playerMaxHp,
-			bossMaxHp,
-			bossAttackDamage,
-			bossHitDamage,
-			healThreshold,
-			healActiveDuration,
-			laneLockInterval,
-			laneLockDuration
-		);
-		_rhythmCore.setOnHitListener((lane, rating, combo, detail) -> {
-			int ratingColor = switch (rating) {
-				case PERFECT -> 0xFF4FB3FF; // Azul
-				case GOOD    -> 0xFF55E87A; // Verde
-				case SAFE    -> 0xFFFFFFFF; // Blanco
-				case MISS    -> 0xFFB86BFF; // Morado
-			};
-			_lastRatingText = rating.name();
-			_ratingTimer = 0.65f;
-			_lastRatingColor = ratingColor;
-
-			float xi = laneToXi(lane);
-			float cx = projectX(xi, 1.0f);
-			float cy = projectY(xi, 1.0f, 1.0f);
-
-			FloatingRating fr = new FloatingRating();
-			fr.text = rating.name();
-			fr.x = cx;
-			fr.y = cy - 18.0f;
-			fr.vy = -22.0f;
-			fr.life = (rating == ROTNCore.HitRating.MISS) ? 0.75f : 0.55f;
-			fr.maxLife = fr.life;
-			fr.color = ratingColor;
-			_floatingRatings.add(fr);
-
-			// Partículas en el texto con el color del juicio
-			_particles.emitBurst(fr.x, fr.y, 7, 14.0f, 44.0f, 1.8f, 3.2f, 0.18f, 0.36f, 18.0f, ratingColor);
-
-			if (rating != ROTNCore.HitRating.MISS) {
-				_particles.emitBurst(cx, cy + PRESS_SINK_PX, 10, 24.0f, 70.0f, 2.2f, 4.0f, 0.18f, 0.36f, 55.0f, 0xFFFFFFFF);
-			}
-		});
-
-		_hitSfx = ResourcesManager.loadSFX("sfx/Normal-Hitnormal.wav");
-
-		setupCombatUI();
-		syncCombatUI();
-
-		_introCountdown = 3.0f;
-		_bgmStarted = false;
+		return reader;
 	}
+
+	/**
+	 * Callback disparado por {@link ROTNCore} al registrar un juicio en un carril:
+	 * genera el cartel flotante sobre el receptor 3D y emite partículas de impacto.
+	 */
+	private void onNoteHit(int lane, ROTNCore.HitRating rating, int combo, String detail) {
+		int ratingColor = switch (rating) {
+			case PERFECT -> COLOR_RATING_PERFECT;
+			case GOOD    -> COLOR_RATING_GOOD;
+			case SAFE    -> COLOR_RATING_SAFE;
+			case MISS    -> COLOR_RATING_MISS;
+		};
+
+		float xi = laneToXi(lane);
+		float cx = projectX(xi, 1.0f);
+		float cy = projectY(xi, 1.0f, 1.0f);
+
+		FloatingRating fr = new FloatingRating();
+		fr.text = rating.name();
+		fr.x = cx;
+		fr.y = cy - 18.0f;
+		fr.vy = -22.0f;
+		fr.life = (rating == ROTNCore.HitRating.MISS) ? 0.75f : 0.55f;
+		fr.maxLife = fr.life;
+		fr.color = ratingColor;
+		_floatingRatings.add(fr);
+
+		// Ráfaga de partículas coloreadas en la posición del texto de juicio
+		_particles.emitBurst(fr.x, fr.y, 7, 14.0f, 44.0f, 1.8f, 3.2f, 0.18f, 0.36f, 18.0f, ratingColor);
+
+		// Ráfaga blanca sobre el receptor cuando la nota es acertada
+		if (rating != ROTNCore.HitRating.MISS) {
+			_particles.emitBurst(cx, cy + PRESS_SINK_PX, 10, 24.0f, 70.0f, 2.2f, 4.0f, 0.18f, 0.36f, 55.0f, 0xFFFFFFFF);
+		}
+	}
+
+	private String resolveSceneRelativeOrResource(String relPath) {
+		String fromRes = ResourcesManager.getResourceAbsPath(relPath);
+		if (new File(fromRes).exists()) return fromRes;
+
+		if (!_sceneFilePath.isEmpty()) {
+			File parent = new File(_sceneFilePath).getParentFile();
+			if (parent != null) {
+				File f = new File(parent, relPath);
+				if (f.exists()) return f.getAbsolutePath();
+			}
+		}
+		return ResourcesManager.getAbsPathFromProject(relPath);
+	}
+
+	private void restartBattleScene() {
+		if (_customSong != null) {
+			CustomSongRepository.CustomSongSummary latest = CustomSongRepository.getById(_customSong.idCancion);
+			Engine.changeScene(new ROTNScene(latest != null ? latest : _customSong));
+		} else if (_chartVariant != null) {
+			Engine.changeScene(new ROTNScene(_chartVariant));
+		} else if (_manifestChartId != null && !_manifestChartId.isEmpty()) {
+			Engine.changeScene(ROTNScene.fromManifest(_manifestChartId));
+		} else {
+			Engine.changeScene(new ROTNScene(_sceneFilePath));
+		}
+	}
+
+	private String resolveReturnTargetScene() {
+		if (!GameState.launchedFromMenu && !GameState.isDebugSession && GameState.returnScenePath != null && !GameState.returnScenePath.isEmpty()) {
+			return GameState.returnScenePath;
+		}
+		return (_returnScene != null && !_returnScene.isEmpty())
+			? _returnScene
+			: GameState.returnScenePath;
+	}
+
+	private void returnToWorld() {
+		if (GameState.launchedFromMenu) {
+			GameState.launchedFromMenu = false;
+			if (!GameState.loadGame()) {
+				GameState.reset();
+			}
+			Engine.changeScene(new InitScene(InitScene.ViewMode.SONG_SELECT));
+			return;
+		}
+		boolean won = (_rhythmCore != null && _rhythmCore.getBattleState() == ROTNCore.BattleState.VICTORY);
+		DialogManager.resolveBattleOutcome(won);
+		if (won) {
+			GameState.defineFlag("LAST_BATTLE_WON");
+			GameState.clearFlag("LAST_BATTLE_LOST");
+		} else {
+			GameState.defineFlag("LAST_BATTLE_LOST");
+			GameState.clearFlag("LAST_BATTLE_WON");
+		}
+		GameState.autoSaveIfStory();
+		Engine.changeScene(new HubScene());
+	}
+
+	@Override
+	protected void onDialogLoadRequest(String scenePath) {
+		String absPath = ResourcesManager.getAbsPathFromProject(scenePath);
+		Engine.changeScene(new ROTNScene(absPath));
+	}
+
+	@Override
+	public void close() {
+		super.close();
+		Audio.stopTransientBGM();
+	}
+
+	// =========================================================================
+	// 4. Construcción y sincronización de UI ControlP5 (HUD superior, barra de
+	//    progreso de curación, modales de pausa, victoria y derrota)
+	// =========================================================================
 
 	private PImage createPixelHeartIcon() {
 		int w = Math.max(16, (int) scaleW(24));
@@ -503,6 +574,9 @@ public class ROTNScene extends Scene {
 		return img;
 	}
 
+	/**
+	 * Construye todos los widgets de ControlP5 para el HUD de combate y el modal de estado.
+	 */
 	private void setupCombatUI() {
 		PApplet app = Engine.getApp();
 
@@ -511,38 +585,37 @@ public class ROTNScene extends Scene {
 		ControlFont fontBig = makeFont(10.5f, true);
 		ControlFont fontModalTitle = makeFont(14.0f, true);
 
-		// 1. Arriba-Izquierda: Corazón + Vida del Jugador + Escudo
+		// 1. Arriba-Izquierda: Corazón + Vida del Jugador + Estado del Escudo
 		PImage heartImg = createPixelHeartIcon();
-		_uiHeartIcon = addUIBox("ui_rotn_heart_icon", null, 10, 8, 24, 24, 0)
+		addUIBox("ui_rotn_heart_icon", null, 10, 8, 24, 24, 0)
 			.setSize(heartImg.width, heartImg.height)
 			.setImage(heartImg);
 
 		_uiHpLbl = addUILabel("ui_rotn_hp_lbl", null, "HP: 100/100", 38, 9, app.color(245, 235, 240), fontMed);
-		_uiHpBg = addUIBox("ui_rotn_hp_bg", null, 38, 21, 96, 7, app.color(40, 20, 28, 220));
+		addUIBox("ui_rotn_hp_bg", null, 38, 21, 96, 7, app.color(40, 20, 28, 220));
 		_uiHpFill = addUIBox("ui_rotn_hp_fill", null, 38, 21, 96, 7, app.color(230, 65, 85, 245));
 		_uiShieldLbl = addUILabel("ui_rotn_shield_lbl", null, "", 38, 31, app.color(110, 235, 255), fontSmall);
 
-		// 2. Arriba-Centro: HP del Jefe (sin título del jefe) y Avisos de ataque
-		_uiBossHpBg = addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
+		// 2. Arriba-Centro: Barra de HP del Jefe y Avisos de bloqueo de carril
+		addUIBox("ui_rotn_boss_hp_bg", null, 175, 14, 130, 6, app.color(42, 18, 26, 220));
 		_uiBossHpFill = addUIBox("ui_rotn_boss_hp_fill", null, 175, 14, 130, 6, app.color(235, 65, 85, 245));
 		_uiAlertLbl = addUILabel("ui_rotn_alert_lbl", null, "", 170, 80, app.color(255, 190, 60), fontMed);
 
-		// 3. Arriba-Derecha: Score, Combo y Juicio
+		// 3. Arriba-Derecha: Score y Combo
 		_uiScoreLbl = addUILabel("ui_rotn_score_lbl", null, "SCORE: 0", 356, 8, app.color(255), fontMed);
 		_uiComboLbl = addUILabel("ui_rotn_combo_lbl", null, "COMBO: 0x", 356, 20, app.color(110, 225, 255), fontMed);
-		_uiRatingLbl = addUILabel("ui_rotn_rating_lbl", null, "", 356, 33, app.color(255, 230, 110), fontBig);
 
-		// 4. Abajo-Izquierda: Barra Vertical de Curación Dinámica (como en la referencia)
-		_uiHealRatioLbl = addUILabel("ui_rotn_heal_ratio_lbl", null, "0/50", 12, 162, app.color(230, 60, 60), fontBig);
-		_uiHealBg = addUIBox("ui_rotn_heal_bg", null, 14, 178, 14, 76, app.color(24, 30, 38, 225));
+		// 4. Abajo-Izquierda: Barra Vertical de Curación Dinámica
+		_uiHealRatioLbl = addUILabel("ui_rotn_heal_ratio_lbl", null, "0/2", 12, 162, app.color(230, 60, 60), fontBig);
+		addUIBox("ui_rotn_heal_bg", null, 14, 178, 14, 76, app.color(24, 30, 38, 225));
 		_uiHealFill = addUIBox("ui_rotn_heal_fill", null, 14, 252, 14, 1, app.color(45, 200, 90, 245));
-		_uiHealT2Lbl = addUILabel("ui_rotn_heal_t2", null, "2", 31, 200, app.color(220, 235, 220), fontSmall);
-		_uiHealT1Lbl = addUILabel("ui_rotn_heal_t1", null, "1", 31, 238, app.color(220, 235, 220), fontSmall);
+		addUILabel("ui_rotn_heal_t2", null, "2", 31, 200, app.color(220, 235, 220), fontSmall);
+		addUILabel("ui_rotn_heal_t1", null, "1", 31, 238, app.color(220, 235, 220), fontSmall);
 
-		// 5. Abajo-Derecha: Ícono pixel art de curación + Modo + Chip equipado
-		_uiItemBadgeBg = addUIBox("ui_rotn_item_badge", null, 346, 232, 124, 30, app.color(18, 16, 28, 205));
+		// 5. Abajo-Derecha: Ícono pixel art de curación + Estrategia + Amuleto equipado
+		addUIBox("ui_rotn_item_badge", null, 346, 232, 124, 30, app.color(18, 16, 28, 205));
 		PImage healImg = createPixelHealIcon();
-		_uiItemIcon = addUIBox("ui_rotn_item_icon", null, 442, 235, 24, 24, 0)
+		addUIBox("ui_rotn_item_icon", null, 442, 235, 24, 24, 0)
 			.setSize(healImg.width, healImg.height)
 			.setImage(healImg);
 		_uiItemLbl = addUILabel("ui_rotn_item_lbl", null, "Cura: Optimo", 352, 238, app.color(235, 240, 255), fontSmall);
@@ -579,38 +652,191 @@ public class ROTNScene extends Scene {
 		}
 	}
 
-	private void restartBattleScene() {
-		if (_customSong != null) {
-			CustomSongRepository.CustomSongSummary latest = CustomSongRepository.getById(_customSong.idCancion);
-			Engine.changeScene(new ROTNScene(latest != null ? latest : _customSong));
-		} else if (_chartVariant != null) {
-			Engine.changeScene(new ROTNScene(_chartVariant));
-		} else if (_manifestChartId != null && !_manifestChartId.isEmpty()) {
-			Engine.changeScene(ROTNScene.fromManifest(_manifestChartId));
-		} else {
-			Engine.changeScene(new ROTNScene(_sceneFilePath));
+	/**
+	 * Sincroniza los textos, barras de progreso y visibilidad del modal de ControlP5
+	 * con el estado actual de {@link ROTNCore}.
+	 */
+	private void syncCombatUI() {
+		if (_rhythmCore == null) return;
+		PApplet app = Engine.getApp();
+
+		// 1. HP del Jugador y Escudo
+		float pHpRatio = (float) _rhythmCore.getPlayerHp() / Math.max(1, _rhythmCore.getPlayerMaxHp());
+		pHpRatio = PApplet.constrain(pHpRatio, 0.0f, 1.0f);
+		if (_uiHpLbl != null) {
+			_uiHpLbl.setText("HP: " + _rhythmCore.getPlayerHp() + "/" + _rhythmCore.getPlayerMaxHp());
 		}
-	}
-
-	private String resolveSceneRelativeOrResource(String relPath) {
-		String fromRes = ResourcesManager.getResourceAbsPath(relPath);
-		if (new File(fromRes).exists()) return fromRes;
-
-		if (!_sceneFilePath.isEmpty()) {
-			File parent = new File(_sceneFilePath).getParentFile();
-			if (parent != null) {
-				File f = new File(parent, relPath);
-				if (f.exists()) return f.getAbsolutePath();
+		if (_uiHpFill != null) {
+			int w = Math.max(1, Math.round(scaleW(96) * pHpRatio));
+			_uiHpFill.setSize(w, Math.max(1, (int) scaleH(7)));
+			_uiHpFill.setColorBackground(
+				_rhythmCore.getInvincibilityTimer() > 0
+					? app.color(255, 230, 90, 245)
+					: app.color(230, 65, 85, 245)
+			);
+		}
+		if (_uiShieldLbl != null) {
+			if (_rhythmCore.hasInvincibilityShield()) {
+				_uiShieldLbl.setText("[ESCUDO LISTO]");
+				_uiShieldLbl.setColorValue(app.color(110, 235, 255));
+			} else if (_rhythmCore.getInvincibilityTimer() > 0) {
+				_uiShieldLbl.setText("[INVENCIBLE]");
+				_uiShieldLbl.setColorValue(app.color(255, 230, 90));
+			} else {
+				_uiShieldLbl.setText("");
 			}
 		}
-		return ResourcesManager.getAbsPathFromProject(relPath);
+
+		// 2. HP del Jefe y Alerta de ataque de carril
+		boolean bossInvincible = _rhythmCore.isBossInvincible();
+		float bHpRatio = bossInvincible
+			? 1.0f
+			: (float) _rhythmCore.getBossHp() / Math.max(1, _rhythmCore.getBossMaxHp());
+		bHpRatio = PApplet.constrain(bHpRatio, 0.0f, 1.0f);
+		if (_uiBossHpFill != null) {
+			int bw = Math.max(1, Math.round(scaleW(130) * bHpRatio));
+			_uiBossHpFill.setSize(bw, Math.max(1, (int) scaleH(6)));
+			_uiBossHpFill.setColorBackground(
+				bossInvincible
+					? app.color(175, 110, 255, 245)
+					: app.color(235, 65, 85, 245)
+			);
+		}
+		if (_uiAlertLbl != null) {
+			int lockedLane = _rhythmCore.getLockedLane();
+			int warningLane = _rhythmCore.getWarningLane();
+			if (lockedLane >= 0) {
+				_uiAlertLbl.setText("CARRIL " + (lockedLane + 1) + " BLOQUEADO!");
+				_uiAlertLbl.setColorValue(app.color(255, 95, 110));
+			} else if (warningLane >= 0) {
+				_uiAlertLbl.setText("ALERTA CARRIL " + (warningLane + 1));
+				_uiAlertLbl.setColorValue(app.color(255, 190, 60));
+			} else {
+				_uiAlertLbl.setText("");
+			}
+		}
+
+		// 3. Score y Combo
+		if (_uiScoreLbl != null) {
+			_uiScoreLbl.setText("SCORE: " + _rhythmCore.getScore());
+		}
+		if (_uiComboLbl != null) {
+			_uiComboLbl.setText("COMBO: " + _rhythmCore.getCombo() + "x");
+		}
+
+		// 4. Barra vertical de Curación Dinámica (abajo-izquierda)
+		int threshold = _rhythmCore.getEffectiveHealThreshold();
+		float healRatio = _rhythmCore.isHealBarActive()
+			? (_rhythmCore.getHealBarTimer() / Math.max(0.1f, _rhythmCore.getHealActiveDuration()))
+			: ((float) _rhythmCore.getHealPoints() / Math.max(1, threshold));
+		healRatio = PApplet.constrain(healRatio, 0.0f, 1.0f);
+
+		if (_uiHealRatioLbl != null) {
+			if (_rhythmCore.isHealBarActive()) {
+				_uiHealRatioLbl.setText(String.format("%.1fs", _rhythmCore.getHealBarTimer()));
+				_uiHealRatioLbl.setColorValue(app.color(90, 255, 165));
+			} else {
+				_uiHealRatioLbl.setText(_rhythmCore.getHealPoints() + "/" + threshold);
+				_uiHealRatioLbl.setColorValue(app.color(230, 55, 65));
+			}
+		}
+		if (_uiHealFill != null) {
+			int fullH = Math.max(1, (int) scaleH(76));
+			int fillH = Math.max(1, Math.round(fullH * healRatio));
+			float bottomY = scaleH(178 + 76);
+			_uiHealFill.setPosition(scaleW(14), bottomY - fillH);
+			_uiHealFill.setSize(Math.max(1, (int) scaleW(14)), fillH);
+			_uiHealFill.setColorBackground(
+				_rhythmCore.isHealBarActive()
+					? app.color(85, 255, 185, 250)
+					: app.color(45, 200, 90, 240)
+			);
+		}
+
+		// 5. Resumen de estrategia de curación y amuletos (abajo-derecha)
+		if (_uiItemLbl != null) {
+			List<String> eq = GameState.getEquippedPowerUps();
+			String chipName;
+			if (eq.isEmpty()) {
+				chipName = "Sin Amuleto";
+			} else if (eq.size() == 1) {
+				chipName = GameState.getItemName(eq.get(0));
+			} else {
+				chipName = eq.size() + " Amuletos";
+			}
+			_uiItemLbl.setText("Cura: " + GameState.healStrategy.label + "\n" + chipName);
+		}
+
+		// 6. Modal de Pausa / Victoria / Derrota
+		syncModalUI(app);
 	}
+
+	private void syncModalUI(PApplet app) {
+		if (_uiModalGroup == null) return;
+
+		ROTNCore.BattleState state = _rhythmCore.getBattleState();
+		if (state == ROTNCore.BattleState.VICTORY) {
+			_uiModalGroup.show();
+			_uiModalTitle.setText(_customSong != null ? "CANCION COMPLETADA!" : "VICTORIA!");
+			_uiModalTitle.setColorValue(app.color(110, 255, 155));
+			String extraLine = "";
+			if (_customSong != null) {
+				extraLine = "\nPrecision: " + String.format("%.1f%%", _rhythmCore.getAccuracyPercent()) +
+					(_customIsNewRecord ? "  [NUEVO RECORD!]" : "");
+			} else if (_rewardItem != null && !_rewardItem.isEmpty()) {
+				extraLine = "\nRecompensa: " + GameState.getItemName(_rewardItem);
+			}
+			_uiModalDesc.setText(
+				"Score: " + _rhythmCore.getScore() +
+				" | Max Combo: " + _rhythmCore.getMaxCombo() + "x" +
+				extraLine
+			);
+			_uiModalBtn1.setLabel(GameState.launchedFromMenu ? "> Volver al Selector" : "> Volver al Mapa");
+			_uiModalBtn1.setColorBackground(app.color(55, 130, 215));
+			_uiModalBtn2.hide();
+		} else if (state == ROTNCore.BattleState.DEFEAT) {
+			_uiModalGroup.show();
+			_uiModalTitle.setText("DERROTA");
+			_uiModalTitle.setColorValue(app.color(255, 100, 110));
+			_uiModalDesc.setText(
+				"Score: " + _rhythmCore.getScore() +
+				"\nHP Jefe restante: " + _rhythmCore.getBossHp()
+			);
+			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reintentar");
+			_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
+			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Volver");
+			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
+			_uiModalBtn2.show();
+		} else if (_rhythmCore.isPaused()) {
+			_uiModalGroup.show();
+			_uiModalTitle.setText("PAUSA");
+			_uiModalTitle.setColorValue(app.color(255));
+			_uiModalDesc.setText(
+				"Score: " + _rhythmCore.getScore() +
+				" | Ventanas: " + (int) _rhythmCore.getPerfectWindowMs() + "/" +
+				(int) _rhythmCore.getGoodWindowMs() + "/" + (int) _rhythmCore.getSafeWindowMs() + "ms"
+			);
+			_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reanudar");
+			_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
+			_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Salir al Mapa");
+			_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
+			_uiModalBtn2.show();
+		} else {
+			_uiModalGroup.hide();
+		}
+	}
+
+	// =========================================================================
+	// 5. Bucle de actualización (update: pre-inicio, reproducción de canción,
+	//    fade-out de victoria, entrada de teclado y disparo de partículas/efectos)
+	// =========================================================================
 
 	@Override
 	public void update(float dt) {
 		super.update(dt);
 		GameState.updateNotification(dt);
 
+		// 1. Si hay un diálogo activo superpuesto, pausar temporalmente la música
 		if (DialogManager.isActive()) {
 			if (_bgm != null && _bgm.isPlaying()) {
 				Audio.pauseBGM();
@@ -620,74 +846,112 @@ public class ROTNScene extends Scene {
 			return;
 		}
 
-		if (_bossSprite != null) {
-			_bossSprite.updateDraw(dt);
-		}
-
 		if (_rhythmCore == null) return;
 
 		if (!_rhythmCore.isPaused()) {
 			_bgAnimTime += dt;
 		}
 
+		// 2. Fin del encuentro (Victoria con fade-out de 3s o Derrota inmediata)
 		ROTNCore.BattleState state = _rhythmCore.getBattleState();
 		if (state != ROTNCore.BattleState.PLAYING) {
-			if (state == ROTNCore.BattleState.VICTORY) {
-				if (_bgm != null && _bgm.isLoaded() && _bgm.isPlaying()) {
-					if (_bgmFadeOutTimer < 0.0f) {
-						_bgmFadeOutTimer = BGM_FADE_OUT_DURATION;
-					}
-					_bgmFadeOutTimer = Math.max(0.0f, _bgmFadeOutTimer - dt);
-					float fade = _bgmFadeOutTimer / BGM_FADE_OUT_DURATION;
-					_bgm.setVolume(Audio.getBGMVolume() * fade);
-					if (_bgmFadeOutTimer <= 0.0f) {
-						Audio.pauseBGM();
-						_bgmPausedByScene = true;
-					}
-				}
-			} else if (_bgm != null && _bgm.isPlaying()) {
-				Audio.pauseBGM();
-				_bgmPausedByScene = true;
-			}
+			updatePostBattleAudioAndModal(state, dt);
+			syncCombatUI();
+			return;
+		}
+
+		// 3. Cuenta regresiva de pre-inicio (3..2..1) antes de lanzar la pista BGM
+		if (_introCountdown > 0.0f) {
+			updateIntroCountdown(dt);
+			syncCombatUI();
+			return;
+		}
+
+		// 4. Sincronización del reloj de canción y actualización del núcleo rítmico
+		int currentSongTimeMs = resolveCurrentSongTimeMs(dt);
+		_rhythmCore.update(currentSongTimeMs, dt);
+
+		// 5. Navegación en modal de pausa o efectos activos de combate (partículas y SFX)
+		if (_rhythmCore.isPaused()) {
 			if (!_modalWasOpen) {
 				_modalFocusIdx = 0;
 				_modalWasOpen = true;
 			}
-			handleEndBattleInput(state);
-			syncCombatUI();
-			return;
+			handlePauseModalInput();
+		} else {
+			_modalWasOpen = false;
+			updateActiveGameplayEffects(dt);
 		}
 
-		if (_introCountdown > 0.0f) {
-			if (
-				KBInput.wasKeyJustPressed(Config.UIButtons[Config.CANCEL]) ||
-				KBInput.wasKeyJustPressed(Config.UIAltButtons[Config.CANCEL])
-			) {
-				_rhythmCore.togglePause();
-			}
-			if (_rhythmCore.isPaused()) {
-				if (!_modalWasOpen) {
-					_modalFocusIdx = 0;
-					_modalWasOpen = true;
+		syncCombatUI();
+	}
+
+	/**
+	 * Gestiona el fade-out progresivo de 3 segundos de la música al ganar, la pausa
+	 * de audio al perder y la entrada del modal de resultado.
+	 */
+	private void updatePostBattleAudioAndModal(ROTNCore.BattleState state, float dt) {
+		if (state == ROTNCore.BattleState.VICTORY) {
+			if (_bgm != null && _bgm.isLoaded() && _bgm.isPlaying()) {
+				if (_bgmFadeOutTimer < 0.0f) {
+					_bgmFadeOutTimer = BGM_FADE_OUT_DURATION;
 				}
-				handlePauseModalInput();
-			} else {
-				_modalWasOpen = false;
-				_introCountdown -= dt;
-				if (_introCountdown <= 0.0f) {
-					_introCountdown = 0.0f;
-					if (_bgm != null && !_bgmStarted) {
-						_bgmStarted = true;
-						Audio.playBGM(_bgm, 0, false);
-					}
+				_bgmFadeOutTimer = Math.max(0.0f, _bgmFadeOutTimer - dt);
+				float fade = _bgmFadeOutTimer / BGM_FADE_OUT_DURATION;
+				_bgm.setVolume(Audio.getBGMVolume() * fade);
+				if (_bgmFadeOutTimer <= 0.0f) {
+					Audio.pauseBGM();
+					_bgmPausedByScene = true;
 				}
-				_particles.update(dt);
 			}
-			syncCombatUI();
-			return;
+		} else if (_bgm != null && _bgm.isPlaying()) {
+			Audio.pauseBGM();
+			_bgmPausedByScene = true;
 		}
 
-		int currentSongTimeMs;
+		if (!_modalWasOpen) {
+			_modalFocusIdx = 0;
+			_modalWasOpen = true;
+		}
+		handleEndBattleInput(state);
+	}
+
+	/**
+	 * Actualiza la cuenta regresiva inicial de 3 segundos (permitiendo pausar antes de que inicie el audio).
+	 */
+	private void updateIntroCountdown(float dt) {
+		if (
+			KBInput.wasKeyJustPressed(Config.UIButtons[Config.CANCEL]) ||
+			KBInput.wasKeyJustPressed(Config.UIAltButtons[Config.CANCEL])
+		) {
+			_rhythmCore.togglePause();
+		}
+
+		if (_rhythmCore.isPaused()) {
+			if (!_modalWasOpen) {
+				_modalFocusIdx = 0;
+				_modalWasOpen = true;
+			}
+			handlePauseModalInput();
+		} else {
+			_modalWasOpen = false;
+			_introCountdown -= dt;
+			if (_introCountdown <= 0.0f) {
+				_introCountdown = 0.0f;
+				if (_bgm != null && !_bgmStarted) {
+					_bgmStarted = true;
+					Audio.playBGM(_bgm, 0, false);
+				}
+			}
+			_particles.update(dt);
+		}
+	}
+
+	/**
+	 * Obtiene la posición actual de reproducción en milisegundos desde la pista BGM
+	 * (o desde el reloj de respaldo si no hay audio cargado), pausando/reanudando según el estado.
+	 */
+	private int resolveCurrentSongTimeMs(float dt) {
 		if (_bgm != null && _bgm.isLoaded()) {
 			if (_rhythmCore.isPaused()) {
 				if (_bgm.isPlaying()) {
@@ -698,69 +962,59 @@ public class ROTNScene extends Scene {
 				_bgmPausedByScene = false;
 				Audio.resumeBGM();
 			}
-			currentSongTimeMs = _bgm.getPositionMs();
-		} else {
-			if (!_rhythmCore.isPaused()) {
-				_songFallbackTimerMs += Math.round(dt * 1000.0f);
-			}
-			currentSongTimeMs = _songFallbackTimerMs;
+			return _bgm.getPositionMs();
 		}
 
-		_rhythmCore.update(currentSongTimeMs, dt);
+		if (!_rhythmCore.isPaused()) {
+			_songFallbackTimerMs += Math.round(dt * 1000.0f);
+		}
+		return _songFallbackTimerMs;
+	}
 
-		if (_rhythmCore.isPaused()) {
-			if (!_modalWasOpen) {
-				_modalFocusIdx = 0;
-				_modalWasOpen = true;
-			}
-			handlePauseModalInput();
-		} else {
-			_modalWasOpen = false;
-			_particles.update(dt);
-			for (int i = _floatingRatings.size() - 1; i >= 0; i--) {
-				FloatingRating fr = _floatingRatings.get(i);
-				fr.life -= dt;
-				if (fr.life <= 0.0f) {
-					_floatingRatings.remove(i);
-					continue;
-				}
-				fr.y += fr.vy * dt;
-			}
+	/**
+	 * Actualiza partículas, carteles flotantes de juicio, SFX de pulsación por carril
+	 * y emisión continua de chispas mientras se mantiene una Hold Note.
+	 */
+	private void updateActiveGameplayEffects(float dt) {
+		_particles.update(dt);
 
-			int lockedLane = _rhythmCore.getLockedLane();
-			for (int lane = 0; lane < 6; lane++) {
-				if (lane != lockedLane && Config.wasRhythmKeyJustPressed(lane)) {
-					Audio.playSFX(_hitSfx);
-				}
-				if (_rhythmCore.isHoldingLane(lane)) {
-					_holdParticleTimers[lane] -= dt;
-					if (_holdParticleTimers[lane] <= 0.0f) {
-						_holdParticleTimers[lane] = 0.025f;
-						float xi = laneToXi(lane);
-						float cx = projectX(xi, 1.0f) + (float) (Math.random() * 8.0 - 4.0);
-						float cy = projectY(xi, 1.0f, 1.0f) + PRESS_SINK_PX;
-						_particles.emit(
-							cx,
-							cy,
-							(float) (Math.random() * 36.0 - 18.0),
-							-28.0f - (float) (Math.random() * 26.0),
-							2.0f + (float) (Math.random() * 1.8),
-							0.22f + (float) (Math.random() * 0.14),
-							45.0f,
-							0xFFFFFFFF
-						);
-					}
-				} else {
-					_holdParticleTimers[lane] = 0.0f;
-				}
+		for (int i = _floatingRatings.size() - 1; i >= 0; i--) {
+			FloatingRating fr = _floatingRatings.get(i);
+			fr.life -= dt;
+			if (fr.life <= 0.0f) {
+				_floatingRatings.remove(i);
+				continue;
 			}
+			fr.y += fr.vy * dt;
 		}
 
-		if (_ratingTimer > 0) {
-			_ratingTimer -= dt;
+		int lockedLane = _rhythmCore.getLockedLane();
+		for (int lane = 0; lane < LANE_COUNT; lane++) {
+			if (lane != lockedLane && Config.wasRhythmKeyJustPressed(lane)) {
+				Audio.playSFX(_hitSfx);
+			}
+			if (_rhythmCore.isHoldingLane(lane)) {
+				_holdParticleTimers[lane] -= dt;
+				if (_holdParticleTimers[lane] <= 0.0f) {
+					_holdParticleTimers[lane] = HOLD_PARTICLE_INTERVAL_SEC;
+					float xi = laneToXi(lane);
+					float cx = projectX(xi, 1.0f) + (float) (Math.random() * 8.0 - 4.0);
+					float cy = projectY(xi, 1.0f, 1.0f) + PRESS_SINK_PX;
+					_particles.emit(
+						cx,
+						cy,
+						(float) (Math.random() * 36.0 - 18.0),
+						-28.0f - (float) (Math.random() * 26.0),
+						2.0f + (float) (Math.random() * 1.8),
+						0.22f + (float) (Math.random() * 0.14),
+						45.0f,
+						0xFFFFFFFF
+					);
+				}
+			} else {
+				_holdParticleTimers[lane] = 0.0f;
+			}
 		}
-
-		syncCombatUI();
 	}
 
 	private void handlePauseModalInput() {
@@ -781,8 +1035,11 @@ public class ROTNScene extends Scene {
 	}
 
 	private void handleEndBattleInput(ROTNCore.BattleState state) {
-		if (_customSong != null && !_customAttemptRecorded &&
-			(state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT)) {
+		if (
+			_customSong != null &&
+			!_customAttemptRecorded &&
+			(state == ROTNCore.BattleState.VICTORY || state == ROTNCore.BattleState.DEFEAT)
+		) {
 			_customAttemptRecorded = true;
 			int prevBest = _customSong.puntajeMasAlto;
 			int newScore = _rhythmCore.getScore();
@@ -858,215 +1115,8 @@ public class ROTNScene extends Scene {
 		}
 	}
 
-	private String resolveReturnTargetScene() {
-		if (!GameState.launchedFromMenu && !GameState.isDebugSession && GameState.returnScenePath != null && !GameState.returnScenePath.isEmpty()) {
-			return GameState.returnScenePath;
-		}
-		return (_returnScene != null && !_returnScene.isEmpty())
-			? _returnScene
-			: GameState.returnScenePath;
-	}
-
-	private void returnToWorld() {
-		if (GameState.launchedFromMenu) {
-			GameState.launchedFromMenu = false;
-			if (!GameState.loadGame()) {
-				GameState.reset();
-			}
-			Engine.changeScene(new InitScene(InitScene.ViewMode.SONG_SELECT));
-			return;
-		}
-		boolean won = (_rhythmCore != null && _rhythmCore.getBattleState() == ROTNCore.BattleState.VICTORY);
-		DialogManager.resolveBattleOutcome(won);
-		if (won) {
-			GameState.defineFlag("LAST_BATTLE_WON");
-			GameState.clearFlag("LAST_BATTLE_LOST");
-		} else {
-			GameState.defineFlag("LAST_BATTLE_LOST");
-			GameState.clearFlag("LAST_BATTLE_WON");
-		}
-		GameState.autoSaveIfStory();
-		Engine.changeScene(new HubScene());
-	}
-
-	private void syncCombatUI() {
-		if (_rhythmCore == null) return;
-		PApplet app = Engine.getApp();
-
-		// HP Jugador
-		float pHpRatio = (float) _rhythmCore.getPlayerHp() / Math.max(1, _rhythmCore.getPlayerMaxHp());
-		pHpRatio = PApplet.constrain(pHpRatio, 0.0f, 1.0f);
-		if (_uiHpLbl != null) {
-			_uiHpLbl.setText("HP: " + _rhythmCore.getPlayerHp() + "/" + _rhythmCore.getPlayerMaxHp());
-		}
-		if (_uiHpFill != null) {
-			int w = Math.max(1, Math.round(scaleW(96) * pHpRatio));
-			_uiHpFill.setSize(w, Math.max(1, (int) scaleH(7)));
-			_uiHpFill.setColorBackground(
-				_rhythmCore.getInvincibilityTimer() > 0
-					? app.color(255, 230, 90, 245)
-					: app.color(230, 65, 85, 245)
-			);
-		}
-		if (_uiShieldLbl != null) {
-			if (_rhythmCore.hasInvincibilityShield()) {
-				_uiShieldLbl.setText("[ESCUDO LISTO]");
-				_uiShieldLbl.setColorValue(app.color(110, 235, 255));
-			} else if (_rhythmCore.getInvincibilityTimer() > 0) {
-				_uiShieldLbl.setText("[INVENCIBLE]");
-				_uiShieldLbl.setColorValue(app.color(255, 230, 90));
-			} else {
-				_uiShieldLbl.setText("");
-			}
-		}
-
-		// HP Jefe y Alerta de ataque de carril
-		boolean bossInvincible = _rhythmCore.isBossInvincible();
-		float bHpRatio = bossInvincible
-			? 1.0f
-			: (float) _rhythmCore.getBossHp() / Math.max(1, _rhythmCore.getBossMaxHp());
-		bHpRatio = PApplet.constrain(bHpRatio, 0.0f, 1.0f);
-		if (_uiBossLbl != null) {
-			String sp = _bossSpecies.isEmpty() ? "" : " (" + _bossSpecies + ")";
-			String hpText = bossInvincible
-				? "[INVENCIBLE]"
-				: (_rhythmCore.getBossHp() + "/" + _rhythmCore.getBossMaxHp());
-			_uiBossLbl.setText(_bossName + sp + "  " + hpText);
-		}
-		if (_uiBossHpFill != null) {
-			int bw = Math.max(1, Math.round(scaleW(130) * bHpRatio));
-			_uiBossHpFill.setSize(bw, Math.max(1, (int) scaleH(6)));
-			_uiBossHpFill.setColorBackground(
-				bossInvincible
-					? app.color(175, 110, 255, 245)
-					: app.color(235, 65, 85, 245)
-			);
-		}
-		if (_uiAlertLbl != null) {
-			int lockedLane = _rhythmCore.getLockedLane();
-			int warningLane = _rhythmCore.getWarningLane();
-			if (lockedLane >= 0) {
-				_uiAlertLbl.setText("CARRIL " + (lockedLane + 1) + " BLOQUEADO!");
-				_uiAlertLbl.setColorValue(app.color(255, 95, 110));
-			} else if (warningLane >= 0) {
-				_uiAlertLbl.setText("ALERTA CARRIL " + (warningLane + 1));
-				_uiAlertLbl.setColorValue(app.color(255, 190, 60));
-			} else {
-				_uiAlertLbl.setText("");
-			}
-		}
-
-		// Score, Combo y Juicio
-		if (_uiScoreLbl != null) {
-			_uiScoreLbl.setText("SCORE: " + _rhythmCore.getScore());
-		}
-		if (_uiComboLbl != null) {
-			_uiComboLbl.setText("COMBO: " + _rhythmCore.getCombo() + "x");
-		}
-		if (_uiRatingLbl != null) {
-			_uiRatingLbl.setText("");
-		}
-
-		// Barra vertical de Curación Dinámica (abajo-izquierda)
-		int threshold = _rhythmCore.getEffectiveHealThreshold();
-		float healRatio = _rhythmCore.isHealBarActive()
-			? (_rhythmCore.getHealBarTimer() / Math.max(0.1f, _rhythmCore.getHealActiveDuration()))
-			: ((float) _rhythmCore.getHealPoints() / Math.max(1, threshold));
-		healRatio = PApplet.constrain(healRatio, 0.0f, 1.0f);
-
-		if (_uiHealRatioLbl != null) {
-			if (_rhythmCore.isHealBarActive()) {
-				_uiHealRatioLbl.setText(String.format("%.1fs", _rhythmCore.getHealBarTimer()));
-				_uiHealRatioLbl.setColorValue(app.color(90, 255, 165));
-			} else {
-				_uiHealRatioLbl.setText(_rhythmCore.getHealPoints() + "/" + threshold);
-				_uiHealRatioLbl.setColorValue(app.color(230, 55, 65));
-			}
-		}
-		if (_uiHealFill != null) {
-			int fullH = Math.max(1, (int) scaleH(76));
-			int fillH = Math.max(1, Math.round(fullH * healRatio));
-			float bottomY = scaleH(178 + 76);
-			_uiHealFill.setPosition(scaleW(14), bottomY - fillH);
-			_uiHealFill.setSize(Math.max(1, (int) scaleW(14)), fillH);
-			_uiHealFill.setColorBackground(
-				_rhythmCore.isHealBarActive()
-					? app.color(85, 255, 185, 250)
-					: app.color(45, 200, 90, 240)
-			);
-		}
-
-		// Ítem / Amuletos abajo-derecha
-		if (_uiItemLbl != null) {
-			java.util.List<String> eq = GameState.getEquippedPowerUps();
-			String chipName;
-			if (eq.isEmpty()) {
-				chipName = "Sin Amuleto";
-			} else if (eq.size() == 1) {
-				chipName = GameState.getItemName(eq.get(0));
-			} else {
-				chipName = eq.size() + " Amuletos";
-			}
-			_uiItemLbl.setText("Cura: " + GameState.healStrategy.label + "\n" + chipName);
-		}
-
-		// Modal de Pausa / Victoria / Derrota
-		if (_uiModalGroup != null) {
-			ROTNCore.BattleState state = _rhythmCore.getBattleState();
-			if (state == ROTNCore.BattleState.VICTORY) {
-				_uiModalGroup.show();
-				_uiModalTitle.setText(_customSong != null ? "CANCION COMPLETADA!" : "VICTORIA!");
-				_uiModalTitle.setColorValue(app.color(110, 255, 155));
-				String extraLine = "";
-				if (_customSong != null) {
-					extraLine = "\nPrecision: " + String.format("%.1f%%", _rhythmCore.getAccuracyPercent()) +
-						(_customIsNewRecord ? "  [NUEVO RECORD!]" : "");
-				} else if (_rewardItem != null && !_rewardItem.isEmpty()) {
-					extraLine = "\nRecompensa: " + GameState.getItemName(_rewardItem);
-				}
-				_uiModalDesc.setText(
-					"Score: " + _rhythmCore.getScore() +
-					" | Max Combo: " + _rhythmCore.getMaxCombo() + "x" +
-					extraLine
-				);
-				_uiModalBtn1.setLabel(GameState.launchedFromMenu ? "> Volver al Selector" : "> Volver al Mapa");
-				_uiModalBtn1.setColorBackground(app.color(55, 130, 215));
-				_uiModalBtn2.hide();
-			} else if (state == ROTNCore.BattleState.DEFEAT) {
-				_uiModalGroup.show();
-				_uiModalTitle.setText("DERROTA");
-				_uiModalTitle.setColorValue(app.color(255, 100, 110));
-				_uiModalDesc.setText(
-					"Score: " + _rhythmCore.getScore() +
-					"\nHP Jefe restante: " + _rhythmCore.getBossHp()
-				);
-				_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reintentar");
-				_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
-				_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Volver");
-				_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
-				_uiModalBtn2.show();
-			} else if (_rhythmCore.isPaused()) {
-				_uiModalGroup.show();
-				_uiModalTitle.setText("PAUSA");
-				_uiModalTitle.setColorValue(app.color(255));
-				_uiModalDesc.setText(
-					"Score: " + _rhythmCore.getScore() +
-					" | Ventanas: " + (int)_rhythmCore.getPerfectWindowMs() + "/" +
-					(int)_rhythmCore.getGoodWindowMs() + "/" + (int)_rhythmCore.getSafeWindowMs() + "ms"
-				);
-				_uiModalBtn1.setLabel((_modalFocusIdx == 0 ? "> " : "") + "Reanudar");
-				_uiModalBtn1.setColorBackground(_modalFocusIdx == 0 ? app.color(55, 130, 215) : app.color(35, 90, 155));
-				_uiModalBtn2.setLabel((_modalFocusIdx == 1 ? "> " : "") + "Salir al Mapa");
-				_uiModalBtn2.setColorBackground(_modalFocusIdx == 1 ? app.color(150, 58, 80) : app.color(95, 38, 52));
-				_uiModalBtn2.show();
-			} else {
-				_uiModalGroup.hide();
-			}
-		}
-	}
-
 	// =========================================================================
-	// Proyección 3D en Perspectiva y Renderizado de Arena (Framebuffer 480x270)
+	// 6. Proyección en perspectiva 3D y renderizado modular (draw)
 	// =========================================================================
 
 	private static float laneToXi(int lane) {
@@ -1100,72 +1150,6 @@ public class ROTNScene extends Scene {
 		return PApplet.constrain(0.36f + u * 0.18f, 0.34f, 0.62f);
 	}
 
-	@Override
-	public void draw(PGraphics g) {
-		g.pushStyle();
-
-		int songTimeMs;
-		if (_introCountdown > 0.0f) {
-			songTimeMs = -Math.round(_introCountdown * 1000.0f);
-		} else {
-			songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
-		}
-
-		drawArenaBackground(g, _bgAnimTime);
-
-		if (_rhythmCore != null) {
-			drawPerspectiveHighway(g, songTimeMs);
-			drawPerspectiveReceptors(g);
-			drawPerspectiveNotes(g, songTimeMs);
-			_particles.draw(g);
-			drawFloatingRatings(g);
-			if (_introCountdown > 0.0f) {
-				int sec = (int) Math.ceil(_introCountdown);
-				sec = PApplet.constrain(sec, 1, 3);
-				g.pushStyle();
-				g.textAlign(PConstants.CENTER, PConstants.CENTER);
-				if (GameDialog.titleFont != null) {
-					g.textFont(GameDialog.titleFont, 28);
-				} else {
-					g.textSize(28);
-				}
-				String label = String.valueOf(sec);
-				float cy = 128.0f;
-				g.fill(0, 0, 0, 210);
-				g.text(label, CENTER_X + 2.0f, cy + 2.0f);
-				g.fill(255, 235, 110, 255);
-				g.text(label, CENTER_X, cy);
-				g.popStyle();
-			}
-		}
-
-		g.popStyle();
-	}
-
-	private void drawFloatingRatings(PGraphics g) {
-		if (_floatingRatings.isEmpty()) return;
-		g.pushStyle();
-		g.textAlign(PConstants.CENTER, PConstants.CENTER);
-		if (GameDialog.descriptionFont != null) {
-			g.textFont(GameDialog.descriptionFont, 9);
-		} else {
-			g.textSize(9);
-		}
-		for (int i = 0; i < _floatingRatings.size(); i++) {
-			FloatingRating fr = _floatingRatings.get(i);
-			float ratio = PApplet.constrain((fr.life / fr.maxLife) * 2.0f, 0.0f, 1.0f);
-			int alpha = Math.round(255 * ratio);
-			int rgb = fr.color & 0x00FFFFFF;
-
-			g.fill(0, 0, 0, Math.round(190 * ratio));
-			g.text(fr.text, fr.x + 1.0f, fr.y + 1.0f);
-
-			g.fill((alpha << 24) | rgb);
-			g.text(fr.text, fr.x, fr.y);
-		}
-		g.popStyle();
-	}
-
 	private static float horizonYAtX(float x) {
 		float nx = -1.0f + 2.0f * (x / BASE_W);
 		return Y_FAR - 4.0f + 18.0f * (nx * nx);
@@ -1180,273 +1164,17 @@ public class ROTNScene extends Scene {
 		return new float[] { lx, ly, s, u };
 	}
 
-	private void drawArenaBackground(PGraphics g, float bgTimeSec) {
-		// Cielo nocturno oscuro púrpura-vino (estilo arena de combate de la referencia)
-		g.noStroke();
-		g.background(14, 7, 22);
-		for (int band = 0; band < 6; band++) {
-			float y0 = band * 18.0f;
-			g.fill(26 + band * 3, 10 + band * 2, 34 + band * 3, 160);
-			g.rect(0, y0, BASE_W, 18.0f);
-		}
-
-		// Halo carmesí detrás del horizonte
-		for (int r = 5; r >= 1; r--) {
-			g.fill(180, 32, 36, 18 + (6 - r) * 8);
-			g.ellipse(CENTER_X, 54.0f, r * 30.0f, r * 20.0f);
-		}
-
-		// Horizonte curvo oscuro (planeta abajo)
-		g.fill(10, 11, 18);
-		g.beginShape();
-		g.vertex(0, BASE_H);
-		g.vertex(0, Y_FAR + 14.0f);
-		for (int i = 0; i <= 24; i++) {
-			float hx = i * (BASE_W / 24.0f);
-			g.vertex(hx, horizonYAtX(hx));
-		}
-		g.vertex(BASE_W, BASE_H);
-		g.endShape(PConstants.CLOSE);
-
-		// Borde difuso original del horizonte curvo
-		g.stroke(42, 26, 48, 170);
-		g.noFill();
-		g.beginShape();
-		for (int i = 0; i <= 24; i++) {
-			float hx = i * (BASE_W / 24.0f);
-			g.vertex(hx, horizonYAtX(hx));
-		}
-		g.endShape();
-
-		// Conjuntos de luces amarillas (ciudades) y caminos de luces rotando despacio desde que carga la escena
-		g.noStroke();
-		float rotProgress = bgTimeSec * 0.042f;
-		float tSec = bgTimeSec;
-
-		// Clusters bien separados alrededor del planeta: { xiCentro, tFase (0..1), cantidadLuces }
-		final float[][] clusters = {
-			{ -2.45f, 0.06f, 11 }, // 0: Izquierda lejano
-			{  2.35f, 0.14f, 11 }, // 1: Derecha lejano
-			{ -1.65f, 0.34f, 10 }, // 2: Izquierda medio
-			{  1.70f, 0.44f, 10 }, // 3: Derecha medio
-			{ -2.15f, 0.62f, 12 }, // 4: Izquierda otro continente
-			{  2.25f, 0.72f, 12 }, // 5: Derecha otro continente
-			{ -1.45f, 0.88f,  9 }, // 6: Izquierda cercano
-			{  1.50f, 0.94f,  9 }  // 7: Derecha cercano
-		};
-
-		// Mini caminos de luces chiquititas entre algunos conjuntos muy distantes entre sí
-		final int[][] roadPairs = {
-			{ 0, 4 }, // gran distancia en fase (0.06 -> 0.62)
-			{ 1, 5 }  // gran distancia en fase (0.14 -> 0.72)
-		};
-		for (int rp = 0; rp < roadPairs.length; rp++) {
-			int ia = roadPairs[rp][0];
-			int ib = roadPairs[rp][1];
-			float xiA = clusters[ia][0];
-			float xiB = clusters[ib][0];
-			float phaseA = clusters[ia][1];
-			float phaseB = clusters[ib][1];
-			final int roadDots = 14;
-			for (int d = 2; d <= roadDots - 2; d++) {
-				float frac = d / (float) roadDots;
-				float tPhase = (PApplet.lerp(phaseA, phaseB, frac) + rotProgress) % 1.0f;
-				float tWorld = tPhase * 1.15f;
-				if (tWorld < 0.02f || tWorld > 1.15f) continue;
-
-				float xiRoad = PApplet.lerp(xiA, xiB, frac) + (float) Math.sin(frac * Math.PI) * (xiA < 0 ? -0.14f : 0.14f);
-				float[] pt = projectWorldPoint(xiRoad, tWorld);
-				float lx = pt[0], ly = pt[1];
-				if (lx < 1.0f || lx >= BASE_W - 1.0f || ly < horizonYAtX(lx) + 1.0f || ly >= BASE_H - 1.0f) continue;
-
-				float fade = PApplet.constrain(tWorld / 0.16f, 0.0f, 1.0f);
-				int alpha = Math.round((85 + 35 * (float) Math.sin(tSec * 2.0f + d)) * fade);
-				g.fill(255, 210, 90, alpha);
-				g.rect(Math.round(lx), Math.round(ly), 1, 1);
-			}
-		}
-
-		// Dibujar los grupos densos de luces de ciudad (1x1 px, moviéndose en perspectiva real)
-		for (int c = 0; c < clusters.length; c++) {
-			float xiCenter = clusters[c][0];
-			float tCluster = (clusters[c][1] + rotProgress) % 1.0f;
-			float tWorld = tCluster * 1.15f;
-			float horizonFade = PApplet.constrain(tWorld / 0.14f, 0.0f, 1.0f);
-			int count = (int) clusters[c][2];
-
-			for (int k = 0; k < count; k++) {
-				int hash = c * 37 + k * 19;
-				float offXi = (((hash * 23) % 29) - 14) * 0.017f;
-				float offT  = (((hash * 13) % 17) - 8) * 0.0055f;
-
-				float lt = tWorld + offT;
-				if (lt < 0.0f || lt > 1.15f) continue;
-
-				float lxi = xiCenter + offXi;
-				float[] pt = projectWorldPoint(lxi, lt);
-				float lx = pt[0], ly = pt[1];
-				if (lx < 1.0f || lx >= BASE_W - 1.0f || ly < 0.0f || ly >= BASE_H - 1.0f) continue;
-				if (ly < horizonYAtX(lx) + 1.0f) continue;
-
-				float twinkle = 0.65f + 0.35f * (float) Math.sin(tSec * (2.2f + (k % 4) * 0.5f) + hash);
-				int alpha = Math.round((130 + 120 * twinkle) * horizonFade);
-				g.fill(255, 222 + (k % 3) * 10, 95, alpha);
-				g.rect(Math.round(lx), Math.round(ly), 1, 1);
-			}
-		}
-	}
-
-	private void drawPerspectiveArc(PGraphics g, float u, float s, float maxXi, int col, float weight) {
-		g.stroke(col);
-		g.strokeWeight(weight);
-		g.noFill();
-		g.beginShape();
-		final int steps = 28;
-		for (int i = 0; i <= steps; i++) {
-			float xi = -maxXi + (2.0f * maxXi * i) / steps;
-			float x = projectX(xi, s);
-			float y = projectY(xi, u, s);
-			g.vertex(x, y);
-		}
-		g.endShape();
-	}
-
-	private void drawPerspectiveHighway(PGraphics g, int songTimeMs) {
-		int warningLane = _rhythmCore.getWarningLane();
-		int lockedLane = _rhythmCore.getLockedLane();
-
-		float sFar = S_FAR;
-		float uFar = 0.0f;
-		float sBottom = scaleFromT(1.13f);
-		float uBottom = uFromScale(sBottom);
-
-		// 1. Fondos trapezoidales por carril (sin pintar todo el carril al bloquear)
-		for (int lane = 0; lane < 6; lane++) {
-			float xiL = -1.0f + lane * (2.0f / 6.0f);
-			float xiR = xiL + (2.0f / 6.0f);
-
-			boolean keyDown = !_rhythmCore.isPaused() && (
-							  KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
-							  KBInput.isKeyDown(Config.RhythmAltButtons[lane]));
-
-			int fillCol = (lane % 2 == 0)
-				? g.color(20, 22, 34, 115)
-				: g.color(28, 30, 44, 115);
-
-			if (keyDown && lane != lockedLane) {
-				fillCol = g.color(255, 120, 130, 65);
-			}
-
-			g.noStroke();
-			g.fill(fillCol);
-			g.quad(
-				projectX(xiL, sFar),    projectY(xiL, uFar, sFar),
-				projectX(xiR, sFar),    projectY(xiR, uFar, sFar),
-				projectX(xiR, sBottom), projectY(xiR, uBottom, sBottom),
-				projectX(xiL, sBottom), projectY(xiL, uBottom, sBottom)
-			);
-		}
-
-		// 1b. Bloque rojo continuo viajando por la pista (como nota larga) para el bloqueo de carril
-		int lockVisLane = _rhythmCore.getLockVisualLane();
-		int lockStartMs = _rhythmCore.getLockStartMs();
-		int lockEndMs = _rhythmCore.getLockEndMs();
-		if (lockVisLane >= 0 && lockVisLane < 6 && lockEndMs > lockStartMs) {
-			float appMs = getApproachTimeMs();
-			float tHead = 1.0f - ((lockStartMs - songTimeMs) / appMs);
-			float tTail = 1.0f - ((lockEndMs - songTimeMs) / appMs);
-			float tA = PApplet.constrain(tTail, 0.0f, 1.06f);
-			float tB = PApplet.constrain(tHead, 0.0f, 1.06f);
-			if (tB > tA + 0.005f) {
-				float xiL = -1.0f + lockVisLane * (2.0f / 6.0f) + 0.025f;
-				float xiR = -1.0f + (lockVisLane + 1) * (2.0f / 6.0f) - 0.025f;
-				int segs = 10;
-				g.noStroke();
-				for (int sIdx = 0; sIdx < segs; sIdx++) {
-					float ft0 = PApplet.lerp(tA, tB, sIdx / (float) segs);
-					float ft1 = PApplet.lerp(tA, tB, (sIdx + 1) / (float) segs);
-					float sc0 = scaleFromT(ft0);
-					float sc1 = scaleFromT(ft1);
-					float uu0 = uFromScale(sc0);
-					float uu1 = uFromScale(sc1);
-
-					g.fill(215, 28, 48, 175);
-					g.quad(
-						projectX(xiL, sc0), projectY(xiL, uu0, sc0),
-						projectX(xiR, sc0), projectY(xiR, uu0, sc0),
-						projectX(xiR, sc1), projectY(xiR, uu1, sc1),
-						projectX(xiL, sc1), projectY(xiL, uu1, sc1)
-					);
-				}
-				// Borde brillante en los laterales y en el frente/cola del bloque rojo
-				float scHead = scaleFromT(tB);
-				float scTail = scaleFromT(tA);
-				float uuHead = uFromScale(scHead);
-				float uuTail = uFromScale(scTail);
-				g.stroke(255, 95, 110, 235);
-				g.strokeWeight(1.5f);
-				g.line(projectX(xiL, scTail), projectY(xiL, uuTail, scTail), projectX(xiL, scHead), projectY(xiL, uuHead, scHead));
-				g.line(projectX(xiR, scTail), projectY(xiR, uuTail, scTail), projectX(xiR, scHead), projectY(xiR, uuHead, scHead));
-				g.line(projectX(xiL, scHead), projectY(xiL, uuHead, scHead), projectX(xiR, scHead), projectY(xiR, uuHead, scHead));
-				g.line(projectX(xiL, scTail), projectY(xiL, uuTail, scTail), projectX(xiR, scTail), projectY(xiR, uuTail, scTail));
-				g.strokeWeight(1.0f);
-			}
-		}
-
-		// 2. Líneas horizontales (arcos de beat) viajando a la misma velocidad exacta que las notas
-		float[] beat = computeBeatState(songTimeMs);
-		float phase = beat[1];
-		float beatLengthMs = Math.max(50.0f, beat[3]);
-		float tpTime = beat[4];
-		float approachTimeMs = getApproachTimeMs();
-		float beatImpulse = (float) Math.pow(1.0f - phase, 2.2);
-
-		int nMin = (int) Math.floor(((songTimeMs - 0.12f * approachTimeMs) - tpTime) / beatLengthMs);
-		int nMax = (int) Math.ceil(((songTimeMs + approachTimeMs) - tpTime) / beatLengthMs);
-		for (int n = nMin; n <= nMax; n++) {
-			float beatTimeMs = tpTime + n * beatLengthMs;
-			float tArc = 1.0f - ((beatTimeMs - songTimeMs) / approachTimeMs);
-			if (tArc < 0.04f || tArc > 1.12f) continue;
-
-			float sArc = scaleFromT(tArc);
-			float uArc = uFromScale(sArc);
-			boolean downbeat = ((n % 4 + 4) % 4) == 0;
-			int baseAlpha = downbeat ? 95 : 50;
-			int alpha = (int) PApplet.constrain(baseAlpha + tArc * 95 + beatImpulse * 25, 45, 210);
-			drawPerspectiveArc(g, uArc, sArc, 1.48f, g.color(150, 155, 175, alpha), downbeat ? 1.3f : 1.0f);
-		}
-
-		// 3. 7 líneas divisorias de carriles que divergen hacia la cámara
-		for (int edge = 0; edge <= 6; edge++) {
-			float xi = -1.0f + edge * (2.0f / 6.0f);
-			float xTop = projectX(xi, sFar);
-			float yTop = projectY(xi, uFar, sFar);
-			float xBot = projectX(xi, sBottom);
-			float yBot = projectY(xi, uBottom, sBottom);
-
-			boolean outer = (edge == 0 || edge == 6);
-			g.stroke(outer ? g.color(210, 215, 230, 195) : g.color(195, 200, 220, 145));
-			g.strokeWeight(outer ? 1.5f : 1.0f);
-			g.line(xTop, yTop, xBot, yBot);
-		}
-
-		// 4. Línea blanca principal (arco de impacto t = 1.0, S = 1.0) pulsando al ritmo
-		float hitWeight = 1.8f + beatImpulse * 1.1f;
-		drawPerspectiveArc(g, 1.0f, 1.0f, 1.58f, g.color(255, 255, 255, 245), hitWeight);
-		g.strokeWeight(1.0f);
-	}
-
 	private float getApproachTimeMs() {
-		return 1400.0f / Math.max(0.08f, _scrollSpeed / 0.22f);
+		return BASE_APPROACH_TIME_MS / Math.max(0.08f, _scrollSpeed / DEFAULT_SCROLL_SPEED);
 	}
 
 	/**
 	 * Calcula la posición actual dentro del compás según los TimingPoints del beatmap (.osu).
-	 * Retorna { beatPos, beatPhase (0..1), beatInMeasure (0..3), beatLengthMs, tpTime }.
+	 * Retorna {@code { beatPos, beatPhase (0..1), beatInMeasure (0..3), beatLengthMs, tpTime }}.
 	 */
 	private float[] computeBeatState(int songTimeMs) {
 		int tpTime = 0;
-		float beatLength = 500.0f; // 120 BPM fallback
+		float beatLength = 500.0f; // 120 BPM por defecto
 
 		if (_timingPoints != null && _timingPoints.length > 0) {
 			boolean foundFirst = false;
@@ -1475,63 +1203,299 @@ public class ROTNScene extends Scene {
 		return new float[] { beatPos, beatPhase, beatInMeasure, beatLength, tpTime };
 	}
 
-	/**
-	 * Barra de ritmo bajo la vida del jefe: muestra el pulso del beat y el avance del compás 4/4.
-	 */
-	private void drawRhythmBeatBar(PGraphics g, int songTimeMs) {
-		float[] beat = computeBeatState(songTimeMs);
-		float beatPos = beat[0];
-		float beatPhase = beat[1];
-		int beatInMeasure = (int) beat[2];
+	@Override
+	public void draw(PGraphics g) {
+		g.pushStyle();
 
-		float barX = 175.0f;
-		float barY = 26.0f;
-		float barW = 130.0f;
-		float barH = 5.0f;
-		float beatImpulse = (float) Math.pow(1.0f - beatPhase, 2.2);
-		boolean downbeat = (beatInMeasure == 0);
-
-		g.noStroke();
-		g.fill(18, 16, 30, 215);
-		g.rect(barX, barY, barW, barH);
-
-		// Progreso continuo dentro del compás de 4 tiempos (0..1)
-		float measureProgress = PApplet.constrain((beatInMeasure + beatPhase) / 4.0f, 0.0f, 1.0f);
-		int fillCol = downbeat
-			? g.color(255, 225, 110, (int) (185 + beatImpulse * 70))
-			: g.color(95, 215, 255, (int) (155 + beatImpulse * 90));
-		g.fill(fillCol);
-		g.rect(barX, barY, barW * measureProgress, barH);
-
-		// Marcas de los 4 tiempos del compás + destello de pulso central
-		g.stroke(255, 255, 255, 90);
-		for (int b = 1; b < 4; b++) {
-			float mx = barX + barW * (b / 4.0f);
-			g.line(mx, barY, mx, barY + barH);
+		int songTimeMs;
+		if (_introCountdown > 0.0f) {
+			songTimeMs = -Math.round(_introCountdown * 1000.0f);
+		} else {
+			songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
 		}
 
-		// Cursor brillante que recorre la barra al ritmo de la canción
-		float cursorX = barX + barW * measureProgress;
-		g.noStroke();
-		g.fill(255, 255, 255, (int) (180 + beatImpulse * 75));
-		g.rect(cursorX - 1.5f, barY - 1.0f, 3.0f, barH + 2.0f);
+		drawArenaBackground(g, _bgAnimTime);
 
-		// Pulso simétrico en los extremos de la barra en cada beat
-		float wingW = 3.0f + beatImpulse * 5.0f;
-		g.fill(downbeat ? g.color(255, 225, 110, (int) (130 + beatImpulse * 125))
-		                : g.color(110, 225, 255, (int) (110 + beatImpulse * 125)));
-		g.rect(barX - wingW - 2.0f, barY, wingW, barH);
-		g.rect(barX + barW + 2.0f, barY, wingW, barH);
+		if (_rhythmCore != null) {
+			drawPerspectiveHighway(g, songTimeMs);
+			drawPerspectiveReceptors(g);
+			drawPerspectiveNotes(g, songTimeMs);
+			_particles.draw(g);
+			drawFloatingRatings(g);
+			drawIntroCountdownOverlay(g);
+		}
 
-		// Borde de la barra
-		g.noFill();
-		g.stroke(220, 230, 255, 130);
-		g.rect(barX, barY, barW, barH);
+		g.popStyle();
 	}
 
 	/**
-	 * Dibuja una elipse en perspectiva real (escorzada y orientada al ángulo de la pista)
-	 * para que tanto los receptores como las notas luzcan apoyados en el suelo 3D y no planos.
+	 * Renderiza el cielo nocturno, el halo carmesí, la curvatura del planeta y las luces
+	 * de ciudad (con sus caminos conectores) rotando en perspectiva 3D.
+	 */
+	private void drawArenaBackground(PGraphics g, float bgTimeSec) {
+		// 1. Cielo nocturno oscuro púrpura-vino por bandas
+		g.noStroke();
+		g.background(14, 7, 22);
+		for (int band = 0; band < 6; band++) {
+			float y0 = band * 18.0f;
+			g.fill(26 + band * 3, 10 + band * 2, 34 + band * 3, 160);
+			g.rect(0, y0, BASE_W, 18.0f);
+		}
+
+		// 2. Halo carmesí detrás del horizonte
+		for (int r = 5; r >= 1; r--) {
+			g.fill(180, 32, 36, 18 + (6 - r) * 8);
+			g.ellipse(CENTER_X, 54.0f, r * 30.0f, r * 20.0f);
+		}
+
+		// 3. Silueta curva del planeta debajo del horizonte
+		g.fill(10, 11, 18);
+		g.beginShape();
+		g.vertex(0, BASE_H);
+		g.vertex(0, Y_FAR + 14.0f);
+		for (int i = 0; i <= 24; i++) {
+			float hx = i * (BASE_W / 24.0f);
+			g.vertex(hx, horizonYAtX(hx));
+		}
+		g.vertex(BASE_W, BASE_H);
+		g.endShape(PConstants.CLOSE);
+
+		// 4. Borde difuso del horizonte curvo
+		g.stroke(42, 26, 48, 170);
+		g.noFill();
+		g.beginShape();
+		for (int i = 0; i <= 24; i++) {
+			float hx = i * (BASE_W / 24.0f);
+			g.vertex(hx, horizonYAtX(hx));
+		}
+		g.endShape();
+
+		// 5. Clusters de luces de ciudad y caminos luminosos rotando sobre el planeta
+		drawPlanetCityLights(g, bgTimeSec);
+	}
+
+	private void drawPlanetCityLights(PGraphics g, float bgTimeSec) {
+		g.noStroke();
+		float rotProgress = bgTimeSec * 0.042f;
+
+		// Caminos de luces tenues entre conjuntos distantes
+		for (int rp = 0; rp < CITY_ROAD_PAIRS.length; rp++) {
+			int ia = CITY_ROAD_PAIRS[rp][0];
+			int ib = CITY_ROAD_PAIRS[rp][1];
+			float xiA = CITY_LIGHT_CLUSTERS[ia][0];
+			float xiB = CITY_LIGHT_CLUSTERS[ib][0];
+			float phaseA = CITY_LIGHT_CLUSTERS[ia][1];
+			float phaseB = CITY_LIGHT_CLUSTERS[ib][1];
+			final int roadDots = 14;
+			for (int d = 2; d <= roadDots - 2; d++) {
+				float frac = d / (float) roadDots;
+				float tPhase = (PApplet.lerp(phaseA, phaseB, frac) + rotProgress) % 1.0f;
+				float tWorld = tPhase * 1.15f;
+				if (tWorld < 0.02f || tWorld > 1.15f) continue;
+
+				float xiRoad = PApplet.lerp(xiA, xiB, frac) + (float) Math.sin(frac * Math.PI) * (xiA < 0 ? -0.14f : 0.14f);
+				float[] pt = projectWorldPoint(xiRoad, tWorld);
+				float lx = pt[0], ly = pt[1];
+				if (lx < 1.0f || lx >= BASE_W - 1.0f || ly < horizonYAtX(lx) + 1.0f || ly >= BASE_H - 1.0f) continue;
+
+				float fade = PApplet.constrain(tWorld / 0.16f, 0.0f, 1.0f);
+				int alpha = Math.round((85 + 35 * (float) Math.sin(bgTimeSec * 2.0f + d)) * fade);
+				g.fill(255, 210, 90, alpha);
+				g.rect(Math.round(lx), Math.round(ly), 1, 1);
+			}
+		}
+
+		// Grupos densos de luces de ciudad (1x1 px en perspectiva real)
+		for (int c = 0; c < CITY_LIGHT_CLUSTERS.length; c++) {
+			float xiCenter = CITY_LIGHT_CLUSTERS[c][0];
+			float tCluster = (CITY_LIGHT_CLUSTERS[c][1] + rotProgress) % 1.0f;
+			float tWorld = tCluster * 1.15f;
+			float horizonFade = PApplet.constrain(tWorld / 0.14f, 0.0f, 1.0f);
+			int count = (int) CITY_LIGHT_CLUSTERS[c][2];
+
+			for (int k = 0; k < count; k++) {
+				int hash = c * 37 + k * 19;
+				float offXi = (((hash * 23) % 29) - 14) * 0.017f;
+				float offT  = (((hash * 13) % 17) - 8) * 0.0055f;
+
+				float lt = tWorld + offT;
+				if (lt < 0.0f || lt > 1.15f) continue;
+
+				float lxi = xiCenter + offXi;
+				float[] pt = projectWorldPoint(lxi, lt);
+				float lx = pt[0], ly = pt[1];
+				if (lx < 1.0f || lx >= BASE_W - 1.0f || ly < 0.0f || ly >= BASE_H - 1.0f) continue;
+				if (ly < horizonYAtX(lx) + 1.0f) continue;
+
+				float twinkle = 0.65f + 0.35f * (float) Math.sin(bgTimeSec * (2.2f + (k % 4) * 0.5f) + hash);
+				int alpha = Math.round((130 + 120 * twinkle) * horizonFade);
+				g.fill(255, 222 + (k % 3) * 10, 95, alpha);
+				g.rect(Math.round(lx), Math.round(ly), 1, 1);
+			}
+		}
+	}
+
+	/**
+	 * Renderiza la geometría 3D de la autopista de 6 carriles: fondos trapezoidales,
+	 * bloque rojo continuo de bloqueo de carril, ondas horizontales de compás, líneas
+	 * divisorias y el arco blanco principal de impacto.
+	 */
+	private void drawPerspectiveHighway(PGraphics g, int songTimeMs) {
+		int lockedLane = _rhythmCore.getLockedLane();
+
+		float sFar = S_FAR;
+		float uFar = 0.0f;
+		float sBottom = scaleFromT(1.13f);
+		float uBottom = uFromScale(sBottom);
+
+		// 1. Fondos trapezoidales por carril
+		for (int lane = 0; lane < LANE_COUNT; lane++) {
+			float xiL = -1.0f + lane * (2.0f / 6.0f);
+			float xiR = xiL + (2.0f / 6.0f);
+
+			boolean keyDown = !_rhythmCore.isPaused() && (
+				KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
+				KBInput.isKeyDown(Config.RhythmAltButtons[lane])
+			);
+
+			int fillCol = (lane % 2 == 0)
+				? g.color(20, 22, 34, 115)
+				: g.color(28, 30, 44, 115);
+
+			if (keyDown && lane != lockedLane) {
+				fillCol = g.color(255, 120, 130, 65);
+			}
+
+			g.noStroke();
+			g.fill(fillCol);
+			g.quad(
+				projectX(xiL, sFar),    projectY(xiL, uFar, sFar),
+				projectX(xiR, sFar),    projectY(xiR, uFar, sFar),
+				projectX(xiR, sBottom), projectY(xiR, uBottom, sBottom),
+				projectX(xiL, sBottom), projectY(xiL, uBottom, sBottom)
+			);
+		}
+
+		// 2. Bloque rojo continuo viajando por la pista para el intervalo [lockStartMs, lockEndMs]
+		drawLaneLockBlock(g, songTimeMs);
+
+		// 3. Ondas horizontales (arcos de beat) viajando a la velocidad de las notas
+		float[] beat = computeBeatState(songTimeMs);
+		float phase = beat[1];
+		float beatLengthMs = Math.max(50.0f, beat[3]);
+		float tpTime = beat[4];
+		float approachTimeMs = getApproachTimeMs();
+		float beatImpulse = (float) Math.pow(1.0f - phase, 2.2);
+
+		int nMin = (int) Math.floor(((songTimeMs - 0.12f * approachTimeMs) - tpTime) / beatLengthMs);
+		int nMax = (int) Math.ceil(((songTimeMs + approachTimeMs) - tpTime) / beatLengthMs);
+		for (int n = nMin; n <= nMax; n++) {
+			float beatTimeMs = tpTime + n * beatLengthMs;
+			float tArc = 1.0f - ((beatTimeMs - songTimeMs) / approachTimeMs);
+			if (tArc < 0.04f || tArc > 1.12f) continue;
+
+			float sArc = scaleFromT(tArc);
+			float uArc = uFromScale(sArc);
+			boolean downbeat = ((n % 4 + 4) % 4) == 0;
+			int baseAlpha = downbeat ? 95 : 50;
+			int alpha = (int) PApplet.constrain(baseAlpha + tArc * 95 + beatImpulse * 25, 45, 210);
+			drawPerspectiveArc(g, uArc, sArc, BEAT_WAVE_ARC_MAX_XI, g.color(150, 155, 175, alpha), downbeat ? 1.3f : 1.0f);
+		}
+
+		// 4. 7 líneas divisorias de carriles que divergen hacia la cámara
+		for (int edge = 0; edge <= LANE_COUNT; edge++) {
+			float xi = -1.0f + edge * (2.0f / 6.0f);
+			float xTop = projectX(xi, sFar);
+			float yTop = projectY(xi, uFar, sFar);
+			float xBot = projectX(xi, sBottom);
+			float yBot = projectY(xi, uBottom, sBottom);
+
+			boolean outer = (edge == 0 || edge == LANE_COUNT);
+			g.stroke(outer ? g.color(210, 215, 230, 195) : g.color(195, 200, 220, 145));
+			g.strokeWeight(outer ? 1.5f : 1.0f);
+			g.line(xTop, yTop, xBot, yBot);
+		}
+
+		// 5. Línea blanca principal (arco de impacto t = 1.0, S = 1.0) pulsando al ritmo
+		float hitWeight = 1.8f + beatImpulse * 1.1f;
+		drawPerspectiveArc(g, 1.0f, 1.0f, HIT_LINE_ARC_MAX_XI, g.color(255, 255, 255, 245), hitWeight);
+		g.strokeWeight(1.0f);
+	}
+
+	/**
+	 * Renderiza el bloque rojo continuo que desciende por el carril afectado durante la
+	 * advertencia y la duración activa del bloqueo ({@code [lockStartMs, lockEndMs]}).
+	 */
+	private void drawLaneLockBlock(PGraphics g, int songTimeMs) {
+		int lockVisLane = _rhythmCore.getLockVisualLane();
+		int lockStartMs = _rhythmCore.getLockStartMs();
+		int lockEndMs = _rhythmCore.getLockEndMs();
+		if (lockVisLane < 0 || lockVisLane >= LANE_COUNT || lockEndMs <= lockStartMs) {
+			return;
+		}
+
+		float appMs = getApproachTimeMs();
+		float tHead = 1.0f - ((lockStartMs - songTimeMs) / appMs);
+		float tTail = 1.0f - ((lockEndMs - songTimeMs) / appMs);
+		float tA = PApplet.constrain(tTail, 0.0f, 1.06f);
+		float tB = PApplet.constrain(tHead, 0.0f, 1.06f);
+		if (tB <= tA + 0.005f) {
+			return;
+		}
+
+		float xiL = -1.0f + lockVisLane * (2.0f / 6.0f) + 0.025f;
+		float xiR = -1.0f + (lockVisLane + 1) * (2.0f / 6.0f) - 0.025f;
+		final int segs = 10;
+		g.noStroke();
+		for (int sIdx = 0; sIdx < segs; sIdx++) {
+			float ft0 = PApplet.lerp(tA, tB, sIdx / (float) segs);
+			float ft1 = PApplet.lerp(tA, tB, (sIdx + 1) / (float) segs);
+			float sc0 = scaleFromT(ft0);
+			float sc1 = scaleFromT(ft1);
+			float uu0 = uFromScale(sc0);
+			float uu1 = uFromScale(sc1);
+
+			g.fill(215, 28, 48, 175);
+			g.quad(
+				projectX(xiL, sc0), projectY(xiL, uu0, sc0),
+				projectX(xiR, sc0), projectY(xiR, uu0, sc0),
+				projectX(xiR, sc1), projectY(xiR, uu1, sc1),
+				projectX(xiL, sc1), projectY(xiL, uu1, sc1)
+			);
+		}
+
+		// Borde brillante en los laterales y en el frente/cola del bloque rojo
+		float scHead = scaleFromT(tB);
+		float scTail = scaleFromT(tA);
+		float uuHead = uFromScale(scHead);
+		float uuTail = uFromScale(scTail);
+		g.stroke(255, 95, 110, 235);
+		g.strokeWeight(1.5f);
+		g.line(projectX(xiL, scTail), projectY(xiL, uuTail, scTail), projectX(xiL, scHead), projectY(xiL, uuHead, scHead));
+		g.line(projectX(xiR, scTail), projectY(xiR, uuTail, scTail), projectX(xiR, scHead), projectY(xiR, uuHead, scHead));
+		g.line(projectX(xiL, scHead), projectY(xiL, uuHead, scHead), projectX(xiR, scHead), projectY(xiR, uuHead, scHead));
+		g.line(projectX(xiL, scTail), projectY(xiL, uuTail, scTail), projectX(xiR, scTail), projectY(xiR, uuTail, scTail));
+		g.strokeWeight(1.0f);
+	}
+
+	private void drawPerspectiveArc(PGraphics g, float u, float s, float maxXi, int col, float weight) {
+		g.stroke(col);
+		g.strokeWeight(weight);
+		g.noFill();
+		g.beginShape();
+		final int steps = 28;
+		for (int i = 0; i <= steps; i++) {
+			float xi = -maxXi + (2.0f * maxXi * i) / steps;
+			float x = projectX(xi, s);
+			float y = projectY(xi, u, s);
+			g.vertex(x, y);
+		}
+		g.endShape();
+	}
+
+	/**
+	 * Dibuja una elipse en perspectiva real (escorzada y orientada al ángulo tangente de la pista)
+	 * para que tanto los receptores como las notas luzcan apoyados en el plano 3D.
 	 */
 	private void drawPerspectiveEllipse(
 		PGraphics g,
@@ -1575,21 +1539,26 @@ public class ROTNScene extends Scene {
 		g.popMatrix();
 	}
 
+	/**
+	 * Renderiza los 6 receptores circulares escorzados sobre el arco de impacto (t = 1.0),
+	 * incluyendo el hundimiento al pulsar y la cruz roja cuando un carril está bloqueado.
+	 */
 	private void drawPerspectiveReceptors(PGraphics g) {
 		int lockedLane = _rhythmCore.getLockedLane();
 		int warningLane = _rhythmCore.getWarningLane();
 		boolean isCritical = _rhythmCore.getCombo() > 7;
 		float tiltRatio = tiltRatioFromU(1.0f);
 
-		for (int lane = 0; lane < 6; lane++) {
+		for (int lane = 0; lane < LANE_COUNT; lane++) {
 			float xi = laneToXi(lane);
 			float cx = projectX(xi, 1.0f);
 			float cy = projectY(xi, 1.0f, 1.0f);
 			float ang = arcTangentAngle(xi, 1.0f);
 
 			boolean keyDown = !_rhythmCore.isPaused() && (
-							  KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
-							  KBInput.isKeyDown(Config.RhythmAltButtons[lane]));
+				KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
+				KBInput.isKeyDown(Config.RhythmAltButtons[lane])
+			);
 
 			if (keyDown && lane != lockedLane) {
 				cy += PRESS_SINK_PX;
@@ -1632,7 +1601,6 @@ public class ROTNScene extends Scene {
 
 			drawPerspectiveEllipse(g, cx, cy, rx, ry, ang, baseCol, rimCol, fillCol, coreCol);
 
-			// X roja si el carril esta bloqueado
 			if (lane == lockedLane) {
 				g.stroke(255, 120, 130);
 				g.strokeWeight(1.5f);
@@ -1643,6 +1611,10 @@ public class ROTNScene extends Scene {
 		}
 	}
 
+	/**
+	 * Renderiza todas las notas visibles en la ventana de aproximación: estelas azules
+	 * de Hold Notes y cabezas elípticas en perspectiva (normales, a distancia y con cambio de carril).
+	 */
 	private void drawPerspectiveNotes(PGraphics g, int songTimeMs) {
 		long[] notes = _rhythmCore.getNotes();
 		if (notes == null) return;
@@ -1652,7 +1624,6 @@ public class ROTNScene extends Scene {
 		for (int i = 0; i < notes.length; i++) {
 			long packed = notes[i];
 			int lane = NotePacker.getLane(packed);
-
 			byte noteType = NotePacker.getNoteType(packed);
 			long startTime = NotePacker.getStartTime(packed);
 			long duration = NotePacker.getDuration(packed);
@@ -1666,11 +1637,12 @@ public class ROTNScene extends Scene {
 			if (tTail > 1.13f || tHead < 0.0f) continue;
 
 			boolean keyDown = !_rhythmCore.isPaused() && (
-							  KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
-							  KBInput.isKeyDown(Config.RhythmAltButtons[lane]));
+				KBInput.isKeyDown(Config.RhythmButtons[lane]) ||
+				KBInput.isKeyDown(Config.RhythmAltButtons[lane])
+			);
 			float targetXi = laneToXi(lane);
 
-			// Trayectoria para notas con cambio de carril (SHIFT_UP / SHIFT_DOWN)
+			// Trayectoria interpolada para notas con cambio de carril (SHIFT_UP / SHIFT_DOWN)
 			float drawXi = targetXi;
 			if (noteType == NotePacker.NOTE_SHIFT_UP && tHead < 0.65f && lane < 5) {
 				float originXi = laneToXi(lane + 1);
@@ -1682,128 +1654,190 @@ public class ROTNScene extends Scene {
 				drawXi = originXi + (targetXi - originXi) * shiftProg;
 			}
 
-			// 1. Hold note ribbon en perspectiva (azul y transparente; se hunde al mantener la tecla)
+			// 1. Cinta en perspectiva para Hold Notes (azul translúcida)
 			if (duration > 0) {
-				float segStart = Math.max(0.0f, tTail);
-				float segEnd = isBeingHeld ? 1.0f : Math.min(1.12f, tHead);
-				boolean sinkTail = isBeingHeld || (keyDown && segEnd >= 0.98f);
-				if (segEnd > segStart) {
-					final int slices = 8;
-					g.noStroke();
-					g.fill(45, 165, 255, 115);
-					for (int sIdx = 0; sIdx < slices; sIdx++) {
-						float ta = segStart + (segEnd - segStart) * (sIdx / (float) slices);
-						float tb = segStart + (segEnd - segStart) * ((sIdx + 1) / (float) slices);
-						float sa = scaleFromT(ta);
-						float sb = scaleFromT(tb);
-						float ua = uFromScale(sa);
-						float ub = uFromScale(sb);
-						float sinkA = sinkTail ? PRESS_SINK_PX * PApplet.constrain((ta - 0.75f) / 0.25f, 0.0f, 1.0f) : 0.0f;
-						float sinkB = sinkTail ? PRESS_SINK_PX * PApplet.constrain((tb - 0.75f) / 0.25f, 0.0f, 1.0f) : 0.0f;
-						float halfLaneXi = 0.075f;
-						g.quad(
-							projectX(targetXi - halfLaneXi, sa), projectY(targetXi - halfLaneXi, ua, sa) + sinkA,
-							projectX(targetXi + halfLaneXi, sa), projectY(targetXi + halfLaneXi, ua, sa) + sinkA,
-							projectX(targetXi + halfLaneXi, sb), projectY(targetXi + halfLaneXi, ub, sb) + sinkB,
-							projectX(targetXi - halfLaneXi, sb), projectY(targetXi - halfLaneXi, ub, sb) + sinkB
-						);
-					}
-				}
+				drawHoldNoteRibbon(g, targetXi, tHead, tTail, isBeingHeld, keyDown);
 			}
 
+			// 2. Cabeza elíptica 3D de la nota
 			if (!isBeingHeld && tHead >= 0.0f && tHead <= 1.12f) {
-				float s = scaleFromT(tHead);
-				float u = uFromScale(s);
-				float cx = projectX(drawXi, s);
-				float cy = projectY(drawXi, u, s);
-				if (keyDown && tHead >= 0.85f) {
-					cy += PRESS_SINK_PX * PApplet.constrain((tHead - 0.85f) / 0.15f, 0.0f, 1.0f);
-				}
-				float ang = arcTangentAngle(drawXi, s);
-				float tiltRatio = tiltRatioFromU(u);
-
-				// Indicador en el receptor para ataques a distancia (RANGED_ORIGIN)
-				if (noteType == NotePacker.NOTE_RANGED_ORIGIN && tHead < 1.0f) {
-					float rxTarget = projectX(targetXi, 1.0f);
-					float ryTarget = projectY(targetXi, 1.0f, 1.0f);
-					g.stroke(255, 120, 80, 150);
-					g.noFill();
-					g.line(cx, cy, rxTarget, ryTarget);
-					drawPerspectiveEllipse(
-						g,
-						rxTarget,
-						ryTarget,
-						15.0f,
-						15.0f * tiltRatioFromU(1.0f),
-						arcTangentAngle(targetXi, 1.0f),
-						g.color(0, 0),
-						g.color(255, 130, 80, 200),
-						g.color(255, 110, 75, 45),
-						g.color(0, 0)
-					);
-				}
-
-				float rx = Math.max(2.6f, 12.2f * s);
-				float ry = Math.max(1.2f, rx * tiltRatio);
-
-				int baseCol = g.color(8, 8, 14, 210);
-				int rimCol;
-				int fillCol;
-				int coreCol;
-
-				switch (noteType) {
-					case NotePacker.NOTE_RANGED_ORIGIN -> {
-						rimCol = g.color(255, 185, 120);
-						fillCol = g.color(255, 95, 60);
-						coreCol = g.color(255, 240, 190);
-					}
-					case NotePacker.NOTE_SHIFT_UP -> {
-						rimCol = g.color(200, 255, 215);
-						fillCol = g.color(95, 225, 135);
-						coreCol = g.color(230, 255, 235);
-					}
-					case NotePacker.NOTE_SHIFT_DOWN -> {
-						rimCol = g.color(255, 235, 165);
-						fillCol = g.color(245, 175, 55);
-						coreCol = g.color(255, 245, 205);
-					}
-					default -> {
-						if (duration > 0) {
-							rimCol = g.color(170, 235, 255, 210);
-							fillCol = g.color(45, 165, 245, 155);
-							coreCol = g.color(150, 225, 255, 140);
-						} else {
-							rimCol = g.color(240, 225, 255);
-							fillCol = g.color(0xE2, 0xE2, 0xE2);
-							coreCol = g.color(245, 245, 245, 165);
-						}
-					}
-				}
-
-				drawPerspectiveEllipse(g, cx, cy, rx, ry, ang, baseCol, rimCol, fillCol, coreCol);
-
-				// Indicador direccional escorzado para SHIFT_UP / SHIFT_DOWN
-				if (noteType == NotePacker.NOTE_SHIFT_UP || noteType == NotePacker.NOTE_SHIFT_DOWN) {
-					float dir = (noteType == NotePacker.NOTE_SHIFT_UP) ? -1.0f : 1.0f;
-					g.stroke(15, 20, 28);
-					g.strokeWeight(1.2f);
-					g.line(cx + rx * 0.35f * dir, cy, cx - rx * 0.25f * dir, cy - ry * 0.32f);
-					g.line(cx + rx * 0.35f * dir, cy, cx - rx * 0.25f * dir, cy + ry * 0.32f);
-					g.strokeWeight(1.0f);
-				}
+				drawNoteHead(g, noteType, duration, targetXi, drawXi, tHead, keyDown);
 			}
 		}
 	}
 
-	@Override
-	protected void onDialogLoadRequest(String scenePath) {
-		String absPath = ResourcesManager.getAbsPathFromProject(scenePath);
-		Engine.changeScene(new ROTNScene(absPath));
+	private void drawHoldNoteRibbon(
+		PGraphics g,
+		float targetXi,
+		float tHead,
+		float tTail,
+		boolean isBeingHeld,
+		boolean keyDown
+	) {
+		float segStart = Math.max(0.0f, tTail);
+		float segEnd = isBeingHeld ? 1.0f : Math.min(1.12f, tHead);
+		boolean sinkTail = isBeingHeld || (keyDown && segEnd >= 0.98f);
+		if (segEnd <= segStart) return;
+
+		final int slices = 8;
+		final float halfLaneXi = 0.075f;
+		g.noStroke();
+		g.fill(45, 165, 255, 115);
+		for (int sIdx = 0; sIdx < slices; sIdx++) {
+			float ta = segStart + (segEnd - segStart) * (sIdx / (float) slices);
+			float tb = segStart + (segEnd - segStart) * ((sIdx + 1) / (float) slices);
+			float sa = scaleFromT(ta);
+			float sb = scaleFromT(tb);
+			float ua = uFromScale(sa);
+			float ub = uFromScale(sb);
+			float sinkA = sinkTail ? PRESS_SINK_PX * PApplet.constrain((ta - 0.75f) / 0.25f, 0.0f, 1.0f) : 0.0f;
+			float sinkB = sinkTail ? PRESS_SINK_PX * PApplet.constrain((tb - 0.75f) / 0.25f, 0.0f, 1.0f) : 0.0f;
+			g.quad(
+				projectX(targetXi - halfLaneXi, sa), projectY(targetXi - halfLaneXi, ua, sa) + sinkA,
+				projectX(targetXi + halfLaneXi, sa), projectY(targetXi + halfLaneXi, ua, sa) + sinkA,
+				projectX(targetXi + halfLaneXi, sb), projectY(targetXi + halfLaneXi, ub, sb) + sinkB,
+				projectX(targetXi - halfLaneXi, sb), projectY(targetXi - halfLaneXi, ub, sb) + sinkB
+			);
+		}
 	}
 
-	@Override
-	public void close() {
-		super.close();
-		Audio.stopTransientBGM();
+	private void drawNoteHead(
+		PGraphics g,
+		byte noteType,
+		long duration,
+		float targetXi,
+		float drawXi,
+		float tHead,
+		boolean keyDown
+	) {
+		float s = scaleFromT(tHead);
+		float u = uFromScale(s);
+		float cx = projectX(drawXi, s);
+		float cy = projectY(drawXi, u, s);
+		if (keyDown && tHead >= 0.85f) {
+			cy += PRESS_SINK_PX * PApplet.constrain((tHead - 0.85f) / 0.15f, 0.0f, 1.0f);
+		}
+		float ang = arcTangentAngle(drawXi, s);
+		float tiltRatio = tiltRatioFromU(u);
+
+		// Línea guía e indicador en el receptor para ataques a distancia (RANGED_ORIGIN)
+		if (noteType == NotePacker.NOTE_RANGED_ORIGIN && tHead < 1.0f) {
+			float rxTarget = projectX(targetXi, 1.0f);
+			float ryTarget = projectY(targetXi, 1.0f, 1.0f);
+			g.stroke(255, 120, 80, 150);
+			g.noFill();
+			g.line(cx, cy, rxTarget, ryTarget);
+			drawPerspectiveEllipse(
+				g,
+				rxTarget,
+				ryTarget,
+				15.0f,
+				15.0f * tiltRatioFromU(1.0f),
+				arcTangentAngle(targetXi, 1.0f),
+				g.color(0, 0),
+				g.color(255, 130, 80, 200),
+				g.color(255, 110, 75, 45),
+				g.color(0, 0)
+			);
+		}
+
+		float rx = Math.max(2.6f, 12.2f * s);
+		float ry = Math.max(1.2f, rx * tiltRatio);
+
+		int baseCol = g.color(8, 8, 14, 210);
+		int rimCol;
+		int fillCol;
+		int coreCol;
+
+		switch (noteType) {
+			case NotePacker.NOTE_RANGED_ORIGIN -> {
+				rimCol = g.color(255, 185, 120);
+				fillCol = g.color(255, 95, 60);
+				coreCol = g.color(255, 240, 190);
+			}
+			case NotePacker.NOTE_SHIFT_UP -> {
+				rimCol = g.color(200, 255, 215);
+				fillCol = g.color(95, 225, 135);
+				coreCol = g.color(230, 255, 235);
+			}
+			case NotePacker.NOTE_SHIFT_DOWN -> {
+				rimCol = g.color(255, 235, 165);
+				fillCol = g.color(245, 175, 55);
+				coreCol = g.color(255, 245, 205);
+			}
+			default -> {
+				if (duration > 0) {
+					rimCol = g.color(170, 235, 255, 210);
+					fillCol = g.color(45, 165, 245, 155);
+					coreCol = g.color(150, 225, 255, 140);
+				} else {
+					rimCol = g.color(240, 225, 255);
+					fillCol = g.color(0xE2, 0xE2, 0xE2);
+					coreCol = g.color(245, 245, 245, 165);
+				}
+			}
+		}
+
+		drawPerspectiveEllipse(g, cx, cy, rx, ry, ang, baseCol, rimCol, fillCol, coreCol);
+
+		// Chevron direccional escorzado para SHIFT_UP / SHIFT_DOWN
+		if (noteType == NotePacker.NOTE_SHIFT_UP || noteType == NotePacker.NOTE_SHIFT_DOWN) {
+			float dir = (noteType == NotePacker.NOTE_SHIFT_UP) ? -1.0f : 1.0f;
+			g.stroke(15, 20, 28);
+			g.strokeWeight(1.2f);
+			g.line(cx + rx * 0.35f * dir, cy, cx - rx * 0.25f * dir, cy - ry * 0.32f);
+			g.line(cx + rx * 0.35f * dir, cy, cx - rx * 0.25f * dir, cy + ry * 0.32f);
+			g.strokeWeight(1.0f);
+		}
+	}
+
+	/**
+	 * Renderiza los carteles flotantes de juicio (PERFECT, GOOD, SAFE, MISS) sobre cada carril.
+	 */
+	private void drawFloatingRatings(PGraphics g) {
+		if (_floatingRatings.isEmpty()) return;
+		g.pushStyle();
+		g.textAlign(PConstants.CENTER, PConstants.CENTER);
+		if (GameDialog.descriptionFont != null) {
+			g.textFont(GameDialog.descriptionFont, 9);
+		} else {
+			g.textSize(9);
+		}
+		for (int i = 0; i < _floatingRatings.size(); i++) {
+			FloatingRating fr = _floatingRatings.get(i);
+			float ratio = PApplet.constrain((fr.life / fr.maxLife) * 2.0f, 0.0f, 1.0f);
+			int alpha = Math.round(255 * ratio);
+			int rgb = fr.color & 0x00FFFFFF;
+
+			g.fill(0, 0, 0, Math.round(190 * ratio));
+			g.text(fr.text, fr.x + 1.0f, fr.y + 1.0f);
+
+			g.fill((alpha << 24) | rgb);
+			g.text(fr.text, fr.x, fr.y);
+		}
+		g.popStyle();
+	}
+
+	/**
+	 * Renderiza el contador numérico grande (3, 2, 1) en el centro de la arena durante el pre-inicio.
+	 */
+	private void drawIntroCountdownOverlay(PGraphics g) {
+		if (_introCountdown <= 0.0f) return;
+
+		int sec = PApplet.constrain((int) Math.ceil(_introCountdown), 1, 3);
+		g.pushStyle();
+		g.textAlign(PConstants.CENTER, PConstants.CENTER);
+		if (GameDialog.titleFont != null) {
+			g.textFont(GameDialog.titleFont, 28);
+		} else {
+			g.textSize(28);
+		}
+		String label = String.valueOf(sec);
+		float cy = 128.0f;
+		g.fill(0, 0, 0, 210);
+		g.text(label, CENTER_X + 2.0f, cy + 2.0f);
+		g.fill(255, 235, 110, 255);
+		g.text(label, CENTER_X, cy);
+		g.popStyle();
 	}
 }

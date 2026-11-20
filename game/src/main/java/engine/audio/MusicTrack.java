@@ -1,16 +1,35 @@
 package engine.audio;
 
 import java.io.File;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.BooleanControl;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 
-import javax.sound.sampled.*;
-
+/**
+ * Envoltorio sobre {@link Clip} de Java Sound para reproducción de música WAV PCM
+ * con soporte de búsqueda por milisegundos, bucle continuo, pausa/reanudación y control en dB.
+ */
 public class MusicTrack {
+
+	// =========================================================================
+	// Estado del Clip de Audio
+	// =========================================================================
+
 	private Clip _clip;
 	private FloatControl _volumeControl;
 	private BooleanControl _muteControl;
 	private long _pausedMicros = 0;
 	private boolean _looping = false;
 
+	// =========================================================================
+	// Carga y Control de Reproducción
+	// =========================================================================
+
+	/**
+	 * Abre un archivo WAV en memoria dentro de un {@link Clip} y extrae sus controles de ganancia y mute.
+	 */
 	public void loadMusic(String wavPath) {
 		try {
 			File file = new File(wavPath);
@@ -31,7 +50,9 @@ public class MusicTrack {
 		}
 	}
 
-	public void play() { play(0, _looping); }
+	public void play() {
+		play(0, _looping);
+	}
 
 	public void play(int startMs, boolean loop) {
 		if (_clip == null) return;
@@ -77,9 +98,17 @@ public class MusicTrack {
 		}
 	}
 
-	public boolean isLoaded() { return _clip != null; }
+	// =========================================================================
+	// Consultas de Estado, Volumen y Posición Temporal
+	// =========================================================================
 
-	public boolean isPlaying() { return _clip != null && _clip.isRunning(); }
+	public boolean isLoaded() {
+		return _clip != null;
+	}
+
+	public boolean isPlaying() {
+		return _clip != null && _clip.isRunning();
+	}
 
 	public void setVolume(float volume) {
 		if (_volumeControl != null) {
@@ -94,13 +123,13 @@ public class MusicTrack {
 		if (_muteControl != null) {
 			_muteControl.setValue(muted);
 		} else {
-			setVolume( muted ? 0.0f : Audio.getBGMVolume());
+			setVolume(muted ? 0.0f : Audio.getBGMVolume());
 		}
 	}
 
 	public int getPositionMs() {
 		if (_clip != null) {
-			return (int)(_clip.getMicrosecondPosition() / 1000L);
+			return (int) (_clip.getMicrosecondPosition() / 1000L);
 		}
 		return 0;
 	}

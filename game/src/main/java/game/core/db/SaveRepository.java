@@ -15,9 +15,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Repositorio SQLite para PARTIDAS, BATALLAS_VENCIDAS, OBJETOS_OBTENIDOS, HISTORIAL_OBJETOS y FLAGS_PARTIDA.
+ * Repositorio SQLite para la persistencia de partidas e historia principal en 3FN.
+ *
+ * <p>Interactúa con las tablas {@code PARTIDAS}, {@code ZONAS}, {@code CATALOGO_BATALLAS},
+ * {@code BATALLAS_VENCIDAS}, {@code CATALOGO_ITEMS}, {@code OBJETOS_OBTENIDOS},
+ * {@code HISTORIAL_OBJETOS} y {@code FLAGS_PARTIDA}, así como con las vistas
+ * {@code v_resumen_partidas}, {@code v_mejores_puntajes_batallas}, {@code v_inventario_detallado}
+ * y {@code v_historial_objetos}.
  */
 public class SaveRepository {
+
+	// =========================================================================
+	// DTOs de Lectura de Partidas, Récords de Batalla e Historial de Objetos
+	// =========================================================================
 
 	public static class LoadedSaveData {
 		public long idPartida;
@@ -52,10 +62,20 @@ public class SaveRepository {
 		public String eventDate;
 	}
 
+	// =========================================================================
+	// Consultas de Slots y Vistas de Resumen (v_resumen_partidas, v_mejores_puntajes_batallas, v_historial_objetos)
+	// =========================================================================
+
+	/**
+	 * Convierte el índice de slot base 0 usado en memoria ({@code 0..3}) al slot 1FN/3FN ({@code 1..4} en {@code PARTIDAS.slot}).
+	 */
 	private static int toDbSlot(int zeroBasedSlot) {
 		return GameState.clampSaveSlot(zeroBasedSlot) + 1;
 	}
 
+	/**
+	 * Verifica si existe una partida registrada en {@code PARTIDAS} para el slot indicado.
+	 */
 	public static boolean hasSlot(int zeroBasedSlot) {
 		int dbSlot = toDbSlot(zeroBasedSlot);
 		try (Connection conn = DatabaseManager.getConnection();
@@ -70,6 +90,9 @@ public class SaveRepository {
 		}
 	}
 
+	/**
+	 * Cuenta el total de filas activas en la tabla {@code PARTIDAS}.
+	 */
 	public static int countUsedSlots() {
 		try (Connection conn = DatabaseManager.getConnection();
 			 PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM PARTIDAS");
@@ -81,6 +104,10 @@ public class SaveRepository {
 		}
 	}
 
+	/**
+	 * Obtiene el resumen de un slot consultando la vista {@code v_resumen_partidas}
+	 * (que agrega {@code PARTIDAS}, {@code ZONAS}, {@code OBJETOS_OBTENIDOS}, {@code CATALOGO_ITEMS} y {@code BATALLAS_VENCIDAS}).
+	 */
 	public static GameState.SaveSlotSummary getSlotSummary(int zeroBasedSlot) {
 		GameState.SaveSlotSummary summary = new GameState.SaveSlotSummary();
 		int dbSlot = toDbSlot(zeroBasedSlot);
@@ -110,6 +137,9 @@ public class SaveRepository {
 		return summary;
 	}
 
+	/**
+	 * Lista los récords de batallas ganadas en un slot desde la vista {@code v_mejores_puntajes_batallas}.
+	 */
 	public static List<BattleRecordView> getBattleRecordsForSlot(int zeroBasedSlot) {
 		List<BattleRecordView> list = new ArrayList<>();
 		int dbSlot = toDbSlot(zeroBasedSlot);
@@ -138,6 +168,10 @@ public class SaveRepository {
 		return list;
 	}
 
+	/**
+	 * Obtiene los últimos eventos de auditoría de inventario del slot desde la vista {@code v_historial_objetos}
+	 * (alimentada automáticamente por los triggers {@code trg_objetos_audit_insert} y {@code trg_objetos_audit_update}).
+	 */
 	public static List<ItemHistoryView> getItemHistoryForSlot(int zeroBasedSlot, int limit) {
 		List<ItemHistoryView> list = new ArrayList<>();
 		int dbSlot = toDbSlot(zeroBasedSlot);
@@ -166,6 +200,14 @@ public class SaveRepository {
 		return list;
 	}
 
+	// =========================================================================
+	// Creación, Eliminación, Guardado y Carga de Partidas
+	// =========================================================================
+
+	/**
+	 * Elimina una partida de {@code PARTIDAS}. Gracias a {@code ON DELETE CASCADE}, limpia automáticamente
+	 * sus registros en {@code BATALLAS_VENCIDAS}, {@code OBJETOS_OBTENIDOS}, {@code HISTORIAL_OBJETOS} y {@code FLAGS_PARTIDA}.
+	 */
 	public static boolean deleteSlot(int zeroBasedSlot) {
 		int dbSlot = toDbSlot(zeroBasedSlot);
 		try (Connection conn = DatabaseManager.getConnection();
@@ -179,6 +221,10 @@ public class SaveRepository {
 		}
 	}
 
+	/**
+	 * Reinicia el slot en {@code PARTIDAS} e inserta el inventario inicial en {@code OBJETOS_OBTENIDOS}
+	 * (disparando {@code trg_objetos_validar_insert} y {@code trg_objetos_audit_insert} hacia {@code HISTORIAL_OBJETOS}).
+	 */
 	public static void createNewGame(
 		int zeroBasedSlot,
 		String startScene,
@@ -241,6 +287,18 @@ public class SaveRepository {
 		}
 	}
 
+	/**
+	 * Persiste el estado completo del jugador en una transacción atómica:
+	 * <ol>
+	 *   <li>Inserta o actualiza la fila principal en {@code PARTIDAS} (con referencias a {@code ZONAS}).</li>
+	 *   <li>Sincroniza diferencialmente {@code FLAGS_PARTIDA}.</li>
+	 *   <li>Sincroniza por diferencias {@code OBJETOS_OBTENIDOS} para que los triggers {@code trg_objetos_audit_insert}
+	 *       y {@code trg_objetos_audit_update} registren únicamente cambios reales en {@code HISTORIAL_OBJETOS}
+	 *       (y auto-eliminen filas cuya {@code cantidad} baje a {@code 0}).</li>
+	 *   <li>Registra en {@code BATALLAS_VENCIDAS} cualquier jefe cuyo {@code defeat_flag} esté activo
+	 *       (disparando {@code trg_batallas_progreso_insert}).</li>
+	 * </ol>
+	 */
 	public static void saveState(
 		int zeroBasedSlot,
 		String scenePath,
@@ -428,6 +486,10 @@ public class SaveRepository {
 		}
 	}
 
+	/**
+	 * Carga el estado completo de una partida leyendo las vistas {@code v_resumen_partidas} y
+	 * {@code v_inventario_detallado}, junto con las tablas {@code FLAGS_PARTIDA} y {@code BATALLAS_VENCIDAS}.
+	 */
 	public static LoadedSaveData loadState(int zeroBasedSlot) {
 		int dbSlot = toDbSlot(zeroBasedSlot);
 		String sql =
@@ -519,6 +581,22 @@ public class SaveRepository {
 		}
 	}
 
+	// =========================================================================
+	// Registro de Victorias en Combates Rítmicos (BATALLAS_VENCIDAS y Triggers)
+	// =========================================================================
+
+	/**
+	 * Registra o actualiza una victoria en {@code BATALLAS_VENCIDAS} (asegurando su entrada en {@code CATALOGO_BATALLAS}).
+	 *
+	 * <p>Triggers disparados automáticamente en SQLite:
+	 * <ul>
+	 *   <li>{@code trg_batallas_progreso_insert} / {@code trg_batallas_progreso_update}: recalcula
+	 *       {@code PARTIDAS.progreso_porcentaje} según el porcentaje de batallas principales vencidas.</li>
+	 *   <li>{@code trg_batallas_amuleto_score_insert} / {@code trg_batallas_amuleto_score_update}: si la batalla
+	 *       define {@code id_amuleto_score} en {@code CATALOGO_BATALLAS} y {@code puntaje_maximo >= puntaje_minimo_amuleto},
+	 *       otorga el amuleto automáticamente en {@code OBJETOS_OBTENIDOS}.</li>
+	 * </ul>
+	 */
 	public static void recordBattleVictory(
 		int zeroBasedSlot,
 		String bossId,

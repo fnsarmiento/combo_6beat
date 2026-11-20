@@ -2,14 +2,33 @@ package engine.audio;
 
 import java.io.File;
 import java.util.HashMap;
-
 import kuusisto.tinysound.Sound;
+import kuusisto.tinysound.TinySound;
 import processing.core.PApplet;
 
-import kuusisto.tinysound.TinySound; // SFX solo
-
+/**
+ * Controlador global de audio del motor.
+ *
+ * <p>Arquitectura de canales:
+ * <ul>
+ *   <li><b>Efectos de sonido (SFX):</b> reproducidos con baja latencia mediante {@link TinySound}
+ *       y almacenados en caché en {@code _sfxCache}.</li>
+ *   <li><b>BGM Persistente ({@code _persistentBGM}):</b> pista de fondo compartida entre el Menú
+ *       Principal y el Hub. No se reinicia al cambiar entre salas; si un combate rítmico la interrumpe,
+ *       guarda su posición en milisegundos ({@code _persistentBGMPosMs}) para reanudarse exactamente
+ *       donde quedó al volver al Hub.</li>
+ *   <li><b>BGM Transitoria ({@code _actualBGM != _persistentBGM}):</b> pista propia de un combate
+ *       rítmico en {@code ROTNScene}. Al finalizar o salir de la canción, {@link #stopTransientBGM()}
+ *       la detiene de inmediato y cierra el {@code Clip} en un hilo daemon para no bloquear el
+ *       renderizado principal.</li>
+ * </ul>
+ */
 public class Audio {
-	//private static ArrayList<Sound> _SFX;
+
+	// =========================================================================
+	// Estado Estático y Caché de Sonidos
+	// =========================================================================
+
 	private static final HashMap<String, Sound> _sfxCache = new HashMap<>();
 	private static MusicTrack _actualBGM;
 	private static MusicTrack _persistentBGM;
@@ -18,15 +37,16 @@ public class Audio {
 
 	private static float _BGMVolume = 1.0f;
 	private static float _SFXVolume = 1.0f;
-	//private static float _lastBGMVolume;
-	//private static float _lastSFXVolume;
 	private static boolean _isMuted = false;
+
+	// =========================================================================
+	// Inicialización y Control de Volumen / Mute
+	// =========================================================================
 
 	public static void init(PApplet app) {
 		if (!TinySound.isInitialized()) {
-		TinySound.init();
+			TinySound.init();
 		}
-
 		TinySound.setGlobalVolume(_SFXVolume);
 	}
 
@@ -37,8 +57,9 @@ public class Audio {
 	public static void setBGMVolume(float volume) {
 		_BGMVolume = PApplet.constrain(volume, 0.0f, 1.0f);
 
-		if (_actualBGM != null && !_isMuted)
+		if (_actualBGM != null && !_isMuted) {
 			_actualBGM.setVolume(_BGMVolume);
+		}
 	}
 
 	public static float getSFXVolume() {
@@ -65,7 +86,9 @@ public class Audio {
 		setMute(!_isMuted);
 	}
 
-	// SFX
+	// =========================================================================
+	// Efectos de Sonido (SFX - TinySound)
+	// =========================================================================
 
 	public static Sound loadSFX(String path) {
 		return _sfxCache.computeIfAbsent(path, k -> TinySound.loadSound(new File(k)));
@@ -77,7 +100,9 @@ public class Audio {
 		}
 	}
 
-	// BGM
+	// =========================================================================
+	// Música de Fondo (BGM Transitoria y Persistente)
+	// =========================================================================
 
 	public static MusicTrack loadBGM(String path) {
 		MusicTrack bgm = new MusicTrack();
@@ -93,6 +118,10 @@ public class Audio {
 		playBGM(bgm, 0, loop);
 	}
 
+	/**
+	 * Inicia la reproducción de una pista BGM. Si la pista anterior era la BGM persistente
+	 * de menú/hub, la pausa conservando su posición; si era otra pista transitoria, la detiene.
+	 */
 	public static void playBGM(MusicTrack bgm, int startMs, boolean loop) {
 		if (_actualBGM != null && _actualBGM != bgm) {
 			if (_actualBGM == _persistentBGM) {
@@ -111,7 +140,7 @@ public class Audio {
 	}
 
 	/**
-	 * Reproduce o reanuda una pista de fondo persistente (ej. Menú + Hub) sin reiniciarla
+	 * Reproduce o reanuda una pista de fondo persistente (Menú + Hub) sin reiniciarla
 	 * al cambiar de escena, retomando exactamente donde quedó si fue pausada por un combate.
 	 */
 	public static void ensurePersistentBGM(String absWavPath) {
@@ -147,6 +176,9 @@ public class Audio {
 		}
 	}
 
+	/**
+	 * Pausa la BGM persistente guardando su posición actual en milisegundos.
+	 */
 	public static void pausePersistentBGM() {
 		if (_persistentBGM != null && _persistentBGM.isPlaying()) {
 			_persistentBGMPosMs = _persistentBGM.getPositionMs();
@@ -154,6 +186,9 @@ public class Audio {
 		}
 	}
 
+	/**
+	 * Detiene y libera en segundo plano la BGM transitoria de combate sin afectar a {@code _persistentBGM}.
+	 */
 	public static void stopTransientBGM() {
 		if (_actualBGM != null && _actualBGM != _persistentBGM) {
 			final MusicTrack toClose = _actualBGM;
@@ -169,7 +204,7 @@ public class Audio {
 	public static void pauseBGM() {
 		if (_actualBGM != null) _actualBGM.pause();
 	}
-	
+
 	public static void resumeBGM() {
 		if (_actualBGM != null) _actualBGM.resume();
 	}
@@ -177,12 +212,14 @@ public class Audio {
 	public static int getBGMPosMs() {
 		return _actualBGM != null ? _actualBGM.getPositionMs() : 0;
 	}
-	
+
 	public static float getBGMPosSeconds() {
 		return _actualBGM != null ? _actualBGM.getPositionSeconds() : 0.0f;
 	}
 
-	// Clear
+	// =========================================================================
+	// Liberación de Recursos
+	// =========================================================================
 
 	public static void clear() {
 		if (_actualBGM != null) {
@@ -199,4 +236,3 @@ public class Audio {
 		_sfxCache.clear();
 	}
 }
-

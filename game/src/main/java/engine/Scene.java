@@ -21,7 +21,18 @@ import processing.core.PGraphics;
 import processing.data.XML;
 import processing.event.KeyEvent;
 
+/**
+ * Clase base para todas las escenas del motor.
+ *
+ * <p>Gestiona la lista de {@link GameObject} activos, la carga declarativa desde archivos XML
+ * de escena, la integración con {@link DialogManager} y el registro de controles {@link ControlP5}
+ * para su destrucción automática al cerrar la escena.
+ */
 public class Scene {
+
+	// =========================================================================
+	// Estado Protegido de la Escena
+	// =========================================================================
 
 	protected ArrayList<String> _controllers = new ArrayList<>();
 	protected ArrayList<GameObject> _gameObjects = new ArrayList<>();
@@ -29,13 +40,24 @@ public class Scene {
 	protected float _defaultSpawnX = -1.0f;
 	protected float _defaultSpawnY = -1.0f;
 
+	// =========================================================================
+	// Constructores
+	// =========================================================================
+
 	public Scene() {}
 
+	/**
+	 * Construye una escena cargando su definición XML mediante {@link ResourcesManager#loadMap(String)}.
+	 */
 	public Scene(String path) {
 		if (path != null && !path.isEmpty()) {
 			_xmlScene = ResourcesManager.loadMap(path);
 		}
 	}
+
+	// =========================================================================
+	// Gestión de GameObjects y Punto de Aparición (Spawn)
+	// =========================================================================
 
 	public void addGameObject(GameObject obj) {
 		if (obj != null) {
@@ -67,12 +89,22 @@ public class Scene {
 		return _defaultSpawnY;
 	}
 
+	// =========================================================================
+	// Helpers de Interfaz de Usuario (ControlP5 escalado a resolución física)
+	// =========================================================================
+
+	/**
+	 * Registra un controlador {@link ControlP5} para eliminarlo automáticamente en {@link #close()}.
+	 */
 	public void registerUI(ControllerInterface<?> control) {
 		if (control != null) {
 			_controllers.add(control.getName());
 		}
 	}
 
+	/**
+	 * Convierte una coordenada horizontal en espacio virtual (ej. base 480) a píxeles de ventana física.
+	 */
 	protected float scaleW(float val) {
 		PApplet app = Engine.getApp();
 		PGraphics vs = Engine.getVirtualScreen();
@@ -80,6 +112,9 @@ public class Scene {
 		return (app != null) ? (val / baseW) * app.width : val;
 	}
 
+	/**
+	 * Convierte una coordenada vertical en espacio virtual (ej. base 270) a píxeles de ventana física.
+	 */
 	protected float scaleH(float val) {
 		PApplet app = Engine.getApp();
 		PGraphics vs = Engine.getVirtualScreen();
@@ -179,6 +214,10 @@ public class Scene {
 		return area;
 	}
 
+	// =========================================================================
+	// Ciclo de Vida y Parseo XML de la Escena
+	// =========================================================================
+
 	public void setup() {
 		DialogManager.setOnLoadRequest(this::onDialogLoadRequest);
 
@@ -202,6 +241,10 @@ public class Scene {
 		}
 	}
 
+	/**
+	 * Parsea los nodos base del XML ({@code Box}/{@code box}/{@code Rect} y {@code Sprite}/{@code Sprite2D})
+	 * y delega cualquier otra etiqueta a {@link #parseCustomNode(XML)}.
+	 */
 	protected void parseBaseNodes(XML scene_parent) {
 		for (XML child : scene_parent.getChildren()) {
 			String tag = child.getName();
@@ -221,8 +264,15 @@ public class Scene {
 		}
 	}
 
+	/**
+	 * Punto de extensión para que las subclases interpreten etiquetas XML específicas del juego.
+	 */
 	protected void parseCustomNode(XML node) {}
 
+	/**
+	 * Actualiza el diálogo activo (pausando los objetos de la escena mientras esté abierto)
+	 * o todos los {@link GameObject} registrados que implementen {@link IUpdate} / {@link IDraw}.
+	 */
 	public void update(float deltaTime) {
 		if (DialogManager.isActive()) {
 			DialogManager.update(deltaTime);
@@ -254,6 +304,10 @@ public class Scene {
 		Engine.changeScene(new Scene(absPath));
 	}
 
+	/**
+	 * Libera callbacks de diálogo, remueve todos los controladores {@link ControlP5} registrados
+	 * por esta escena y vacía la lista de objetos.
+	 */
 	public void close() {
 		DialogManager.setOnLoadRequest(null);
 		DialogManager.close();

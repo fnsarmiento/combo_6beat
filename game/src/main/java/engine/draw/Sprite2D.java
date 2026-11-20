@@ -11,7 +11,18 @@ import processing.core.PImage;
 import processing.core.PVector;
 import processing.data.XML;
 
+/**
+ * Sprite 2D estático o animado por grilla de spritesheet ({@code rows x cols}).
+ *
+ * <p>Almacena su orden de profundidad ({@code zIndex}) en {@code position.z} y soporta
+ * posicionamiento desde el centro ({@code centerPosition = true}) o desde la esquina
+ * superior izquierda ({@code centerPosition = false}).
+ */
 public class Sprite2D extends GameObject implements Drawable, IDraw {
+
+	// =========================================================================
+	// Propiedades Visuales y de Animación
+	// =========================================================================
 
 	public String resourcePath = "";
 	private int _rows = 1;
@@ -28,6 +39,10 @@ public class Sprite2D extends GameObject implements Drawable, IDraw {
 	public boolean centerPosition = false;
 
 	private float _timeAccumulator = 0.0f;
+
+	// =========================================================================
+	// Constructores
+	// =========================================================================
 
 	public Sprite2D() {
 		this.id = "sprite";
@@ -49,28 +64,31 @@ public class Sprite2D extends GameObject implements Drawable, IDraw {
 		this(path, 1, 1, zIndex);
 	}
 
-	// public void setOriginByPosition() {
-	// 	if (frames == null || frames.length == 0) return;
-	// 	position.x += (float) frames[0].width / 2;
-	// 	position.y += (float) frames[0].height / 2;
-	// }
+	// =========================================================================
+	// Visibilidad, Animación y Renderizado
+	// =========================================================================
 
+	@Override
 	public boolean isVisible() {
 		return visible;
 	}
 
+	@Override
 	public void show() {
 		visible = true;
 	}
 
+	@Override
 	public void hide() {
 		visible = false;
 	}
 
+	@Override
 	public float getZIndex() {
 		return position.z;
 	}
 
+	@Override
 	public void updateDraw(float dt) {
 		if (frames == null || frames.length <= 1) return;
 
@@ -82,6 +100,7 @@ public class Sprite2D extends GameObject implements Drawable, IDraw {
 		}
 	}
 
+	@Override
 	public void draw(PGraphics g) {
 		if (!visible || frames == null || frames.length == 0) return;
 		if (currentFrame >= frames.length) currentFrame = frames.length - 1;
@@ -116,13 +135,16 @@ public class Sprite2D extends GameObject implements Drawable, IDraw {
 		g.pop();
 	}
 
-	// Game Object
+	// =========================================================================
+	// Serialización XML y Recorte de Frames del Spritesheet
+	// =========================================================================
 
 	@Override
 	public String getType() {
 		return "Sprite2D";
 	}
 
+	@Override
 	public XML toXML() {
 		XML xml = super.toXML();
 		xml.setName("Sprite");
@@ -141,6 +163,7 @@ public class Sprite2D extends GameObject implements Drawable, IDraw {
 		return xml;
 	}
 
+	@Override
 	public void fromXML(XML xml) {
 		super.fromXML(xml);
 
@@ -173,7 +196,9 @@ public class Sprite2D extends GameObject implements Drawable, IDraw {
 		}
 	}
 
-	/** Ajusta scale.x / scale.y para que cada frame mida exactamente targetW x targetH píxeles. */
+	/**
+	 * Ajusta {@code scale.x} y {@code scale.y} para que cada frame mida exactamente {@code targetW x targetH} píxeles.
+	 */
 	public void setPixelSize(float targetW, float targetH) {
 		if (frames == null || frames.length == 0) return;
 		float fw = Math.max(1.0f, frames[0].width);
@@ -182,6 +207,9 @@ public class Sprite2D extends GameObject implements Drawable, IDraw {
 		if (targetH > 0.0f) scale.y = targetH / fh;
 	}
 
+	/**
+	 * Divide la imagen en una grilla de {@code rows x cols} celdas, descartando celdas finales totalmente transparentes.
+	 */
 	protected void loadFrames(PImage img, int rows, int cols) {
 		if (img == null) {
 			_cols = 0;

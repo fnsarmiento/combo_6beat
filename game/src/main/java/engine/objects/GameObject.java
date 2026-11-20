@@ -4,15 +4,17 @@ import engine.draw.Sprite2D;
 import engine.physics.Box;
 import processing.data.XML;
 
-/*
-Un GameObject se compene de GameObjects "primarios" (sprites y colisiones)
-<NPC id="0"... name="fulano">
-	<Img type="Sprite2D" .../>
-	...
-</NPC>
-*/
-
+/**
+ * Entidad base serializable a/desde XML dentro de una {@link engine.Scene}.
+ *
+ * <p>Provee identificación ({@code id}), agrupación lógica ({@code group}) y utilidades
+ * protegidas para sincronizar y serializar componentes hijos ({@link Box}, {@link Sprite2D}).
+ */
 public abstract class GameObject {
+
+	// =========================================================================
+	// Identificación y Agrupación
+	// =========================================================================
 
 	public String id = "gameobject";
 	public String group = "Root";
@@ -36,6 +38,10 @@ public abstract class GameObject {
 	public String getType() {
 		return "GameObject";
 	}
+
+	// =========================================================================
+	// Serialización XML Base y Helpers para Subclases Compuestas
+	// =========================================================================
 
 	public XML toXML() {
 		XML xml = new XML("GameObject");

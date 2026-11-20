@@ -1,10 +1,38 @@
 package game.core.notes;
 
+/**
+ * Empaquetador de notas rítmicas en un entero primitivo {@code long} de 64 bits
+ * para evitar allocaciones de objetos en el heap por cada nota del beatmap.
+ *
+ * <p>Distribución exacta de bits dentro del {@code long} (64 bits en total):
+ * <pre>
+ *  [63 .................. 34] [33 ................. 5] [4 .... 3] [2 ... 0]
+ *  |      duration (30b)    | |    startTime (29b)   | |type(2b)| |lane(3b)|
+ * </pre>
+ * <ul>
+ *   <li><b>Bits {@code [0..2]} (3 bits, {@code SHIFT_LANE = 0}):</b> Carril de la nota ({@code 0..5} para 6K).</li>
+ *   <li><b>Bits {@code [3..4]} (2 bits, {@code SHIFT_NOTE_TYPE = 3}):</b> Tipo/estado de nota
+ *       ({@link #NOTE_NORMAL}, {@link #NOTE_RANGED_ORIGIN}, {@link #NOTE_SHIFT_UP}, {@link #NOTE_SHIFT_DOWN}).</li>
+ *   <li><b>Bits {@code [5..33]} (29 bits, {@code SHIFT_TIME = 5}):</b> Tiempo de inicio {@code startTime} en ms
+ *       (hasta ~536.870.911 ms ≈ 149 horas).</li>
+ *   <li><b>Bits {@code [34..63]} (30 bits, {@code SHIFT_DURATION = 34}):</b> Duración {@code duration} en ms
+ *       ({@code 0} para nota tap normal; {@code > 0} para Hold Note).</li>
+ * </ul>
+ */
 public class NotePacker {
+
+	// =========================================================================
+	// Constantes de Tipo de Nota
+	// =========================================================================
+
 	public static final byte NOTE_NORMAL        = 0;
-	public static final byte NOTE_RANGED_ORIGIN = 1; // Ataque a distancia (caballero/pajaro) con indicador de origen
+	public static final byte NOTE_RANGED_ORIGIN = 1; // Ataque a distancia (caballero/pájaro) con indicador de origen
 	public static final byte NOTE_SHIFT_UP      = 2; // Cambio de trayectoria hacia arriba
 	public static final byte NOTE_SHIFT_DOWN    = 3; // Cambio de trayectoria hacia abajo
+
+	// =========================================================================
+	// Tamaños de Campo, Máscaras y Desplazamientos de Bits
+	// =========================================================================
 
 	private static final int BITS_LANE      = 3;
 	private static final int BITS_NOTE_TYPE = 2;
@@ -20,6 +48,10 @@ public class NotePacker {
 	private static final int SHIFT_NOTE_TYPE = BITS_LANE;
 	private static final int SHIFT_TIME      = SHIFT_NOTE_TYPE + BITS_NOTE_TYPE;
 	private static final int SHIFT_DURATION  = SHIFT_TIME + BITS_TIME;
+
+	// =========================================================================
+	// Empaquetado y Desempaquetado Bit a Bit
+	// =========================================================================
 
 	public static long pack(byte lane, boolean isPressed, int startTime, int duration) {
 		return pack(lane, isPressed ? NOTE_RANGED_ORIGIN : NOTE_NORMAL, startTime, duration);

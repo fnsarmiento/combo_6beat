@@ -24,10 +24,21 @@ import processing.data.JSONArray;
 import processing.data.JSONObject;
 
 /**
- * Gestor central de la base de datos SQLite de Combo 6Beat.
- * Inicializa el esquema 3FN, triggers, vistas, catálogos y migración única desde archivos .save.
+ * Gestor central de la base de datos SQLite en 3FN de Combo 6Beat ({@code combo6beat.db}).
+ *
+ * <p>Responsabilidades sobre el esquema ({@code resources/db/schema.sql}):
+ * <ul>
+ *   <li>Configurar conexiones JDBC con {@code PRAGMA foreign_keys = ON}, {@code WAL} y {@code busy_timeout}.</li>
+ *   <li>Ejecutar el script DDL/DML completo (tablas, índices, triggers con bloques {@code BEGIN...CASE...END} y vistas).</li>
+ *   <li>Registrar dinámicamente salas en {@code ZONAS} e ítems en {@code CATALOGO_ITEMS}.</li>
+ *   <li>Ejecutar la migración única desde archivos JSON legacy ({@code .save}) controlada por {@code DB_META}.</li>
+ * </ul>
  */
 public class DatabaseManager {
+
+	// =========================================================================
+	// Constantes y Estado de Conexión SQLite
+	// =========================================================================
 
 	public static final String DEFAULT_DB_FILE = "combo6beat.db";
 	public static final String DEFAULT_SCHEMA_FILE = "resources/db/schema.sql";
@@ -36,12 +47,23 @@ public class DatabaseManager {
 	private static String _dbPath = "";
 	private static String _jdbcUrl = "";
 
+	// =========================================================================
+	// Inicialización del Esquema 3FN y Gestión de Conexiones JDBC
+	// =========================================================================
+
+	/**
+	 * Inicializa la base de datos por defecto ({@code combo6beat.db}) aplicando {@code resources/db/schema.sql}
+	 * y migrando partidas legacy {@code .save} si aún no fueron migradas.
+	 */
 	public static synchronized void init() {
 		String dbAbs = ResourcesManager.getAbsPathFromProject(DEFAULT_DB_FILE);
 		String schemaAbs = ResourcesManager.getAbsPathFromProject(DEFAULT_SCHEMA_FILE);
 		init(dbAbs, schemaAbs, true);
 	}
 
+	/**
+	 * Inicializa una base de datos SQLite en una ruta específica aplicando el archivo de esquema indicado.
+	 */
 	public static synchronized void init(String dbFilePath, String schemaFilePath) {
 		init(dbFilePath, schemaFilePath, false);
 	}
@@ -84,6 +106,9 @@ public class DatabaseManager {
 		return _dbPath;
 	}
 
+	/**
+	 * Obtiene una nueva conexión JDBC con integridad referencial ({@code foreign_keys = ON}) activa.
+	 */
 	public static Connection getConnection() throws SQLException {
 		if (!_initialized) {
 			init();
@@ -100,8 +125,13 @@ public class DatabaseManager {
 		return DriverManager.getConnection(_jdbcUrl);
 	}
 
+	// =========================================================================
+	// Parser y Ejecutor de Scripts SQL (Soporte de Triggers BEGIN...CASE...END)
+	// =========================================================================
+
 	/**
-	 * Ejecuta un script SQL respetando comentarios --, literales '...' y bloques BEGIN ... CASE ... END; en triggers.
+	 * Ejecuta un script SQL respetando comentarios {@code --}, literales {@code '...'}
+	 * y bloques compuestos {@code BEGIN ... CASE ... END;} dentro de triggers SQLite.
 	 */
 	public static void executeSqlScript(Connection conn, String script) throws SQLException {
 		List<String> statements = splitSqlStatements(script);
@@ -115,6 +145,9 @@ public class DatabaseManager {
 		}
 	}
 
+	/**
+	 * Divide un script SQL en sentencias individuales sin cortar en los {@code ;} internos de un {@code CREATE TRIGGER}.
+	 */
 	public static List<String> splitSqlStatements(String script) {
 		List<String> result = new ArrayList<>();
 		if (script == null || script.isEmpty()) return result;
@@ -221,8 +254,13 @@ public class DatabaseManager {
 		return result;
 	}
 
+	// =========================================================================
+	// Normalización de Rutas y Registro en Catálogos 3FN (ZONAS, CATALOGO_ITEMS)
+	// =========================================================================
+
 	/**
-	 * Normaliza cualquier ruta a formato relativo respecto al directorio del proyecto.
+	 * Normaliza cualquier ruta a formato relativo respecto al directorio del proyecto,
+	 * cumpliendo los triggers de validación de rutas relativas ({@code trg_canciones_validar_*}, {@code trg_enemigos_validar_*}).
 	 */
 	public static String toRelativeProjectPath(String path) {
 		if (path == null) return "";
@@ -246,6 +284,11 @@ public class DatabaseManager {
 		return clean;
 	}
 
+	/**
+	 * Garantiza que la escena XML exista en la tabla catálogo {@code ZONAS} y devuelve su {@code id_zona}.
+	 *
+	 * <p>Tablas tocadas: {@code ZONAS} ({@code SELECT} por {@code escena_xml_relativa} e {@code INSERT} si es una sala nueva).
+	 */
 	public static String ensureZoneRegistered(Connection conn, String sceneRelPath) throws SQLException {
 		String rel = toRelativeProjectPath(sceneRelPath);
 		if (rel.isEmpty()) rel = "resources/scenes/hub.xml";
@@ -303,6 +346,11 @@ public class DatabaseManager {
 		return (dot > 0) ? fileName.substring(0, dot) : fileName;
 	}
 
+	/**
+	 * Registra un objeto o amuleto en la tabla {@code CATALOGO_ITEMS} si aún no existe ({@code INSERT OR IGNORE}).
+	 *
+	 * <p>Tablas tocadas: {@code CATALOGO_ITEMS}.
+	 */
 	public static void ensureItemRegistered(Connection conn, GameState.ItemDef def) throws SQLException {
 		if (def == null || def.id == null || def.id.isEmpty()) return;
 		try (PreparedStatement ps = conn.prepareStatement(
@@ -316,6 +364,21 @@ public class DatabaseManager {
 		}
 	}
 
+	// =========================================================================
+	// Migración Única de Archivos Legacy (.save) y Deducción de Estado General
+	// =========================================================================
+
+	/**
+	 * Migra por única vez archivos JSON {@code .save} al esquema relacional 3FN.
+	 *
+	 * <p>Tablas y triggers involucrados:
+	 * <ul>
+	 *   <li>{@code DB_META}: consulta y marca {@code legacy_saves_migrated = '1'}.</li>
+	 *   <li>{@code CATALOGO_ITEMS} y {@code CATALOGO_BATALLAS}: sincroniza ítems y mapea {@code defeat_flag -> id_batalla}.</li>
+	 *   <li>{@code PARTIDAS}, {@code FLAGS_PARTIDA}, {@code BATALLAS_VENCIDAS} (activa {@code trg_batallas_progreso_insert})
+	 *       y {@code OBJETOS_OBTENIDOS} (activa {@code trg_objetos_audit_insert} hacia {@code HISTORIAL_OBJETOS}).</li>
+	 * </ul>
+	 */
 	private static void migrateLegacySavesIfNeeded(Connection conn) throws SQLException {
 		try (PreparedStatement ps = conn.prepareStatement(
 			"SELECT valor FROM DB_META WHERE clave = 'legacy_saves_migrated'")) {
@@ -483,6 +546,9 @@ public class DatabaseManager {
 		}
 	}
 
+	/**
+	 * Deduce el valor de {@code PARTIDAS.estado_general} a partir de los flags narrativos de la partida.
+	 */
 	public static String inferGeneralState(Set<String> flags) {
 		if (flags != null) {
 			if (flags.contains("GAME_ENDING_TRUE")) return "FINAL_VERDADERO";

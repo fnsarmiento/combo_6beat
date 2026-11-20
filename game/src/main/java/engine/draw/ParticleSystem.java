@@ -12,6 +12,10 @@ import processing.core.PGraphics;
  */
 public class ParticleSystem extends GameObject implements IUpdate, IDraw, Drawable {
 
+	// =========================================================================
+	// Estructura Interna de Partícula y Estado del Emisor
+	// =========================================================================
+
 	private static class Particle {
 		float x, y;
 		float vx, vy;
@@ -27,6 +31,10 @@ public class ParticleSystem extends GameObject implements IUpdate, IDraw, Drawab
 	private float _zIndex = 0.0f;
 	private boolean _visible = true;
 
+	// =========================================================================
+	// Constructores y Emisión
+	// =========================================================================
+
 	public ParticleSystem() {
 		this(256);
 	}
@@ -36,7 +44,7 @@ public class ParticleSystem extends GameObject implements IUpdate, IDraw, Drawab
 	}
 
 	/**
-	 * Emite una partícula individual cuadrada con velocidad, tamaño, vida y gravedad dados.
+	 * Emite una partícula individual cuadrada con velocidad, tamaño, tiempo de vida y gravedad dados.
 	 */
 	public void emit(
 		float x,
@@ -102,6 +110,10 @@ public class ParticleSystem extends GameObject implements IUpdate, IDraw, Drawab
 		_particles.clear();
 	}
 
+	// =========================================================================
+	// Simulación Física y Renderizado
+	// =========================================================================
+
 	@Override
 	public void update(float dt) {
 		if (dt <= 0.0f) return;
@@ -141,6 +153,10 @@ public class ParticleSystem extends GameObject implements IUpdate, IDraw, Drawab
 		}
 		g.popStyle();
 	}
+
+	// =========================================================================
+	// Implementación de Drawable
+	// =========================================================================
 
 	@Override
 	public float getZIndex() {

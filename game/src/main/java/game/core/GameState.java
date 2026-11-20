@@ -1,9 +1,6 @@
 package game.core;
 
-import engine.Engine;
-import engine.ResourcesManager;
 import engine.dialogs.DialogManager;
-import game.Global;
 import game.core.db.DatabaseManager;
 import game.core.db.SaveRepository;
 import java.util.ArrayList;
@@ -16,16 +13,25 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Administrador persistente de estado del juego (State Manager):
- * inventario, ítems de curación, llaves, power-ups, flags de diálogo y transiciones de escena.
+ * Administrador central del estado persistente del juego (State Manager).
+ * <p>
+ * Centraliza el catalogo e inventario de items, chips Power-Up, amuletos desbloqueables,
+ * estrategias de curacion automatica, banderas de progreso narrativo/combate, coordenadas
+ * de retorno al Hub y sincronizacion con la base de datos SQLite (3FN).
  */
 public class GameState {
 
+	// =========================================================================
+	// IDENTIFICADORES Y DEFINICIONES DE ITEMS, AMULETOS Y ESTRATEGIAS
+	// =========================================================================
+
+	/** Modos de campana soportados al iniciar una nueva partida. */
 	public enum CampaignMode {
 		CLASSIC,
 		EXPLORATION
 	}
 
+	/** Categorias funcionales de objetos dentro del catalogo maestro. */
 	public enum ItemCategory {
 		HEAL,
 		KEY,
@@ -34,6 +40,7 @@ public class GameState {
 		MISC
 	}
 
+	/** Estrategia de seleccion automatica de consumibles curativos durante el combate ritmico. */
 	public enum HealStrategy {
 		OPTIMAL("Optimo"),
 		MINIMAL("Minimo");
@@ -45,6 +52,7 @@ public class GameState {
 		}
 	}
 
+	/** Definicion inmutable de un objeto, chip Power-Up, llave o amuleto del catalogo. */
 	public static class ItemDef {
 		public final String id;
 		public final String name;
@@ -67,14 +75,7 @@ public class GameState {
 		}
 	}
 
-	private static final Set<String> _flags = new HashSet<>();
-	private static final Map<String, ItemDef> _catalog = new LinkedHashMap<>();
-	private static final Map<String, Integer> _inventory = new LinkedHashMap<>();
-	private static final Set<String> _equippedPowerUps = new LinkedHashSet<>();
-
-	public static final int SAVE_SLOT_COUNT = 4;
-	public static int activeSaveSlot = 0;
-
+	/** Resumen de estado de una ranura de guardado SQLite para su visualizacion en menus y HUD. */
 	public static class SaveSlotSummary {
 		public boolean exists = false;
 		public String sceneLabel = "Vacio";
@@ -86,27 +87,53 @@ public class GameState {
 		public String lastUpdated = "";
 	}
 
+	// =========================================================================
+	// ESTADO DE CAMPANA, ESCENA ACTIVA Y RANURA ACTIVA SQLITE
+	// =========================================================================
+
+	/** Cantidad total de ranuras de guardado disponibles en SQLite. */
+	public static final int SAVE_SLOT_COUNT = 4;
+
+	/** Indice (0..3) de la ranura de guardado SQLite actualmente seleccionada. */
+	public static int activeSaveSlot = 0;
+
+	/** Identificador del chip Power-Up primario equipado ("none" si no hay ninguno). */
 	public static String equippedPowerUp = "none";
+
+	/** Estrategia activa de curacion automatica durante los combates ritmicos. */
 	public static HealStrategy healStrategy = HealStrategy.OPTIMAL;
 
+	/** Ruta relativa de la escena activa y coordenadas de retorno al Hub. */
 	public static String currentScenePath = "resources/scenes/hub.xml";
 	public static String returnScenePath = "resources/scenes/hub.xml";
 	public static float returnPlayerX = 7.0f;
 	public static float returnPlayerY = 4.0f;
 
+	/** Coordenadas de aparicion diferida tras cargar partida o cambiar de sala. */
 	public static boolean hasPendingSpawn = false;
 	public static float pendingSpawnX = 0.0f;
 	public static float pendingSpawnY = 0.0f;
 
+	/** Banderas de sesion para distinguir modo historia, selector libre (arcade) y depuracion. */
 	public static boolean launchedFromMenu = false;
 	public static boolean isDebugSession = false;
 	public static boolean bossInvincibleMode = false;
 	public static float songSpeedMultiplier = 1.0f;
 
+	/** Colecciones internas de banderas narrativas, catalogo maestro, inventario y equipamiento. */
+	private static final Set<String> _flags = new HashSet<>();
+	private static final Map<String, ItemDef> _catalog = new LinkedHashMap<>();
+	private static final Map<String, Integer> _inventory = new LinkedHashMap<>();
+	private static final Set<String> _equippedPowerUps = new LinkedHashSet<>();
+
+	/** Estado interno de notificaciones emergentes y control de inicializacion unica. */
 	private static String _notificationText = "";
 	private static float _notificationTimer = 0.0f;
 	private static boolean _initialized = false;
 
+	/**
+	 * Inicializa el catalogo maestro, la conexion SQLite, el inventario base y los hooks de dialogo.
+	 */
 	public static void init() {
 		if (_initialized) return;
 		_initialized = true;
@@ -115,28 +142,78 @@ public class GameState {
 		if (!DatabaseManager.isInitialized()) {
 			DatabaseManager.init();
 		}
-		// Inventario inicial mínimo para poder probar curación y mecánicas en combate
+		// Inventario inicial minimo para disponer de curacion base en los primeros combates
 		_inventory.put("potion_small", 2);
 		bindDialogHooks();
 	}
 
+	/** Asegura que el catalogo en memoria contenga todas las definiciones base del juego. */
 	public static void ensureCatalogLoaded() {
 		if (_catalog.isEmpty()) {
 			registerDefaults();
 		}
 	}
 
+	/** Devuelve una copia inmutable de todas las definiciones registradas en el catalogo. */
 	public static Collection<ItemDef> getCatalogSnapshot() {
 		ensureCatalogLoaded();
 		return new ArrayList<>(_catalog.values());
 	}
 
+	/** Registra un item en el catalogo solo si su identificador aun no existe. */
 	public static void registerItemIfAbsent(ItemDef def) {
 		if (def != null && def.id != null && !def.id.isEmpty()) {
 			_catalog.putIfAbsent(def.id, def);
 		}
 	}
 
+	/** Registra o actualiza la definicion de un item en el catalogo en memoria. */
+	public static void registerItem(ItemDef def) {
+		if (def != null && def.id != null && !def.id.isEmpty()) {
+			_catalog.put(def.id, def);
+		}
+	}
+
+	/**
+	 * Obtiene la definicion de un objeto del catalogo o infiere y registra una por defecto
+	 * a partir de su prefijo (`heal_`, `potion_`, `key_`, `powerup_`, `amulet_`).
+	 */
+	public static ItemDef getOrRegisterItemDef(String itemId) {
+		if (itemId == null || itemId.isEmpty()) return null;
+		ItemDef existing = _catalog.get(itemId);
+		if (existing != null) return existing;
+
+		ItemCategory cat = ItemCategory.MISC;
+		int healAmt = 0;
+		String desc = "Objeto obtenido";
+
+		if (itemId.startsWith("heal_") || itemId.startsWith("potion_")) {
+			cat = ItemCategory.HEAL;
+			healAmt = 30;
+			desc = "Restaura 30 HP";
+		} else if (itemId.startsWith("key_")) {
+			cat = ItemCategory.KEY;
+			desc = "Llave especial";
+		} else if (itemId.startsWith("powerup_")) {
+			cat = ItemCategory.POWERUP;
+			desc = "Mejora para combate";
+		} else if (itemId.startsWith("amulet_")) {
+			cat = ItemCategory.AMULET;
+			desc = "Amuleto equipable";
+		}
+
+		ItemDef custom = new ItemDef(itemId, itemId, cat, healAmt, desc);
+		_catalog.put(itemId, custom);
+		return custom;
+	}
+
+	/** Devuelve el nombre legible de un objeto a partir de su identificador. */
+	public static String getItemName(String itemId) {
+		ItemDef def = getOrRegisterItemDef(itemId);
+		return (def != null) ? def.name : itemId;
+	}
+
+	/** Restablece el estado en memoria a los valores predeterminados de una sesion limpia. */
 	public static void reset() {
 		_flags.clear();
 		_inventory.clear();
@@ -157,6 +234,7 @@ public class GameState {
 		init();
 	}
 
+	/** Pobla el catalogo con los consumibles, chips, amuletos y llaves estandar del juego. */
 	private static void registerDefaults() {
 		_catalog.clear();
 		registerItem(new ItemDef(
@@ -266,88 +344,11 @@ public class GameState {
 		));
 	}
 
-	/** Indica si el jugador posee un amuleto de curacion activo en su inventario. */
-	public static boolean hasHealingAmulet() {
-		return getItemCount("amulet_healing") > 0;
-	}
+	// =========================================================================
+	// INVENTARIO DE CHIPS, AMULETOS EQUIPADOS Y CURACION DINAMICA
+	// =========================================================================
 
-	public static void registerItem(ItemDef def) {
-		if (def != null && def.id != null && !def.id.isEmpty()) {
-			_catalog.put(def.id, def);
-		}
-	}
-
-	public static ItemDef getOrRegisterItemDef(String itemId) {
-		if (itemId == null || itemId.isEmpty()) return null;
-		ItemDef existing = _catalog.get(itemId);
-		if (existing != null) return existing;
-
-		ItemCategory cat = ItemCategory.MISC;
-		int healAmt = 0;
-		String desc = "Objeto obtenido";
-
-		if (itemId.startsWith("heal_") || itemId.startsWith("potion_")) {
-			cat = ItemCategory.HEAL;
-			healAmt = 30;
-			desc = "Restaura 30 HP";
-		} else if (itemId.startsWith("key_")) {
-			cat = ItemCategory.KEY;
-			desc = "Llave especial";
-		} else if (itemId.startsWith("powerup_")) {
-			cat = ItemCategory.POWERUP;
-			desc = "Mejora para combate";
-		} else if (itemId.startsWith("amulet_")) {
-			cat = ItemCategory.AMULET;
-			desc = "Amuleto equipable";
-		}
-
-		ItemDef custom = new ItemDef(itemId, itemId, cat, healAmt, desc);
-		_catalog.put(itemId, custom);
-		return custom;
-	}
-
-	public static String getItemName(String itemId) {
-		ItemDef def = getOrRegisterItemDef(itemId);
-		return (def != null) ? def.name : itemId;
-	}
-
-	public static void bindDialogHooks() {
-		DialogManager.setOnDefineFlag(flag -> {
-			defineFlag(flag);
-			autoSaveIfStory();
-		});
-		DialogManager.setOnCheckFlag(GameState::hasFlag);
-		DialogManager.setOnGiveItemRequest((itemId, count) -> {
-			addItem(itemId, count);
-			autoSaveIfStory();
-		});
-	}
-
-	// Flags
-
-	public static void defineFlag(String flag) {
-		if (flag != null && !flag.isEmpty()) {
-			_flags.add(flag);
-		}
-	}
-
-	public static void clearFlag(String flag) {
-		if (flag != null && !flag.isEmpty()) {
-			_flags.remove(flag);
-			DialogManager.clearLocalFlag(flag);
-		}
-	}
-
-	public static boolean hasFlag(String flag) {
-		if (flag == null || flag.isEmpty()) return false;
-		if (flag.startsWith("HAS_ITEM:")) {
-			return hasItem(flag.substring("HAS_ITEM:".length()));
-		}
-		return _flags.contains(flag);
-	}
-
-	// Inventario
-
+	/** Agrega `count` unidades de un objeto al inventario y dispara una notificacion en el HUD. */
 	public static void addItem(String itemId, int count) {
 		if (itemId == null || itemId.isEmpty() || count <= 0) return;
 		ItemDef def = getOrRegisterItemDef(itemId);
@@ -357,15 +358,18 @@ public class GameState {
 		showNotification("Obtenido: " + label + " x" + count);
 	}
 
+	/** Devuelve la cantidad disponible de un objeto en el inventario actual. */
 	public static int getItemCount(String itemId) {
 		if (itemId == null || itemId.isEmpty()) return 0;
 		return _inventory.getOrDefault(itemId, 0);
 	}
 
+	/** Comprueba si el jugador posee al menos una unidad del objeto indicado. */
 	public static boolean hasItem(String itemId) {
 		return getItemCount(itemId) > 0;
 	}
 
+	/** Consume `count` unidades del objeto indicado si hay stock suficiente. */
 	public static boolean consumeItem(String itemId, int count) {
 		if (count <= 0) return true;
 		int cur = getItemCount(itemId);
@@ -379,6 +383,12 @@ public class GameState {
 		return true;
 	}
 
+	/** Indica si el jugador posee el Amuleto de Curacion en su inventario. */
+	public static boolean hasHealingAmulet() {
+		return getItemCount("amulet_healing") > 0;
+	}
+
+	/** Lista todos los chips Power-Up y amuletos actualmente en posesion del jugador. */
 	public static List<ItemDef> getOwnedPowerUps() {
 		List<ItemDef> list = new ArrayList<>();
 		for (Map.Entry<String, Integer> entry : _inventory.entrySet()) {
@@ -391,12 +401,12 @@ public class GameState {
 		return list;
 	}
 
+	/** Devuelve una copia del mapa de inventario (`id_objeto -> cantidad`). */
 	public static Map<String, Integer> getInventorySnapshot() {
 		return new LinkedHashMap<>(_inventory);
 	}
 
-	// Power-ups, Amuletos y Curación Dinámica
-
+	/** Equipa un unico chip Power-Up como primario (o limpia el equipamiento si es `"none"`). */
 	public static void equipPowerUp(String powerUpId) {
 		_equippedPowerUps.clear();
 		if (powerUpId == null || powerUpId.isEmpty() || "none".equals(powerUpId)) {
@@ -411,6 +421,7 @@ public class GameState {
 		}
 	}
 
+	/** Alterna el estado equipado/desequipado de un chip Power-Up o amuleto. */
 	public static void toggleEquippedPowerUp(String powerUpId) {
 		if (powerUpId == null || powerUpId.isEmpty() || "none".equals(powerUpId)) return;
 		if (!hasItem(powerUpId)) return;
@@ -435,12 +446,14 @@ public class GameState {
 		}
 	}
 
+	/** Verifica si el chip Power-Up o amuleto indicado se encuentra equipado y disponible. */
 	public static boolean isPowerUpEquipped(String powerUpId) {
 		if (powerUpId == null || powerUpId.isEmpty() || "none".equals(powerUpId)) return false;
 		if (!hasItem(powerUpId)) return false;
 		return _equippedPowerUps.contains(powerUpId) || powerUpId.equals(equippedPowerUp);
 	}
 
+	/** Devuelve la lista ordenada de identificadores de chips/amuletos actualmente equipados. */
 	public static List<String> getEquippedPowerUps() {
 		List<String> list = new ArrayList<>();
 		for (String id : _equippedPowerUps) {
@@ -452,6 +465,7 @@ public class GameState {
 		return list;
 	}
 
+	/** Alterna la estrategia de curacion automatica entre OPTIMAL y MINIMAL. */
 	public static void toggleHealStrategy() {
 		healStrategy = (healStrategy == HealStrategy.OPTIMAL)
 			? HealStrategy.MINIMAL
@@ -471,9 +485,9 @@ public class GameState {
 	}
 
 	/**
-	 * Selecciona y consume automáticamente un ítem de curación del inventario según la estrategia:
-	 * - MINIMAL: el ítem curativo de menor potencia disponible.
-	 * - OPTIMAL: el mayor ítem que no exceda missingHp (o el menor disponible si todos exceden).
+	 * Selecciona y consume automaticamente un item de curacion del inventario segun la estrategia:
+	 * - MINIMAL: el item curativo de menor potencia disponible.
+	 * - OPTIMAL: el mayor item que no exceda missingHp (o el menor disponible si todos exceden).
 	 */
 	public static int consumeAutoHeal(int missingHp) {
 		if (missingHp <= 0) return 0;
@@ -518,8 +532,51 @@ public class GameState {
 		return 0;
 	}
 
-	// Transición de escenas y spawn
+	// =========================================================================
+	// PROGRESO DE BATALLAS, HISTORIA, FLAGS DE DIALOGO Y TRANSICIONES
+	// =========================================================================
 
+	/** Conecta los callbacks de `DialogManager` con el sistema de banderas e inventario. */
+	public static void bindDialogHooks() {
+		DialogManager.setOnDefineFlag(flag -> {
+			defineFlag(flag);
+			autoSaveIfStory();
+		});
+		DialogManager.setOnCheckFlag(GameState::hasFlag);
+		DialogManager.setOnGiveItemRequest((itemId, count) -> {
+			addItem(itemId, count);
+			autoSaveIfStory();
+		});
+	}
+
+	/** Activa una bandera de evento narrativo o de jefe derrotado. */
+	public static void defineFlag(String flag) {
+		if (flag != null && !flag.isEmpty()) {
+			_flags.add(flag);
+		}
+	}
+
+	/** Elimina una bandera de estado tanto globalmente como del contexto local de dialogos. */
+	public static void clearFlag(String flag) {
+		if (flag != null && !flag.isEmpty()) {
+			_flags.remove(flag);
+			DialogManager.clearLocalFlag(flag);
+		}
+	}
+
+	/**
+	 * Evalua si una bandera esta activa. Soporta el prefijo especial `HAS_ITEM:<id>`
+	 * para condicionales de dialogo basados en inventario.
+	 */
+	public static boolean hasFlag(String flag) {
+		if (flag == null || flag.isEmpty()) return false;
+		if (flag.startsWith("HAS_ITEM:")) {
+			return hasItem(flag.substring("HAS_ITEM:".length()));
+		}
+		return _flags.contains(flag);
+	}
+
+	/** Registra la escena y coordenadas de retorno antes de iniciar un combate ritmico. */
 	public static void saveReturnLocation(String scenePath, float x, float y) {
 		if (scenePath != null && !scenePath.isEmpty()) {
 			returnScenePath = scenePath;
@@ -528,47 +585,97 @@ public class GameState {
 		returnPlayerY = y;
 	}
 
+	/** Define una posicion de aparicion pendiente para la siguiente carga de escena. */
 	public static void setPendingSpawn(float x, float y) {
 		hasPendingSpawn = true;
 		pendingSpawnX = x;
 		pendingSpawnY = y;
 	}
 
+	/** Consume y limpia la marca de aparicion pendiente si estaba activa. */
 	public static boolean consumePendingSpawn() {
 		if (!hasPendingSpawn) return false;
 		hasPendingSpawn = false;
 		return true;
 	}
 
-	// Guardado y Carga Persistente (SQLite como única fuente de verdad)
+	/**
+	 * Registra en SQLite (`BATALLAS_VENCIDAS`) la victoria sobre un jefe o pista de historia,
+	 * disparando los triggers de recompensas y amuletos desbloqueables por puntaje.
+	 */
+	public static void recordBattleVictory(
+		String bossId,
+		String bossName,
+		String species,
+		String defeatFlag,
+		String battleScenePath,
+		String zoneScenePath,
+		String rewardItemId,
+		int score,
+		int maxCombo,
+		int perfects,
+		int goods,
+		int safes,
+		int misses
+	) {
+		if (launchedFromMenu || isDebugSession) return;
+		init();
+		SaveRepository.recordBattleVictory(
+			activeSaveSlot,
+			bossId,
+			bossName,
+			species,
+			defeatFlag,
+			battleScenePath,
+			zoneScenePath,
+			rewardItemId,
+			score,
+			maxCombo,
+			perfects,
+			goods,
+			safes,
+			misses
+		);
+	}
 
+	// =========================================================================
+	// PERSISTENCIA SQLITE (GUARDADO, CARGA Y REINICIO DE PROGRESO)
+	// =========================================================================
+
+	/** Normaliza una ruta de escena a formato relativo dentro del proyecto. */
 	public static String toRelativeProjectPath(String path) {
 		String rel = DatabaseManager.toRelativeProjectPath(path);
 		return rel.isEmpty() ? "resources/scenes/beach_ruins.xml" : rel;
 	}
 
+	/** Restringe un indice de ranura al rango valido `0 .. SAVE_SLOT_COUNT - 1`. */
 	public static int clampSaveSlot(int slot) {
 		return Math.max(0, Math.min(SAVE_SLOT_COUNT - 1, slot));
 	}
 
+	/** Establece la ranura de guardado SQLite activa. */
 	public static void setActiveSaveSlot(int slot) {
 		activeSaveSlot = clampSaveSlot(slot);
 	}
 
+	/** Indica si existe una partida guardada en la ranura especificada. */
 	public static boolean hasSaveFile(int slot) {
 		init();
 		return SaveRepository.hasSlot(clampSaveSlot(slot));
 	}
 
+	/** Indica si existe una partida guardada en la ranura activa actual. */
 	public static boolean hasSaveFile() {
 		return hasSaveFile(activeSaveSlot);
 	}
 
+	/** Cuenta cuantas ranuras de guardado estan ocupadas en SQLite. */
 	public static int countUsedSaveSlots() {
 		init();
 		return SaveRepository.countUsedSlots();
 	}
 
+	/** Elimina los datos de la ranura indicada en SQLite y reinicia el estado si era la activa. */
 	public static boolean deleteSaveSlot(int slot) {
 		init();
 		int s = clampSaveSlot(slot);
@@ -579,21 +686,25 @@ public class GameState {
 		return ok;
 	}
 
+	/** Obtiene el resumen estadistico de una ranura de guardado desde SQLite. */
 	public static SaveSlotSummary getSaveSlotSummary(int slot) {
 		init();
 		return SaveRepository.getSlotSummary(clampSaveSlot(slot));
 	}
 
+	/** Ejecuta un autoguardado en SQLite solo si la sesion actual pertenece al modo historia. */
 	public static void autoSaveIfStory() {
 		if (!isDebugSession && !launchedFromMenu) {
 			saveGame();
 		}
 	}
 
+	/** Guarda el estado actual en la ranura activa de SQLite usando la escena y posicion en curso. */
 	public static void saveGame() {
 		saveGame(currentScenePath, returnPlayerX, returnPlayerY);
 	}
 
+	/** Persiste el estado completo de la partida en la ranura activa de la base de datos SQLite. */
 	public static void saveGame(String scenePath, float playerX, float playerY) {
 		init();
 		String relScene = toRelativeProjectPath(
@@ -617,10 +728,12 @@ public class GameState {
 		);
 	}
 
+	/** Carga en memoria la partida almacenada en la ranura activa de SQLite. */
 	public static boolean loadGame() {
 		return loadGame(activeSaveSlot);
 	}
 
+	/** Carga en memoria la partida almacenada en la ranura `slot` desde SQLite. */
 	public static boolean loadGame(int slot) {
 		init();
 		setActiveSaveSlot(slot);
@@ -659,14 +772,17 @@ public class GameState {
 		return true;
 	}
 
+	/** Inicia una nueva partida en la ranura activa con el modo de campana clasico (Hub). */
 	public static void startNewGame() {
 		startNewGame(activeSaveSlot, CampaignMode.CLASSIC);
 	}
 
+	/** Inicia una nueva partida en la ranura indicada con el modo de campana clasico (Hub). */
 	public static void startNewGame(int slot) {
 		startNewGame(slot, CampaignMode.CLASSIC);
 	}
 
+	/** Reinicia el progreso e inicializa un nuevo registro de partida en SQLite para la ranura dada. */
 	public static void startNewGame(int slot, CampaignMode mode) {
 		setActiveSaveSlot(slot);
 		reset();
@@ -685,49 +801,18 @@ public class GameState {
 		SaveRepository.createNewGame(activeSaveSlot, currentScenePath, returnPlayerX, returnPlayerY, _inventory);
 	}
 
-	public static void recordBattleVictory(
-		String bossId,
-		String bossName,
-		String species,
-		String defeatFlag,
-		String battleScenePath,
-		String zoneScenePath,
-		String rewardItemId,
-		int score,
-		int maxCombo,
-		int perfects,
-		int goods,
-		int safes,
-		int misses
-	) {
-		if (launchedFromMenu || isDebugSession) return;
-		init();
-		SaveRepository.recordBattleVictory(
-			activeSaveSlot,
-			bossId,
-			bossName,
-			species,
-			defeatFlag,
-			battleScenePath,
-			zoneScenePath,
-			rewardItemId,
-			score,
-			maxCombo,
-			perfects,
-			goods,
-			safes,
-			misses
-		);
-	}
+	// =========================================================================
+	// NOTIFICACIONES DE HUD
+	// =========================================================================
 
-	// Notificaciones HUD
-
+	/** Muestra un mensaje temporal de notificacion en el HUD (ej. al recibir un objeto). */
 	public static void showNotification(String msg) {
 		if (msg == null || msg.isEmpty()) return;
 		_notificationText = msg;
 		_notificationTimer = 3.2f;
 	}
 
+	/** Actualiza el temporizador de la notificacion activa del HUD. */
 	public static void updateNotification(float dt) {
 		if (_notificationTimer > 0.0f) {
 			_notificationTimer -= dt;
@@ -738,10 +823,12 @@ public class GameState {
 		}
 	}
 
+	/** Indica si hay una notificacion emergente activa pendiente de mostrarse. */
 	public static boolean hasNotification() {
 		return _notificationTimer > 0.0f && !_notificationText.isEmpty();
 	}
 
+	/** Devuelve el texto de la notificacion activa. */
 	public static String getNotification() {
 		return _notificationText;
 	}

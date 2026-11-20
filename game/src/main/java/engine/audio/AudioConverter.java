@@ -1,19 +1,28 @@
 package engine.audio;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.util.Locale;
 
 /**
- * Conversor automático de audio comprimido (.mp3 / .ogg / .flac) a WAV PCM 16-bit 44.1kHz
- * para compatibilidad con javax.sound.sampled.Clip antes de iniciar una canción.
+ * Conversor automático de audio comprimido ({@code .mp3}, {@code .ogg}, {@code .flac})
+ * a WAV PCM 16-bit 44.1 kHz estéreo para garantizar compatibilidad con {@link javax.sound.sampled.Clip}.
  */
 public class AudioConverter {
 
+	// =========================================================================
+	// Conversión bajo Demanda a WAV PCM
+	// =========================================================================
+
 	/**
-	 * Devuelve un archivo .wav listo para reproducir.
-	 * Si sourceFile ya es .wav o ya existe un .wav hermano, lo reutiliza al instante.
-	 * Si es .mp3/.ogg y falta el .wav, intenta convertirlo automáticamente con las herramientas
-	 * disponibles del sistema (ffmpeg, mpg123, gst-launch-1.0, oggdec).
+	 * Devuelve un archivo {@code .wav} listo para reproducir.
+	 *
+	 * <ul>
+	 *   <li>Si {@code sourceFile} ya es {@code .wav} o ya existe un {@code .wav} hermano válido,
+	 *       lo reutiliza sin reconvertir.</li>
+	 *   <li>Si falta el {@code .wav}, prueba secuencialmente con herramientas del sistema
+	 *       ({@code ffmpeg}, {@code mpg123}, {@code gst-launch-1.0}, {@code oggdec}).</li>
+	 * </ul>
 	 */
 	public static File ensureWav(File sourceFile) {
 		if (sourceFile == null || !sourceFile.exists() || !sourceFile.isFile()) {
@@ -74,21 +83,25 @@ public class AudioConverter {
 		return sourceFile;
 	}
 
+	// =========================================================================
+	// Ejecución de Procesos Externos de Conversión
+	// =========================================================================
+
 	private static boolean runConverter(File outWav, String... cmd) {
 		try {
 			ProcessBuilder pb = new ProcessBuilder(cmd);
 			pb.redirectErrorStream(true);
 			Process proc = pb.start();
-			// Consumir salida para evitar bloqueos de buffer
+			// Consumir salida estándar/error para evitar bloqueos por llenado de pipe
 			try (var is = proc.getInputStream()) {
-				is.transferTo(java.io.OutputStream.nullOutputStream());
+				is.transferTo(OutputStream.nullOutputStream());
 			}
 			int code = proc.waitFor();
 			if (code == 0 && outWav.exists() && outWav.length() > 44) {
 				return true;
 			}
 		} catch (Exception ignored) {
-			// Herramienta no instalada o no disponible: probar la siguiente
+			// Herramienta no instalada o no disponible: probar la siguiente alternativa
 		}
 		if (outWav.exists() && outWav.length() <= 44) {
 			outWav.delete();

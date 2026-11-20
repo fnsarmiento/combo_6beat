@@ -3,7 +3,15 @@ package engine.physics;
 import java.util.ArrayList;
 import processing.core.PVector;
 
+/**
+ * Cuerpo cinemático 2D que extiende {@link Box} con vector de velocidad y resolución
+ * de colisiones por sub-stepping separado en los ejes X e Y ({@link #moveAndSlide(float)}).
+ */
 public class CharacterBody extends Box {
+
+	// =========================================================================
+	// Estado Cinemático y Obstáculos Colisionables
+	// =========================================================================
 
 	public ArrayList<Box> collidingBoxes = new ArrayList<>();
 	public final PVector velocity = new PVector();
@@ -11,6 +19,10 @@ public class CharacterBody extends Box {
 	public CharacterBody(float x, float y, float w, float h) {
 		super(x, y, w, h);
 	}
+
+	// =========================================================================
+	// Movimiento con Deslizamiento sobre Ejes (Sub-stepping)
+	// =========================================================================
 
 	public void moveAndSlide(float dt) {
 		if (velocity.x == 0 && velocity.y == 0) return;

@@ -4,13 +4,24 @@ import engine.objects.GameObject;
 import processing.core.PVector;
 import processing.data.XML;
 
+/**
+ * Caja delimitadora alineada a los ejes (AABB) para colisiones y áreas de activación en 2D.
+ */
 public class Box extends GameObject {
+
+	// =========================================================================
+	// Geometría y Capas de Colisión
+	// =========================================================================
 
 	public PVector position = new PVector();
 	public PVector size = new PVector();
 	public int layer = 1;
 	public int mask = 1;
 	public boolean disabled = false;
+
+	// =========================================================================
+	// Constructores y Detección de Intersección AABB
+	// =========================================================================
 
 	public Box() {
 		this.id = "box";
@@ -22,6 +33,9 @@ public class Box extends GameObject {
 		this.size.set(w, h);
 	}
 
+	/**
+	 * Evalúa intersección AABB contra otra {@link Box}, devolviendo {@code false} si alguna está deshabilitada.
+	 */
 	public boolean intersects(Box other) {
 		if (this.disabled || other == null || other.disabled) return false;
 		return (
@@ -32,13 +46,16 @@ public class Box extends GameObject {
 		);
 	}
 
-	// Game Object
+	// =========================================================================
+	// Serialización XML
+	// =========================================================================
 
 	@Override
 	public String getType() {
 		return "Box";
 	}
 
+	@Override
 	public void fromXML(XML xml) {
 		super.fromXML(xml);
 		position.x = xml.getFloat("position-x", 0);
@@ -50,6 +67,7 @@ public class Box extends GameObject {
 		disabled = xml.getInt("disabled") == 1;
 	}
 
+	@Override
 	public XML toXML() {
 		XML xml = super.toXML();
 		xml.setName("Box");
