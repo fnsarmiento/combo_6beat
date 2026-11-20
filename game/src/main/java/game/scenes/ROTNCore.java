@@ -717,6 +717,7 @@ public class ROTNCore {
 	// =========================================================================
 
 	public long[] getNotes() { return notes; }
+	public long getLastNoteEndTimeMs() { return lastNoteEndTimeMs; }
 	public boolean isNoteProcessed(int index) { return processedNotes[index]; }
 	public boolean isNoteMissed(int index) { return missedNotes != null && index >= 0 && index < missedNotes.length && missedNotes[index]; }
 	public boolean isHoldingLane(int lane) { return isHoldingLane[lane]; }

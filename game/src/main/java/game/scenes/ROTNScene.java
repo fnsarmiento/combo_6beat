@@ -1197,7 +1197,7 @@ public class ROTNScene extends Scene {
 			songTimeMs = (_bgm != null && _bgm.isLoaded()) ? _bgm.getPositionMs() : _songFallbackTimerMs;
 		}
 
-		drawArenaBackground(g, _bgAnimTime);
+		drawArenaBackground(g, _bgAnimTime, songTimeMs);
 
 		if (_rhythmCore != null) {
 			drawPerspectiveHighway(g, songTimeMs);
@@ -1212,27 +1212,65 @@ public class ROTNScene extends Scene {
 	}
 
 	/**
-	 * Renderiza el cielo nocturno, el halo carmesí, la curvatura del planeta y las luces
-	 * de ciudad (con sus caminos conectores) rotando en perspectiva 3D.
+	 * Renderiza el cielo oscuro inicial y el atardecer/amanecer progresivo sincronizado
+	 * con la duración total de la canción: los círculos concéntricos suben detrás de la
+	 * curvatura del planeta (siempre con borde visible) hasta que al final asoma apenas
+	 * un borde muy pequeño del sol amarillo.
 	 */
-	private void drawArenaBackground(PGraphics g, float bgTimeSec) {
-		// 1. Cielo nocturno oscuro púrpura-vino por bandas
+	private void drawArenaBackground(PGraphics g, float bgTimeSec, int songTimeMs) {
+		float songDurationMs = (_rhythmCore != null && _rhythmCore.getLastNoteEndTimeMs() > 0L)
+			? (float) _rhythmCore.getLastNoteEndTimeMs()
+			: 60000.0f;
+		float skyProgress = PApplet.constrain(Math.max(0, songTimeMs) / Math.max(1000.0f, songDurationMs), 0.0f, 1.0f);
+
+		// 1. Cielo oscuro inicial que se entibia levemente conforme avanza el atardecer
 		g.noStroke();
-		g.background(14, 7, 22);
+		g.background(
+			Math.round(PApplet.lerp(6.0f, 18.0f, skyProgress)),
+			Math.round(PApplet.lerp(7.0f, 10.0f, skyProgress)),
+			Math.round(PApplet.lerp(15.0f, 24.0f, skyProgress))
+		);
 		for (int band = 0; band < 6; band++) {
 			float y0 = band * 18.0f;
-			g.fill(26 + band * 3, 10 + band * 2, 34 + band * 3, 160);
+			float bandFactor = band / 5.0f;
+			int r = Math.round(PApplet.lerp(9.0f + band * 2.0f, 26.0f + band * 6.0f, skyProgress * bandFactor));
+			int gr = Math.round(PApplet.lerp(10.0f + band * 1.5f, 13.0f + band * 2.5f, skyProgress * bandFactor));
+			int b = Math.round(PApplet.lerp(20.0f + band * 2.5f, 32.0f + band * 2.0f, skyProgress * bandFactor));
+			g.fill(r, gr, b, 175);
 			g.rect(0, y0, BASE_W, 18.0f);
 		}
 
-		// 2. Halo carmesí detrás del horizonte
-		for (int r = 5; r >= 1; r--) {
-			g.fill(180, 32, 36, 18 + (6 - r) * 8);
-			g.ellipse(CENTER_X, 54.0f, r * 30.0f, r * 20.0f);
-		}
+		// 2. Círculos concéntricos del atardecer subiendo a velocidad constante (80px / duración de la canción)
+		//    Inicio (0%): ocultos debajo del horizonte (y = 88). Final (100%): atardecer completo y ~4px de sol amarillo.
+		float sunCenterY = PApplet.lerp(186.0f, 106.0f, skyProgress);
 
-		// 3. Silueta curva del planeta debajo del horizonte
-		g.fill(10, 11, 18);
+		// Capas concéntricas de atmósfera (de púrpura-vino exterior a ámbar interior)
+		g.fill(118, 22, 58, 38);
+		g.ellipse(CENTER_X, sunCenterY, 390.0f, 188.0f);
+
+		g.fill(168, 34, 48, 46);
+		g.ellipse(CENTER_X, sunCenterY, 316.0f, 152.0f);
+
+		g.fill(206, 62, 34, 54);
+		g.ellipse(CENTER_X, sunCenterY, 244.0f, 120.0f);
+
+		g.fill(236, 110, 34, 66);
+		g.ellipse(CENTER_X, sunCenterY, 180.0f, 92.0f);
+
+		g.fill(250, 165, 48, 86);
+		g.ellipse(CENTER_X, sunCenterY, 124.0f, 68.0f);
+
+		g.fill(255, 206, 78, 118);
+		g.ellipse(CENTER_X, sunCenterY, 76.0f, 52.0f);
+
+		// Sol amarillo detrás del horizonte: con ry=22 y sunCenterY final=106, solo asoman ~4px al terminar la canción
+		g.fill(255, 226, 88, 235);
+		g.ellipse(CENTER_X, sunCenterY, 48.0f, 44.0f);
+		g.fill(255, 246, 170, 240);
+		g.ellipse(CENTER_X, sunCenterY, 34.0f, 32.0f);
+
+		// 3. Silueta curva de la Tierra delante del atardecer y el sol
+		g.fill(8, 9, 15);
 		g.beginShape();
 		g.vertex(0, BASE_H);
 		g.vertex(0, Y_FAR + 14.0f);
@@ -1243,9 +1281,29 @@ public class ROTNScene extends Scene {
 		g.vertex(BASE_W, BASE_H);
 		g.endShape(PConstants.CLOSE);
 
-		// 4. Borde difuso del horizonte curvo
-		g.stroke(42, 26, 48, 170);
+		// 4. Borde atmosférico visible del planeta (frío nocturno al inicio -> cálido dorado al final)
 		g.noFill();
+		g.strokeWeight(2.0f);
+		g.stroke(
+			Math.round(PApplet.lerp(56.0f, 225.0f, skyProgress)),
+			Math.round(PApplet.lerp(70.0f, 115.0f, skyProgress)),
+			Math.round(PApplet.lerp(116.0f, 62.0f, skyProgress)),
+			115
+		);
+		g.beginShape();
+		for (int i = 0; i <= 24; i++) {
+			float hx = i * (BASE_W / 24.0f);
+			g.vertex(hx, horizonYAtX(hx));
+		}
+		g.endShape();
+
+		g.strokeWeight(1.0f);
+		g.stroke(
+			Math.round(PApplet.lerp(115.0f, 255.0f, skyProgress)),
+			Math.round(PApplet.lerp(132.0f, 200.0f, skyProgress)),
+			Math.round(PApplet.lerp(178.0f, 112.0f, skyProgress)),
+			200
+		);
 		g.beginShape();
 		for (int i = 0; i <= 24; i++) {
 			float hx = i * (BASE_W / 24.0f);
