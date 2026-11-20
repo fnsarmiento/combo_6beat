@@ -18,6 +18,7 @@ import game.Global;
 import game.core.GameState;
 import game.core.db.CustomSongRepository;
 import game.core.db.SaveRepository;
+import game.core.notes.SongPackLoader;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -62,14 +63,16 @@ public class InitScene extends Scene {
 	private int _confirmDeleteSlot = -1;
 	private int _pendingNewGameSlot = 0;
 	private int _campaignFocusIdx = 0; // 0 = Clásica (izq), 1 = Nueva (der), 2 = Volver
-	private static int _savedSongTab = 0;
-	private int _songTab = _savedSongTab; // 0 = Canciones Custom (BD), 1 = Jefes Historia
+	private static int _savedSongTab = 1;
+	private int _songTab = _savedSongTab; // 0 = Canciones Custom (BD), 1 = Canciones Base
 	private int _selectedCustomIdx = 0;
+	private int _selectedCustomDiffIdx = 0;
 	private int _customScrollOffset = 0;
 	private int _selectedSongIdx = 0;
+	private int _selectedBaseDiffIdx = 0;
 	private int _storyScrollOffset = 0;
 	private int _songFocusCol = 0; // 0 = lista de canciones, 1 = controles derechos
-	private int _songRightIdx = 0; // 0 = Chip, 1 = Jefe, 2 = Cura, 3 = Velocidad, 4 = Iniciar, 5 = Volver
+	private int _songRightIdx = 0; // 0 = Dificultad, 1 = Chip, 2 = Jefe, 3 = Cura, 4 = Velocidad, 5 = Iniciar, 6 = Volver
 	private int _settingsFocusIdx = 0; // 0..6 izq, 7..12 ritmo, 13..17 rpg
 	private static int _savedSettingsFocusIdx = 0;
 	private int _songChipIdx = 0; // 0=Ninguno, 1=+10ms, 2=-7.5ms, 3=Escudo
@@ -100,9 +103,9 @@ public class InitScene extends Scene {
 	private final float[] _starY = new float[28];
 	private final float[] _starPhase = new float[28];
 
-	// Catálogo escaneado de resources/songs/*.scene (Historia) y CANCIONES_PERSONALIZADAS (SQLite)
-	private final List<SongEntry> _songs = new ArrayList<>();
-	private final List<CustomSongRepository.CustomSongSummary> _customSongs = new ArrayList<>();
+	// Catálogos dinámicos agrupados por SongPack (con múltiples dificultades)
+	private final List<SongPackLoader.SongPack> _basePacks = new ArrayList<>();
+	private final List<SongPackLoader.SongPack> _customPacks = new ArrayList<>();
 	private final Map<String, PImage> _coverCache = new HashMap<>();
 	private volatile boolean _importDialogBusy = false;
 	private volatile boolean _pendingCustomRefresh = false;
@@ -132,6 +135,7 @@ public class InitScene extends Scene {
 	private Button _songRescanBtn;
 	private Textlabel _songListFooterLbl;
 	private Textarea _songInfoArea;
+	private Button _songDiffBtn;
 	private Button _songChipBtn;
 	private Button _songInvincibleBtn;
 	private Button _songHealBtn;
@@ -220,64 +224,46 @@ public class InitScene extends Scene {
 	}
 
 	private void scanSongsDirectory() {
-		_songs.clear();
-
-		// 1. Leer archivo padre resources/songs/songs.xml (packs + dificultades .osu)
-		File manifestFile = new File(ResourcesManager.getAbsPathFromProject(Global.SONGS_MANIFEST));
-		if (manifestFile.exists()) {
-			try {
-				XML root = Engine.getApp().loadXML(manifestFile.getAbsolutePath());
-				if (root != null) {
-					for (XML pack : root.getChildren("Pack")) {
-						String packTitle = pack.getString("title", "Cancion");
-						String packArtist = pack.getString("artist", "");
-						for (XML chart : pack.getChildren("Chart")) {
-							SongEntry entry = new SongEntry();
-							entry.chartId = chart.getString("id", "");
-							entry.title = packTitle;
-							entry.artist = packArtist;
-							entry.difficulty = chart.getString("difficulty", "6K");
-							entry.scrollSpeed = chart.getFloat("scroll-speed", 0.22f);
-							entry.bossName = chart.getString("boss-name", entry.bossName);
-							entry.bossSpecies = chart.getString("boss-species", "");
-							entry.bossHp = chart.getInt("boss-hp", entry.bossHp);
-							entry.attackDamage = chart.getInt("attack-damage", entry.attackDamage);
-							entry.hitDamage = chart.getInt("hit-damage", entry.hitDamage);
-
-							String osuRel = chart.getString("file", "");
-							if (!osuRel.isEmpty()) {
-								File osuFile = resolveOsuFile(manifestFile, osuRel);
-								if (osuFile != null && osuFile.exists()) {
-									readOsuSummary(osuFile, entry);
-								}
-							}
-							_songs.add(entry);
-						}
-					}
-				}
-			} catch (Exception e) {
-				System.err.println("Error leyendo songs.xml: " + e.getMessage());
-			}
+		_basePacks.clear();
+		_basePacks.addAll(SongPackLoader.loadBasePacks());
+		if (_selectedSongIdx >= _basePacks.size()) {
+			_selectedSongIdx = Math.max(0, _basePacks.size() - 1);
 		}
+		_selectedBaseDiffIdx = clampDifficultyIdx(_basePacks, _selectedSongIdx, _selectedBaseDiffIdx);
+	}
 
-		// 2. Fallback para archivos .scene sueltos en resources/songs/
-		File songsDir = new File(ResourcesManager.getAbsPathFromProject("resources/songs"));
-		if (songsDir.exists() && songsDir.isDirectory()) {
-			File[] files = songsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".scene"));
-			if (files != null) {
-				Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
-				for (File sceneFile : files) {
-					SongEntry entry = parseSongEntry(sceneFile);
-					if (entry != null) {
-						_songs.add(entry);
-					}
-				}
-			}
-		}
+	private int clampDifficultyIdx(List<SongPackLoader.SongPack> packs, int packIdx, int diffIdx) {
+		if (packs.isEmpty() || packIdx < 0 || packIdx >= packs.size()) return 0;
+		int n = packs.get(packIdx).difficulties.size();
+		if (n <= 0) return 0;
+		return Math.max(0, Math.min(diffIdx, n - 1));
+	}
 
-		if (_selectedSongIdx >= _songs.size()) {
-			_selectedSongIdx = Math.max(0, _songs.size() - 1);
+	private SongPackLoader.SongPack getActivePack() {
+		List<SongPackLoader.SongPack> list = (_songTab == 0) ? _customPacks : _basePacks;
+		int idx = (_songTab == 0) ? _selectedCustomIdx : _selectedSongIdx;
+		if (list.isEmpty() || idx < 0 || idx >= list.size()) return null;
+		return list.get(idx);
+	}
+
+	private SongPackLoader.ChartVariant getActiveChartVariant() {
+		SongPackLoader.SongPack pack = getActivePack();
+		if (pack == null || pack.difficulties.isEmpty()) return null;
+		int dIdx = (_songTab == 0) ? _selectedCustomDiffIdx : _selectedBaseDiffIdx;
+		dIdx = Math.max(0, Math.min(dIdx, pack.difficulties.size() - 1));
+		return pack.difficulties.get(dIdx);
+	}
+
+	private void cycleSelectedDifficulty(int delta) {
+		SongPackLoader.SongPack pack = getActivePack();
+		if (pack == null || pack.difficulties.size() <= 1) return;
+		int n = pack.difficulties.size();
+		if (_songTab == 0) {
+			_selectedCustomDiffIdx = (_selectedCustomDiffIdx + delta + n) % n;
+		} else {
+			_selectedBaseDiffIdx = (_selectedBaseDiffIdx + delta + n) % n;
 		}
+		syncSongSelectUI();
 	}
 
 	private SongEntry parseSongEntry(File sceneFile) {
@@ -526,7 +512,7 @@ public class InitScene extends Scene {
 
 		_songTabCustomBtn = addUIButton("ui_song_tab_custom", _songsGroup, "CANCIONES CUSTOM", 220, 14, 116, 18,
 			app.color(45, 95, 165), app.color(65, 130, 215), fontSmall, () -> setSongTab(0));
-		_songTabStoryBtn = addUIButton("ui_song_tab_story", _songsGroup, "JEFES HISTORIA", 342, 14, 116, 18,
+		_songTabStoryBtn = addUIButton("ui_song_tab_story", _songsGroup, "CANCIONES BASE", 342, 14, 116, 18,
 			app.color(28, 34, 52), app.color(55, 95, 165), fontSmall, () -> setSongTab(1));
 
 		for (int i = 0; i < _songListBtns.length; i++) {
@@ -535,13 +521,15 @@ public class InitScene extends Scene {
 				app.color(26, 30, 46), app.color(50, 95, 165), fontSmall, () -> {
 					int actualIdx = (_songTab == 0 ? _customScrollOffset : _storyScrollOffset) + visibleRow;
 					if (_songTab == 0) {
-						if (actualIdx < _customSongs.size()) {
+						if (actualIdx < _customPacks.size()) {
+							if (_selectedCustomIdx != actualIdx) _selectedCustomDiffIdx = 0;
 							_selectedCustomIdx = actualIdx;
 							_songFocusCol = 0;
 							syncSongSelectUI();
 						}
 					} else {
-						if (actualIdx < _songs.size()) {
+						if (actualIdx < _basePacks.size()) {
+							if (_selectedSongIdx != actualIdx) _selectedBaseDiffIdx = 0;
 							_selectedSongIdx = actualIdx;
 							_songFocusCol = 0;
 							syncSongSelectUI();
@@ -554,24 +542,32 @@ public class InitScene extends Scene {
 			app.color(35, 95, 130), app.color(55, 140, 185), fontSmall, this::openImportOsuDialog);
 		_songRescanBtn = addUIButton("ui_song_rescan_btn", _songsGroup, "ACTUALIZAR", 148, 198, 62, 20,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
+				scanSongsDirectory();
 				refreshCustomSongs(true);
-				_songStatusMsg = "Catalogo custom actualizado (" + _customSongs.size() + ").";
+				_songStatusMsg = "Actualizado: " + _basePacks.size() + " base, " + _customPacks.size() + " custom.";
 				syncSongSelectUI();
 			});
 
 		_songListFooterLbl = addUILabel("ui_song_footer_lbl", _songsGroup, "", 22, 224, app.color(175, 200, 235), fontSmall);
 
-		_songInfoArea = addUITextarea("ui_song_info_area", _songsGroup, "Sin canciones", 220, 40, 164, 108,
+		_songInfoArea = addUITextarea("ui_song_info_area", _songsGroup, "Sin canciones", 220, 40, 164, 88,
 			app.color(235, 240, 255), app.color(20, 24, 38), fontSmall);
 
-		_songCoverBox = addUIBox("ui_song_cover_box", _songsGroup, 390, 40, 68, 68, app.color(20, 24, 38));
-		_songBadgeArea = addUITextarea("ui_song_badge_area", _songsGroup, "", 390, 112, 68, 36,
+		_songCoverBox = addUIBox("ui_song_cover_box", _songsGroup, 390, 40, 68, 56, app.color(20, 24, 38));
+		_songBadgeArea = addUITextarea("ui_song_badge_area", _songsGroup, "", 390, 98, 68, 30,
 			app.color(140, 225, 255), app.color(20, 24, 38), fontSmall);
+
+		_songDiffBtn = addUIButton("ui_song_diff_btn", _songsGroup, "Dificultad: Normal", 220, 132, 238, 18,
+			app.color(42, 62, 108), app.color(65, 110, 195), fontSmall, () -> {
+				_songFocusCol = 1;
+				_songRightIdx = 0;
+				cycleSelectedDifficulty(1);
+			});
 
 		_songChipBtn = addUIButton("ui_song_chip_btn", _songsGroup, "Chip: Ninguno", 220, 154, 116, 18,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = 1;
-				_songRightIdx = 0;
+				_songRightIdx = 1;
 				_songChipIdx = (_songChipIdx + 1) % _chipIds.length;
 				syncSongSelectUI();
 			});
@@ -579,7 +575,7 @@ public class InitScene extends Scene {
 		_songInvincibleBtn = addUIButton("ui_song_invincible_btn", _songsGroup, "Jefe: Invencible", 342, 154, 116, 18,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = 1;
-				_songRightIdx = 1;
+				_songRightIdx = 2;
 				_songInvincibleMode = !_songInvincibleMode;
 				syncSongSelectUI();
 			});
@@ -587,7 +583,7 @@ public class InitScene extends Scene {
 		_songHealBtn = addUIButton("ui_song_heal_btn", _songsGroup, "Cura: Optimo", 220, 176, 116, 18,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = 1;
-				_songRightIdx = 2;
+				_songRightIdx = 3;
 				GameState.toggleHealStrategy();
 				syncSongSelectUI();
 			});
@@ -595,7 +591,7 @@ public class InitScene extends Scene {
 		_songSpeedBtn = addUIButton("ui_song_speed_btn", _songsGroup, "Velocidad: 1.00x", 342, 176, 116, 18,
 			app.color(32, 42, 66), app.color(55, 95, 155), fontSmall, () -> {
 				_songFocusCol = 1;
-				_songRightIdx = 3;
+				_songRightIdx = 4;
 				_songSpeedIdx = (_songSpeedIdx + 1) % _speedOptions.length;
 				syncSongSelectUI();
 			});
@@ -603,7 +599,7 @@ public class InitScene extends Scene {
 		_songPlayBtn = addUIButton("ui_song_play_btn", _songsGroup, "INICIAR COMBATE", 220, 202, 238, 24,
 			app.color(35, 125, 85), app.color(55, 170, 115), fontMed, () -> {
 				_songFocusCol = 1;
-				_songRightIdx = 4;
+				_songRightIdx = 5;
 				launchSelectedSong();
 			});
 
@@ -620,14 +616,12 @@ public class InitScene extends Scene {
 	}
 
 	private void refreshCustomSongs(boolean syncFolder) {
-		if (syncFolder) {
-			CustomSongRepository.syncCustomSongsFolder();
+		_customPacks.clear();
+		_customPacks.addAll(SongPackLoader.loadCustomPacks(syncFolder));
+		if (_selectedCustomIdx >= _customPacks.size()) {
+			_selectedCustomIdx = Math.max(0, _customPacks.size() - 1);
 		}
-		_customSongs.clear();
-		_customSongs.addAll(CustomSongRepository.listAll());
-		if (_selectedCustomIdx >= _customSongs.size()) {
-			_selectedCustomIdx = Math.max(0, _customSongs.size() - 1);
-		}
+		_selectedCustomDiffIdx = clampDifficultyIdx(_customPacks, _selectedCustomIdx, _selectedCustomDiffIdx);
 		ensureSelectionVisible();
 	}
 
@@ -636,11 +630,11 @@ public class InitScene extends Scene {
 		if (_songTab == 0) {
 			if (_selectedCustomIdx < _customScrollOffset) _customScrollOffset = _selectedCustomIdx;
 			else if (_selectedCustomIdx >= _customScrollOffset + cap) _customScrollOffset = _selectedCustomIdx - cap + 1;
-			_customScrollOffset = Math.max(0, Math.min(_customScrollOffset, Math.max(0, _customSongs.size() - cap)));
+			_customScrollOffset = Math.max(0, Math.min(_customScrollOffset, Math.max(0, _customPacks.size() - cap)));
 		} else {
 			if (_selectedSongIdx < _storyScrollOffset) _storyScrollOffset = _selectedSongIdx;
 			else if (_selectedSongIdx >= _storyScrollOffset + cap) _storyScrollOffset = _selectedSongIdx - cap + 1;
-			_storyScrollOffset = Math.max(0, Math.min(_storyScrollOffset, Math.max(0, _songs.size() - cap)));
+			_storyScrollOffset = Math.max(0, Math.min(_storyScrollOffset, Math.max(0, _basePacks.size() - cap)));
 		}
 	}
 
@@ -778,6 +772,9 @@ public class InitScene extends Scene {
 	}
 
 	private void launchSelectedSong() {
+		SongPackLoader.ChartVariant variant = getActiveChartVariant();
+		if (variant == null) return;
+
 		GameState.ensureFreeplayPowerUps();
 		GameState.equipPowerUp(_chipIds[_songChipIdx]);
 		GameState.songSpeedMultiplier = _speedOptions[_songSpeedIdx];
@@ -785,19 +782,11 @@ public class InitScene extends Scene {
 		GameState.launchedFromMenu = true;
 		_savedSongTab = _songTab;
 
-		if (_songTab == 0) {
-			if (_customSongs.isEmpty() || _selectedCustomIdx < 0 || _selectedCustomIdx >= _customSongs.size()) return;
-			CustomSongRepository.CustomSongSummary custom = _customSongs.get(_selectedCustomIdx);
-			CustomSongRepository.CustomSongSummary fresh = CustomSongRepository.getById(custom.idCancion);
-			Engine.changeScene(new ROTNScene(fresh != null ? fresh : custom));
+		if (variant.customDbSummary != null) {
+			CustomSongRepository.CustomSongSummary fresh = CustomSongRepository.getById(variant.customDbSummary.idCancion);
+			Engine.changeScene(new ROTNScene(fresh != null ? fresh : variant.customDbSummary));
 		} else {
-			if (_songs.isEmpty() || _selectedSongIdx < 0 || _selectedSongIdx >= _songs.size()) return;
-			SongEntry entry = _songs.get(_selectedSongIdx);
-			if (entry.chartId != null && !entry.chartId.isEmpty()) {
-				Engine.changeScene(ROTNScene.fromManifest(entry.chartId));
-			} else {
-				Engine.changeScene(new ROTNScene(entry.sceneAbsPath));
-			}
+			Engine.changeScene(new ROTNScene(variant));
 		}
 	}
 
@@ -1099,159 +1088,142 @@ public class InitScene extends Scene {
 			_songTabCustomBtn.setColorBackground(isCustomTab ? app.color(45, 95, 165) : app.color(26, 30, 46));
 		}
 		if (_songTabStoryBtn != null) {
-			_songTabStoryBtn.setLabel((!isCustomTab ? "* " : "") + "JEFES HISTORIA");
+			_songTabStoryBtn.setLabel((!isCustomTab ? "* " : "") + "CANCIONES BASE");
 			_songTabStoryBtn.setColorBackground(!isCustomTab ? app.color(45, 95, 165) : app.color(26, 30, 46));
 		}
 
-		if (isCustomTab) {
-			if (_songImportBtn != null) _songImportBtn.show();
-			if (_songRescanBtn != null) _songRescanBtn.show();
+		if (_songImportBtn != null) {
+			if (isCustomTab) _songImportBtn.show();
+			else _songImportBtn.hide();
+		}
+		if (_songRescanBtn != null) _songRescanBtn.show();
 
-			for (int i = 0; i < _songListBtns.length; i++) {
-				Button btn = _songListBtns[i];
-				if (btn == null) continue;
-				int idx = _customScrollOffset + i;
-				if (idx < _customSongs.size()) {
-					CustomSongRepository.CustomSongSummary entry = _customSongs.get(idx);
-					boolean sel = (idx == _selectedCustomIdx);
-					boolean focused = sel && (_songFocusCol == 0);
-					String label = entry.titulo + " [" + entry.dificultad + "]";
-					if (label.length() > 26) label = label.substring(0, 23) + "...";
-					btn.setLabel((focused ? "> " : (sel ? "* " : "  ")) + label);
-					btn.setColorBackground(
-						focused ? app.color(55, 110, 195) : (sel ? app.color(36, 62, 108) : app.color(26, 30, 46))
-					);
-					btn.show();
-				} else {
-					btn.hide();
-				}
+		List<SongPackLoader.SongPack> activeList = isCustomTab ? _customPacks : _basePacks;
+		int scrollOff = isCustomTab ? _customScrollOffset : _storyScrollOffset;
+		int selIdx = isCustomTab ? _selectedCustomIdx : _selectedSongIdx;
+
+		for (int i = 0; i < _songListBtns.length; i++) {
+			Button btn = _songListBtns[i];
+			if (btn == null) continue;
+			int idx = scrollOff + i;
+			if (idx < activeList.size()) {
+				SongPackLoader.SongPack pack = activeList.get(idx);
+				boolean sel = (idx == selIdx);
+				boolean focused = sel && (_songFocusCol == 0);
+				String diffSuffix = (pack.difficulties.size() > 1) ? (" (" + pack.difficulties.size() + " dif.)") : "";
+				String label = pack.title + diffSuffix;
+				if (label.length() > 26) label = label.substring(0, 23) + "...";
+				btn.setLabel((focused ? "> " : (sel ? "* " : "  ")) + label);
+				btn.setColorBackground(
+					focused ? app.color(55, 110, 195) : (sel ? app.color(36, 62, 108) : app.color(26, 30, 46))
+				);
+				btn.show();
+			} else {
+				btn.hide();
 			}
+		}
 
-			if (_songInfoArea != null) {
-				_songInfoArea.setSize(Math.max(1, (int) scaleW(164)), Math.max(1, (int) scaleH(108)));
-				if (_customSongs.isEmpty()) {
-					_songInfoArea.setText("No hay canciones custom.\nUsa '+ IMPORTAR .OSU' o coloca archivos en resources/songs/custom/");
-				} else {
-					CustomSongRepository.CustomSongSummary c = _customSongs.get(_selectedCustomIdx);
-					_songInfoArea.setText(
-						"Cancion: " + c.titulo + "\n" +
-						"Artista: " + (c.artista.isEmpty() ? "-" : c.artista) + "\n" +
-						"Dificultad: " + c.dificultad + " | Notas: " + c.cantidadNotas + "\n" +
-						"Record: " + c.puntajeMasAlto + " pts (" + c.comboMasAlto + "x, " + String.format("%.1f%%", c.precisionMasAlta) + ")\n" +
-						"Obj. Record: " + c.objetosRecord + "\n" +
-						"Ultimo: " + c.puntajeUltimoIntento + " pts\n" +
-						"Obj. Ultimo: " + c.objetosUltimoIntento
-					);
-				}
+		SongPackLoader.SongPack activePack = getActivePack();
+		SongPackLoader.ChartVariant activeVar = getActiveChartVariant();
+
+		if (_songInfoArea != null) {
+			_songInfoArea.setSize(Math.max(1, (int) scaleW(164)), Math.max(1, (int) scaleH(88)));
+			if (activeVar == null) {
+				_songInfoArea.setText(isCustomTab
+					? "No hay canciones custom.\nUsa '+ IMPORTAR .OSU' o agrega carpetas en resources/songs/custom/"
+					: "No hay canciones base.\nAgrega carpetas .osu en resources/songs/base/");
+			} else if (isCustomTab && activeVar.customDbSummary != null) {
+				CustomSongRepository.CustomSongSummary c = activeVar.customDbSummary;
+				_songInfoArea.setText(
+					"Cancion: " + c.titulo + "\n" +
+					"Artista: " + (c.artista.isEmpty() ? "-" : c.artista) + "\n" +
+					"Notas: " + c.cantidadNotas + " | Jugadas: " + c.vecesJugada + "\n" +
+					"Record: " + c.puntajeMasAlto + " pts (" + c.comboMasAlto + "x, " + String.format("%.1f%%", c.precisionMasAlta) + ")\n" +
+					"Ultimo: " + c.puntajeUltimoIntento + " pts"
+				);
+			} else {
+				String sp = activeVar.bossSpecies.isEmpty() ? "" : " (" + activeVar.bossSpecies + ")";
+				_songInfoArea.setText(
+					"Cancion: " + activeVar.title + "\n" +
+					"Artista: " + (activeVar.artist.isEmpty() ? "-" : activeVar.artist) + "\n" +
+					"Notas: " + activeVar.noteCount + " | Vel: " + String.format("%.2f", activeVar.scrollSpeed) + "\n" +
+					"Jefe: " + activeVar.bossName + sp + "\n" +
+					"HP: " + activeVar.bossHp + " | Danio: " + activeVar.attackDamage
+				);
 			}
+		}
 
-			if (_songCoverBox != null && _songBadgeArea != null) {
-				if (_customSongs.isEmpty()) {
-					PImage fallback = getScaledCoverImage("");
-					_songCoverBox.setSize(fallback.width, fallback.height).setImage(fallback).show();
-					_songBadgeArea.setText("BPM: -\nJugadas: 0").show();
-				} else {
-					CustomSongRepository.CustomSongSummary c = _customSongs.get(_selectedCustomIdx);
-					PImage cover = getScaledCoverImage(c.rutaPortada);
-					_songCoverBox.setSize(cover.width, cover.height).setImage(cover).show();
-					_songBadgeArea.setText(
-						"BPM: " + String.format("%.1f", c.bpm) + "\n" +
-						"Jugadas: " + c.vecesJugada
-					).show();
-				}
+		if (_songCoverBox != null && _songBadgeArea != null) {
+			if (activeVar == null) {
+				PImage fallback = getScaledCoverImage("");
+				_songCoverBox.setSize(fallback.width, fallback.height).setImage(fallback).show();
+				_songBadgeArea.setText("BPM: -").show();
+			} else {
+				PImage cover = getScaledCoverImage(activeVar.coverRelPath);
+				_songCoverBox.setSize(cover.width, cover.height).setImage(cover).show();
+				_songBadgeArea.setText(
+					"BPM: " + String.format("%.0f", activeVar.bpm) + "\n" +
+					"Notas: " + activeVar.noteCount
+				).show();
 			}
+		}
 
-			if (_songListFooterLbl != null) {
-				if (!_songStatusMsg.isEmpty()) {
-					_songListFooterLbl.setText(_songStatusMsg);
-				} else if (_customSongs.isEmpty()) {
-					_songListFooterLbl.setText("0 custom | TAB: Jefes Historia");
-				} else {
-					_songListFooterLbl.setText("Custom " + (_selectedCustomIdx + 1) + "/" + _customSongs.size() + " | TAB: Jefes");
-				}
-			}
-		} else {
-			if (_songImportBtn != null) _songImportBtn.hide();
-			if (_songRescanBtn != null) _songRescanBtn.hide();
-			if (_songCoverBox != null) _songCoverBox.hide();
-			if (_songBadgeArea != null) _songBadgeArea.hide();
-
-			for (int i = 0; i < _songListBtns.length; i++) {
-				Button btn = _songListBtns[i];
-				if (btn == null) continue;
-				int idx = _storyScrollOffset + i;
-				if (idx < _songs.size()) {
-					SongEntry entry = _songs.get(idx);
-					boolean sel = (idx == _selectedSongIdx);
-					boolean focused = sel && (_songFocusCol == 0);
-					String label = entry.bossName + " - " + entry.title;
-					if (label.length() > 26) label = label.substring(0, 23) + "...";
-					btn.setLabel((focused ? "> " : (sel ? "* " : "  ")) + label);
-					btn.setColorBackground(
-						focused ? app.color(55, 110, 195) : (sel ? app.color(36, 62, 108) : app.color(26, 30, 46))
-					);
-					btn.show();
-				} else {
-					btn.hide();
-				}
-			}
-
-			if (_songInfoArea != null) {
-				_songInfoArea.setSize(Math.max(1, (int) scaleW(238)), Math.max(1, (int) scaleH(108)));
-				if (_songs.isEmpty()) {
-					_songInfoArea.setText("No se encontraron archivos .scene en resources/songs/");
-				} else {
-					SongEntry e = _songs.get(_selectedSongIdx);
-					String sp = e.bossSpecies.isEmpty() ? "" : " (" + e.bossSpecies + ")";
-					_songInfoArea.setText(
-						"Cancion: " + e.title + "\n" +
-						"Artista: " + (e.artist.isEmpty() ? "-" : e.artist) + " [" + e.difficulty + "]\n" +
-						"Notas: " + e.noteCount + "  |  Vel. base: " + String.format("%.2f", e.scrollSpeed) + "\n\n" +
-						"Jefe: " + e.bossName + sp + "\n" +
-						"HP Jefe: " + e.bossHp + "  |  Danio: " + e.attackDamage + " / Golpe: " + e.hitDamage
-					);
-				}
-			}
-
-			if (_songListFooterLbl != null) {
-				if (_songs.isEmpty()) {
-					_songListFooterLbl.setText("0 jefes | TAB: Canciones Custom");
-				} else {
-					_songListFooterLbl.setText("Jefes " + (_selectedSongIdx + 1) + "/" + _songs.size() + " | TAB: Custom");
-				}
+		if (_songListFooterLbl != null) {
+			if (!_songStatusMsg.isEmpty()) {
+				_songListFooterLbl.setText(_songStatusMsg);
+			} else if (activeList.isEmpty()) {
+				_songListFooterLbl.setText(isCustomTab ? "0 custom | TAB: Base" : "0 base | TAB: Custom");
+			} else {
+				_songListFooterLbl.setText(
+					(isCustomTab ? "Custom " : "Base ") + (selIdx + 1) + "/" + activeList.size() + " | TAB: Cambiar"
+				);
 			}
 		}
 
 		boolean rightActive = (_songFocusCol == 1);
+		if (_songDiffBtn != null) {
+			boolean f = rightActive && (_songRightIdx == 0);
+			String diffLabel;
+			if (activePack == null || activeVar == null) {
+				diffLabel = "Dificultad: -";
+			} else if (activePack.difficulties.size() > 1) {
+				int dIdx = isCustomTab ? _selectedCustomDiffIdx : _selectedBaseDiffIdx;
+				diffLabel = "Dificultad: < " + activeVar.difficulty + " > (" + (dIdx + 1) + "/" + activePack.difficulties.size() + ")";
+			} else {
+				diffLabel = "Dificultad: " + activeVar.difficulty;
+			}
+			_songDiffBtn.setLabel((f ? "> " : "") + diffLabel);
+			_songDiffBtn.setColorBackground(f ? app.color(65, 118, 210) : app.color(42, 62, 108));
+		}
 		if (_songChipBtn != null) {
 			String chipId = _chipIds[_songChipIdx];
 			String chipLabel = "none".equals(chipId) ? "Ninguno" : GameState.getItemName(chipId);
-			boolean f = rightActive && (_songRightIdx == 0);
+			boolean f = rightActive && (_songRightIdx == 1);
 			_songChipBtn.setLabel((f ? "> " : "") + "Chip: " + chipLabel);
 			_songChipBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
 		}
 		if (_songInvincibleBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 1);
+			boolean f = rightActive && (_songRightIdx == 2);
 			_songInvincibleBtn.setLabel((f ? "> " : "") + "Jefe: " + (_songInvincibleMode ? "Invencible" : "Normal"));
 			_songInvincibleBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
 		}
 		if (_songHealBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 2);
+			boolean f = rightActive && (_songRightIdx == 3);
 			_songHealBtn.setLabel((f ? "> " : "") + "Cura: " + GameState.healStrategy.label);
 			_songHealBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
 		}
 		if (_songSpeedBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 3);
+			boolean f = rightActive && (_songRightIdx == 4);
 			_songSpeedBtn.setLabel((f ? "> " : "") + "Velocidad: " + String.format("%.2fx", _speedOptions[_songSpeedIdx]));
 			_songSpeedBtn.setColorBackground(f ? app.color(55, 110, 195) : app.color(32, 42, 66));
 		}
 		if (_songPlayBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 4);
+			boolean f = rightActive && (_songRightIdx == 5);
 			_songPlayBtn.setLabel((f ? "> " : "") + "INICIAR COMBATE");
 			_songPlayBtn.setColorBackground(f ? app.color(55, 175, 115) : app.color(35, 125, 85));
 		}
 		if (_songBackBtn != null) {
-			boolean f = rightActive && (_songRightIdx == 5);
+			boolean f = rightActive && (_songRightIdx == 6);
 			_songBackBtn.setLabel((f ? "> " : "") + "VOLVER AL MENU");
 			_songBackBtn.setColorBackground(f ? app.color(145, 58, 78) : app.color(85, 36, 48));
 		}
@@ -1498,19 +1470,23 @@ public class InitScene extends Scene {
 					return;
 				}
 				if (_songFocusCol == 0) {
-					int listSize = (_songTab == 0) ? _customSongs.size() : _songs.size();
+					int listSize = (_songTab == 0) ? _customPacks.size() : _basePacks.size();
 					if (up && listSize > 0) {
 						if (_songTab == 0) {
 							_selectedCustomIdx = (_selectedCustomIdx - 1 + listSize) % listSize;
+							_selectedCustomDiffIdx = 0;
 						} else {
 							_selectedSongIdx = (_selectedSongIdx - 1 + listSize) % listSize;
+							_selectedBaseDiffIdx = 0;
 						}
 						syncSongSelectUI();
 					} else if (down && listSize > 0) {
 						if (_songTab == 0) {
 							_selectedCustomIdx = (_selectedCustomIdx + 1) % listSize;
+							_selectedCustomDiffIdx = 0;
 						} else {
 							_selectedSongIdx = (_selectedSongIdx + 1) % listSize;
+							_selectedBaseDiffIdx = 0;
 						}
 						syncSongSelectUI();
 					} else if (right) {
@@ -1521,14 +1497,21 @@ public class InitScene extends Scene {
 					}
 				} else {
 					if (up) {
-						_songRightIdx = (_songRightIdx - 1 + 6) % 6;
+						_songRightIdx = (_songRightIdx - 1 + 7) % 7;
 						syncSongSelectUI();
 					} else if (down) {
-						_songRightIdx = (_songRightIdx + 1) % 6;
+						_songRightIdx = (_songRightIdx + 1) % 7;
 						syncSongSelectUI();
 					} else {
 						switch (_songRightIdx) {
 							case 0 -> {
+								if (left) {
+									cycleSelectedDifficulty(-1);
+								} else if (right || accept) {
+									cycleSelectedDifficulty(1);
+								}
+							}
+							case 1 -> {
 								if (left) {
 									_songChipIdx = (_songChipIdx - 1 + _chipIds.length) % _chipIds.length;
 									syncSongSelectUI();
@@ -1537,19 +1520,19 @@ public class InitScene extends Scene {
 									syncSongSelectUI();
 								}
 							}
-							case 1 -> {
+							case 2 -> {
 								if (left || right || accept) {
 									_songInvincibleMode = !_songInvincibleMode;
 									syncSongSelectUI();
 								}
 							}
-							case 2 -> {
+							case 3 -> {
 								if (left || right || accept) {
 									GameState.toggleHealStrategy();
 									syncSongSelectUI();
 								}
 							}
-							case 3 -> {
+							case 4 -> {
 								if (left) {
 									_songSpeedIdx = (_songSpeedIdx - 1 + _speedOptions.length) % _speedOptions.length;
 									syncSongSelectUI();
@@ -1558,7 +1541,7 @@ public class InitScene extends Scene {
 									syncSongSelectUI();
 								}
 							}
-							case 4 -> {
+							case 5 -> {
 								if (left) {
 									_songFocusCol = 0;
 									syncSongSelectUI();
@@ -1566,7 +1549,7 @@ public class InitScene extends Scene {
 									launchSelectedSong();
 								}
 							}
-							case 5 -> {
+							case 6 -> {
 								if (left) {
 									_songFocusCol = 0;
 									syncSongSelectUI();
