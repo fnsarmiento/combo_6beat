@@ -131,6 +131,7 @@ public class ROTNScene extends Scene {
 
 	// Animación del planeta, sistema de partículas y textos flotantes de juicio
 	private float _bgAnimTime = 0.0f;
+	private int _lastPlayerHp = 0;
 	private final ParticleSystem _particles = new ParticleSystem(320);
 	private final float[] _holdParticleTimers = new float[LANE_COUNT];
 	private final ArrayList<FloatingRating> _floatingRatings = new ArrayList<>();
@@ -274,6 +275,7 @@ public class ROTNScene extends Scene {
 			cfg.laneLockDuration
 		);
 		_rhythmCore.setOnHitListener(this::onNoteHit);
+		_lastPlayerHp = _rhythmCore.getPlayerHp();
 
 		_hitSfx = ResourcesManager.loadSFX("sfx/Normal-Hitnormal.wav");
 
@@ -942,6 +944,22 @@ public class ROTNScene extends Scene {
 	 */
 	private void updateActiveGameplayEffects(float dt) {
 		_particles.update(dt);
+
+		int curHp = _rhythmCore.getPlayerHp();
+		if (curHp > _lastPlayerHp) {
+			int healed = curHp - _lastPlayerHp;
+			FloatingRating healNotice = new FloatingRating();
+			healNotice.text = "+" + healed + " HP";
+			healNotice.x = 68.0f;
+			healNotice.y = 32.0f;
+			healNotice.vy = -16.0f;
+			healNotice.life = 0.75f;
+			healNotice.maxLife = 0.75f;
+			healNotice.color = 0xFF55FF99;
+			_floatingRatings.add(healNotice);
+			_particles.emitBurst(21.0f, 178.0f, 10, 18.0f, 48.0f, 1.8f, 3.2f, 0.20f, 0.40f, 12.0f, 0xFF55FF99);
+		}
+		_lastPlayerHp = curHp;
 
 		for (int i = _floatingRatings.size() - 1; i >= 0; i--) {
 			FloatingRating fr = _floatingRatings.get(i);

@@ -406,12 +406,13 @@ public class ROTNCore {
 				continue;
 			}
 
-			if (justPressed) {
-				pressKey(laneIdx, songTimeMs);
+			boolean wasHolding = isHoldingLane[laneIdx];
+			if (wasHolding) {
+				updateActiveHoldOnLane(laneIdx, songTimeMs, isDown);
 			}
 
-			if (isHoldingLane[laneIdx]) {
-				updateActiveHoldOnLane(laneIdx, songTimeMs, isDown);
+			if (justPressed && !isHoldingLane[laneIdx]) {
+				pressKey(laneIdx, songTimeMs);
 			}
 		}
 
@@ -528,9 +529,13 @@ public class ROTNCore {
 	}
 
 	/**
-	 * Actualiza el estado de una Hold Note activa en el carril {@code laneIdx}.
-	 * Si el jugador suelta la tecla antes de {@code endTime}, se delega a {@link #releaseKey};
-	 * si mantiene presionada la tecla hasta alcanzar o superar {@code endTime}, se otorga {@code PERFECT}.
+	 * Actualiza el estado de una Hold Note activa en el carril {@code laneIdx} con comportamiento
+	 * estilo osu!mania adaptado a nuestras ventanas temporales:
+	 * <ul>
+	 *   <li>Si el jugador suelta la tecla antes o dentro de la ventana final, se evalúa en {@link #releaseKey}.</li>
+	 *   <li>Si mantiene presionado más allá de {@code endTime + getSafeWindowMs()} sin soltar a tiempo,
+	 *       se corta el Hold como {@code MISS} por retención tardía (overhold).</li>
+	 * </ul>
 	 */
 	private void updateActiveHoldOnLane(int laneIdx, int songTimeMs, boolean isDown) {
 		int noteIdx = holdingNoteIndex[laneIdx];
@@ -539,8 +544,11 @@ public class ROTNCore {
 
 		if (!isDown) {
 			releaseKey(laneIdx, songTimeMs, endTime);
-		} else if (songTimeMs >= endTime) {
-			registerHit(laneIdx, HitRating.PERFECT);
+		} else if (songTimeMs > endTime + getSafeWindowMs()) {
+			if (missedNotes != null && noteIdx >= 0 && noteIdx < missedNotes.length) {
+				missedNotes[noteIdx] = true;
+			}
+			registerHit(laneIdx, HitRating.MISS);
 			isHoldingLane[laneIdx] = false;
 			holdingNoteIndex[laneIdx] = -1;
 		}
@@ -552,8 +560,8 @@ public class ROTNCore {
 	 * <ul>
 	 *   <li>Si se suelta demasiado pronto ({@code songTimeMs < endTime - getSafeWindowMs()}),
 	 *       se registra {@code MISS}.</li>
-	 *   <li>Si se suelta dentro de la ventana de tolerancia final, se evalúa la diferencia
-	 *       {@code |endTime - songTimeMs|} con las ventanas estándar de juicio.</li>
+	 *   <li>Si se suelta dentro de {@code [endTime - getSafeWindowMs(), endTime + getSafeWindowMs()]},
+	 *       se evalúa {@code |endTime - songTimeMs|} con las ventanas estándar ({@code PERFECT}/{@code GOOD}/{@code SAFE}).</li>
 	 * </ul>
 	 */
 	private void releaseKey(int laneIdx, int songTimeMs, long endTime) {
@@ -565,7 +573,11 @@ public class ROTNCore {
 			}
 			registerHit(laneIdx, HitRating.MISS);
 		} else {
-			registerHit(laneIdx, evaluateRating((float) releaseDiff));
+			HitRating releaseRating = evaluateRating((float) releaseDiff);
+			if (releaseRating == HitRating.MISS && missedNotes != null && noteIdx >= 0 && noteIdx < missedNotes.length) {
+				missedNotes[noteIdx] = true;
+			}
+			registerHit(laneIdx, releaseRating);
 		}
 		isHoldingLane[laneIdx] = false;
 		holdingNoteIndex[laneIdx] = -1;
@@ -644,20 +656,31 @@ public class ROTNCore {
 
 		if (combo > maxCombo) maxCombo = combo;
 
-		// Curación progresiva cada 2 notas acertadas consecutivas tras recibir daño
+		// Curación progresiva cada 2 notas acertadas consecutivas mientras falte HP
 		if (rating == HitRating.MISS) {
 			healPoints = 0;
 		} else {
 			healPoints++;
 			if (healPoints >= CONSECUTIVE_HITS_FOR_HEAL) {
 				healPoints = 0;
-				if (lastDamageTaken > 0 && playerHp < playerMaxHp) {
+				if (playerHp < playerMaxHp) {
+					int baseRef = (lastDamageTaken > 0) ? lastDamageTaken : bossAttackDamage;
 					float healPercent = GameState.hasHealingAmulet()
 						? AMULET_DAMAGE_RECOVERY_RATIO
 						: BASE_DAMAGE_RECOVERY_RATIO;
-					int healed = Math.max(1, Math.round(lastDamageTaken * healPercent));
+					int healed = Math.max(1, Math.round(baseRef * healPercent));
 					playerHp = Math.min(playerMaxHp, playerHp + healed);
-					lastDamageTaken = 0;
+
+					if (playerHp <= playerMaxHp * 0.60f) {
+						int potHeal = GameState.consumeAutoHeal(playerMaxHp - playerHp);
+						if (potHeal > 0) {
+							playerHp = Math.min(playerMaxHp, playerHp + potHeal);
+						}
+					}
+
+					if (playerHp >= playerMaxHp) {
+						lastDamageTaken = 0;
+					}
 				}
 			}
 		}
@@ -686,7 +709,7 @@ public class ROTNCore {
 		}
 
 		playerHp = Math.max(0, playerHp - dmg);
-		lastDamageTaken = dmg;
+		lastDamageTaken = Math.max(lastDamageTaken, dmg);
 	}
 
 	// =========================================================================
